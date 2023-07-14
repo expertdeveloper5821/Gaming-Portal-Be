@@ -1,21 +1,28 @@
-import express, { Application, Request, Response } from "express";
-import bodyParser from "body-parser";
+import express from 'express';
 import './config/db'
-const cors = require('cors')
+import * as dotenv from 'dotenv'
+import cors from 'cors';
+dotenv.config()
 
-const app: Application = express();
-const port = process.env.PORT || 3000;
+const app = express();
+const port = process.env.serverPort;
 
-// Middleware
-app.use(bodyParser.json());
-app.use(cors());
 
-// Routes
-app.get("/", (req: Request, res: Response) => {
-  res.send("Hello, world!");
-})
+// cors middleware 
+app.use(
+    cors({
+      origin: "*",
+      methods: "GET,POST,PUT,DELETE",
+      credentials: true,
+    })
+  );
 
-// Start the server
+// sample get route
+app.get('/', (req, res) => {
+  res.send('Hello, Gamers!');
+});
+
+// server listening
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`Server is running on port ${port}...👍️`);
 });
