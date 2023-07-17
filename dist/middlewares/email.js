@@ -26,30 +26,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-require("./config/db");
+exports.transporter = void 0;
+const express_1 = require("express");
+const nodemailer_1 = __importDefault(require("nodemailer"));
 const dotenv = __importStar(require("dotenv"));
-const cors_1 = __importDefault(require("cors"));
-const body_parser_1 = __importDefault(require("body-parser"));
 dotenv.config();
-const app = (0, express_1.default)();
-const port = process.env.serverPort;
-// importing routes
-const userAuthRoute_1 = __importDefault(require("./routes/userAuthRoute"));
-// cors middleware 
-app.use((0, cors_1.default)({
-    origin: "*",
-    methods: "GET,POST,PUT,DELETE",
-    credentials: true,
-}));
-app.use(body_parser_1.default.json());
-// using middleware routes
-app.use('/v1', userAuthRoute_1.default);
-// sample get route
-app.get('/', (req, res) => {
-    res.send('Hello, Gamers!');
-});
-// server listening
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}...👍️`);
+const router = (0, express_1.Router)();
+//  nodemailer transporter
+exports.transporter = nodemailer_1.default.createTransport({
+    host: process.env.emailHost,
+    port: parseInt(process.env.emailPort),
+    secure: false,
+    auth: {
+        user: process.env.emailUser,
+        pass: process.env.emailPassword,
+    },
 });
