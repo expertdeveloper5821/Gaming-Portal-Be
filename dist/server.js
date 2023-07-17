@@ -28,20 +28,31 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 require("./config/db");
-const dotenv = __importStar(require("dotenv"));
 const cors_1 = __importDefault(require("cors"));
+const body_parser_1 = __importDefault(require("body-parser"));
+const dotenv = __importStar(require("dotenv"));
 dotenv.config();
 const app = (0, express_1.default)();
 const port = process.env.serverPort;
+// all routes import here 
+const serverRoomIDRoute_1 = __importDefault(require("./routes/serverRoomIDRoute"));
 // cors middleware 
 app.use((0, cors_1.default)({
     origin: "*",
     methods: "GET,POST,PUT,DELETE",
     credentials: true,
 }));
+// accept body middleware
+app.use(express_1.default.json());
+app.use(body_parser_1.default.urlencoded({ extended: true }));
+app.use(express_1.default.urlencoded({ extended: false }));
+// all routes use as a middleware
+app.use('/v2', serverRoomIDRoute_1.default);
+// sample get route
 app.get('/', (req, res) => {
     res.send('Hello, Gamers!');
 });
+// server listening
 app.listen(port, () => {
     console.log(`Server is running on port ${port}...👍️`);
 });
