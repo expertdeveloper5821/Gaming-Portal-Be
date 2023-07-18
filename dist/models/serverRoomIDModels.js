@@ -29,6 +29,14 @@ const roomIdSchema = new mongoose_1.Schema({
         type: Number,
         required: true,
     },
+    gameName: {
+        type: String,
+        required: true,
+    },
+    gameType: {
+        type: String,
+        required: true,
+    },
 }, { timestamps: true });
 const RoomId = mongoose_1.default.model("RoomId", roomIdSchema);
 exports.default = RoomId;

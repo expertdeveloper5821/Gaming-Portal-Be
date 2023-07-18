@@ -6,6 +6,14 @@ const roomIdSchema: Schema = new Schema(
       type: Number,
       required: true,
     },
+    gameName: {
+      type: String,
+      required: true,
+    },
+    gameType: {
+      type: String,
+      required: true,
+    },
   },
   { timestamps: true }
 );
