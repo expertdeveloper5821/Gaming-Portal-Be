@@ -9,6 +9,7 @@ let userRegisterSchema = new mongoose_1.default.Schema({
     fullName: { type: String, required: true },
     userName: { type: String, required: true },
     email: { type: String, required: true },
-    password: { type: String, required: true },
+    password: { type: String, required: false },
+    provider: { type: String, required: false }
 });
 exports.user = mongoose_1.default.model("user", userRegisterSchema);

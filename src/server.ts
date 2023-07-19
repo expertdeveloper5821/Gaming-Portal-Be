@@ -3,13 +3,27 @@ import './config/db'
 import * as dotenv from 'dotenv'
 import cors from 'cors';
 import bodyParser from 'body-parser';
+import Session from 'express-session';
+
 dotenv.config()
 
 const app = express();
 const port = process.env.serverPort;
+import passport from 'passport';
 
+// Initialize Passport middleware
+
+app.use(Session({
+  secret : "GOOOGELEDSKDJS",
+  resave :  false,
+  saveUninitialized : true,
+  cookie : {secure:false}
+}))
+app.use(passport.initialize());
+app.use(passport.session());
 // importing routes
 import userAuthRoute from './routes/userAuthRoute';
+import passportRoute from './routes/passportRoute'
 
 // cors middleware 
 app.use(
@@ -22,6 +36,7 @@ app.use(
   app.use(bodyParser.json());
 // using middleware routes
 app.use('/v1',userAuthRoute)
+app.use('/auth',passportRoute)
 
   // sample get route
 app.get('/', (req, res) => {

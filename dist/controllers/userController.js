@@ -18,6 +18,7 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const email_1 = require("../middlewares/email");
 const otpGen_1 = require("../utils/otpGen");
+// for user signup
 const userSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { fullName, userName, email, password } = req.body;
@@ -51,6 +52,7 @@ const userSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     }
 });
 exports.userSignup = userSignup;
+// for user login
 const userLogin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email, password } = req.body;
@@ -79,21 +81,25 @@ const userLogin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.userLogin = userLogin;
-// In-memory storage for OTP and expiration time (for demonstration purposes)
-const otpStorage = {};
+// to forget password
 const forgetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email } = req.body;
     try {
         // Check if email exists in the database
         const User = yield userModel_1.user.findOne({ email });
         if (!User) {
-            return res.status(400).json({ code: 400, message: `Account with email ${email} not found` });
+            return res
+                .status(400)
+                .json({ code: 400, message: `Account with email ${email} not found` });
         }
         // setting expiration time of 10 min
         const otp = (0, otpGen_1.generateOTP)();
         const expirationTime = new Date(Date.now() + 600000);
-        // Store OTP and expiration time for later verification
-        otpStorage[email] = { otp, expirationTime };
+        // Create the JWT
+        const expiresIn = "1h";
+        const token = jsonwebtoken_1.default.sign({ email, expirationTime, otp }, process.env.jwtSecret, {
+            expiresIn,
+        });
         const mailOptions = {
             from: process.env.emailUser,
             to: email,
@@ -105,7 +111,7 @@ const forgetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
                 res.status(500).json({ code: 500, message: "Failed to send OTP" });
             }
             else {
-                res.json({ code: 200, message: "OTP sent successfully" });
+                res.json({ code: 200, token: token, message: "OTP sent successfully" });
             }
         });
     }
@@ -114,37 +120,51 @@ const forgetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 exports.forgetPassword = forgetPassword;
+// to reset password
 const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { email, otp, newPassword } = req.body;
-    // Retrieve OTP and expiration time from storage
-    const storedOTP = otpStorage[email];
-    if (!storedOTP) {
-        return res.status(400).json({ code: 400, message: 'Invalid or expired OTP' });
-    }
-    const { expirationTime } = storedOTP;
-    if (new Date() > expirationTime) {
-        return res.status(400).json({ code: 400, message: 'Invalid or expired OTP' });
-    }
-    if (otp !== storedOTP.otp) {
-        return res.status(400).json({ code: 400, message: 'Invalid OTP' });
-    }
+    const { token, otp, newPassword } = req.body;
     try {
         ;
+        const decodedToken = jsonwebtoken_1.default.verify(token, process.env.jwtSecret);
+        console.log("decodedtoken ins", decodedToken);
+        const nowInSeconds = Math.floor(Date.now() / 1000);
+        if (!decodedToken) {
+            return res
+                .status(400)
+                .json({ code: 400, message: "Invaliddddddddddddd or expired OTP" });
+        }
+        const { expirationTime } = decodedToken;
+        if (new Date() > expirationTime) {
+            return res
+                .status(400)
+                .json({ code: 400, message: "Invalid or expired OTP" });
+        }
+        if (otp !== decodedToken.otp) {
+            return res.status(400).json({ code: 400, message: "Invalid OTP" });
+        }
+        // Check if the token is expired
+        if (decodedToken.exp && decodedToken.exp < nowInSeconds) {
+            return res.status(400).json({ code: 400, message: "Expired" });
+        }
+        const { email } = decodedToken;
         const User = yield userModel_1.user.findOne({ email });
         if (!User) {
-            return res.status(400).json({ code: 400, message: 'User not found' });
+            return res.status(400).json({ code: 400, message: "User not found" });
         }
         // Set the new password
         if (User) {
+            if (!newPassword) {
+                return res.status(400).json({ code: 400, message: "New password is required" });
+            }
             const hashedPassword = yield bcrypt_1.default.hash(newPassword, 10);
             User.password = hashedPassword;
             yield User.save();
         }
-        // Clear OTP from storage
-        delete otpStorage[email];
-        return res.json({ code: 200, message: 'Password reset successful' });
+        return res.json({ code: 200, message: "Password reset successful" });
     }
     catch (error) {
+        console.log(error);
+        return res.status(500).json({ code: 500, error: "Internal server error" });
     }
 });
 exports.resetPassword = resetPassword;
