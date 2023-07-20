@@ -17,18 +17,17 @@ const serverRoomIDModels_1 = __importDefault(require("../models/serverRoomIDMode
 // Create a new room
 const createRoom = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { roomId, gameName, gameType, gameTiming, mapType } = req.body;
-        if (!roomId || !gameName || !gameType || !gameTiming || !mapType) {
+        const { roomId, gameName, gameType, mapType } = req.body;
+        if (!roomId || !gameName || !gameType || !mapType) {
             return res.status(400).json({ message: "All fields required" });
         }
         else {
-            const createdRoom = yield serverRoomIDModels_1.default.create({ roomId, gameName, gameType, gameTiming, mapType });
+            const createdRoom = yield serverRoomIDModels_1.default.create({ roomId, gameName, gameType, mapType });
             return res.status(200).json({
                 message: "RoomID created successfully",
                 roomId: createdRoom.roomId,
                 gameName: createdRoom.gameName,
                 gameType: createdRoom.gameType,
-                gameTiming: createdRoom.gameTiming,
                 mapType: createdRoom.mapType
             });
         }
