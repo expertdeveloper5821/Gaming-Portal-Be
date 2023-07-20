@@ -12,9 +12,9 @@ const port = process.env.serverPort;
 import passport from 'passport';
 
 // Initialize Passport middleware
-
+const sessionSecret = process.env.sessionSecret || "defaultSecret";
 app.use(Session({
-  secret : "GOOOGELEDSKDJS",
+  secret :sessionSecret,
   resave :  false,
   saveUninitialized : true,
   cookie : {secure:false}
@@ -24,6 +24,7 @@ app.use(passport.session());
 // importing routes
 import userAuthRoute from './routes/userAuthRoute';
 import passportRoute from './routes/passportRoute'
+import fbPassportRoute from './routes/fbPassportRoute'
 
 // cors middleware 
 app.use(
@@ -37,6 +38,7 @@ app.use(
 // using middleware routes
 app.use('/v1',userAuthRoute)
 app.use('/auth',passportRoute)
+app.use('/fbsocial',fbPassportRoute)
 
   // sample get route
 app.get('/', (req, res) => {

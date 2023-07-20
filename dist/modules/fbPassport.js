@@ -32,18 +32,18 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const passport = require("passport");
+const passport = require('passport');
 const userModel_1 = require("../models/userModel");
-var GoogleStrategy = require("passport-google-oauth20").Strategy;
+var FacebookStrategy = require('passport-facebook').Strategy;
 const dotenv = __importStar(require("dotenv"));
 dotenv.config();
-passport.use(new GoogleStrategy({
-    clientID: process.env.clientID,
-    clientSecret: process.env.clientSecret,
-    callbackURL: `/auth/google/callback`,
-    scope: ["profile", "email"],
+passport.use(new FacebookStrategy({
+    clientID: process.env.appID,
+    clientSecret: process.env.appSecret,
+    callbackURL: `fbsocial/facebook/callback`
 }, function (accessToken, refreshToken, profile, cb) {
     return __awaiter(this, void 0, void 0, function* () {
+        console.log("this si the profile", profile);
         var userData = {
             email: profile.emails[0].value,
             userName: profile.displayName,

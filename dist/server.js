@@ -37,8 +37,9 @@ const app = (0, express_1.default)();
 const port = process.env.serverPort;
 const passport_1 = __importDefault(require("passport"));
 // Initialize Passport middleware
+const sessionSecret = process.env.sessionSecret || "defaultSecret";
 app.use((0, express_session_1.default)({
-    secret: "GOOOGELEDSKDJS",
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: true,
     cookie: { secure: false }
@@ -48,6 +49,7 @@ app.use(passport_1.default.session());
 // importing routes
 const userAuthRoute_1 = __importDefault(require("./routes/userAuthRoute"));
 const passportRoute_1 = __importDefault(require("./routes/passportRoute"));
+const fbPassportRoute_1 = __importDefault(require("./routes/fbPassportRoute"));
 // cors middleware 
 app.use((0, cors_1.default)({
     origin: "*",
@@ -58,6 +60,7 @@ app.use(body_parser_1.default.json());
 // using middleware routes
 app.use('/v1', userAuthRoute_1.default);
 app.use('/auth', passportRoute_1.default);
+app.use('/fbsocial', fbPassportRoute_1.default);
 // sample get route
 app.get('/', (req, res) => {
     res.send('Hello, Gamers!');

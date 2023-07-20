@@ -124,9 +124,7 @@ exports.forgetPassword = forgetPassword;
 const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { token, otp, newPassword } = req.body;
     try {
-        ;
         const decodedToken = jsonwebtoken_1.default.verify(token, process.env.jwtSecret);
-        console.log("decodedtoken ins", decodedToken);
         const nowInSeconds = Math.floor(Date.now() / 1000);
         if (!decodedToken) {
             return res
@@ -154,7 +152,9 @@ const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         // Set the new password
         if (User) {
             if (!newPassword) {
-                return res.status(400).json({ code: 400, message: "New password is required" });
+                return res
+                    .status(400)
+                    .json({ code: 400, message: "New password is required" });
             }
             const hashedPassword = yield bcrypt_1.default.hash(newPassword, 10);
             User.password = hashedPassword;
@@ -163,7 +163,6 @@ const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         return res.json({ code: 200, message: "Password reset successful" });
     }
     catch (error) {
-        console.log(error);
         return res.status(500).json({ code: 500, error: "Internal server error" });
     }
 });

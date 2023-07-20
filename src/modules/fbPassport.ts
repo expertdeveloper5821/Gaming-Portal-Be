@@ -1,18 +1,18 @@
-const passport = require("passport");
+const passport = require('passport');
 import { user } from "../models/userModel";
-var GoogleStrategy = require("passport-google-oauth20").Strategy;
+var FacebookStrategy = require('passport-facebook').Strategy;
 import * as dotenv from "dotenv";
 dotenv.config();
 
 passport.use(
-  new GoogleStrategy(
+  new FacebookStrategy(
     {
-      clientID: process.env.clientID,
-      clientSecret: process.env.clientSecret,
-      callbackURL: `/auth/google/callback`,
-      scope: ["profile", "email"],
+      clientID: process.env.appID,
+      clientSecret: process.env.appSecret,
+      callbackURL: `fbsocial/facebook/callback`
     },
-    async function (accessToken: String, refreshToken: String, profile: any, cb: any) {        
+    async function (accessToken: String, refreshToken: String, profile: any, cb: any) {    
+        console.log("this si the profile", profile);    
       var userData = {
         email: profile.emails[0].value,
         userName: profile.displayName,
