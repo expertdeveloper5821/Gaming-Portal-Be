@@ -1,25 +1,18 @@
-import express from 'express';
+import express,{Express, Request, Response} from 'express';
 import './config/db'
-import * as dotenv from 'dotenv'
-import cors from 'cors';
-dotenv.config()
+import { environmentConfig } from './config/environmentConfig';
+import { configureCors } from './config/corsConfig';
 
-const app = express();
-const port = process.env.serverPort;
+const app:Express = express();
+const port: number = environmentConfig.SERVER_PORT;
 
 
 // cors middleware 
-app.use(
-    cors({
-      origin: "*",
-      methods: "GET,POST,PUT,DELETE",
-      credentials: true,
-    })
-  );
+app.use(configureCors());
 
 // sample get route
-app.get('/', (req, res) => {
-  res.send('Hello, Gamers!');
+app.get('/', (req:Request, res:Response) => {
+  res.status(200).send('Hello, Gamers!');
 });
 
 // server listening
