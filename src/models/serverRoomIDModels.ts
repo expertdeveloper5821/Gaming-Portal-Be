@@ -14,6 +14,14 @@ const roomIdSchema: Schema = new Schema(
       type: String,
       required: true,
     },
+    mapType: {
+      type: String,
+      required: true,
+    },
+    gameTiming: {
+      type: String,
+      required: true,
+    },
   },
   { timestamps: true }
 );
