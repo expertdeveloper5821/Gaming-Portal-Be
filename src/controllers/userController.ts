@@ -1,9 +1,9 @@
 import { user } from "../models/userModel";
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 import { transporter } from "../middlewares/email";
-import { generateOTP } from "../utils/otpGen";
+import { v4 as uuidv4 } from "uuid"; // Import uuid library
 
 // for user signup
 export const userSignup = async (req: Request, res: Response) => {
@@ -70,6 +70,7 @@ export const userLogin = async (req: Request, res: Response) => {
   }
 };
 
+
 // to forget password
 export const forgetPassword = async (req: Request, res: Response) => {
   const { email } = req.body;
@@ -77,36 +78,50 @@ export const forgetPassword = async (req: Request, res: Response) => {
     // Check if email exists in the database
     const User = await user.findOne({ email });
     if (!User) {
-      return res
-        .status(400)
-        .json({ code: 400, message: `Account with email ${email} not found` });
+      return res.status(400).json({
+        code: 400,
+        message: `Account with email ${email} not found`,
+      });
     }
 
-    // setting expiration time of 10 min
-    const otp = generateOTP();
-    const expirationTime = new Date(Date.now() + 600000);
+    // Generate a unique reset token
+    const resetToken = uuidv4();
 
     // Create the JWT
     const expiresIn = "1h";
     const token = jwt.sign(
-      { email, expirationTime, otp },
+      { email, resetToken },
       process.env.jwtSecret as string,
       {
         expiresIn,
       }
     );
+
+    // Construct the reset password URL
+    const resetPasswordUrl = `${process.env.reset_password}?token=${token}`;
+
+    // Send the reset password URL in the email
     const mailOptions = {
       from: process.env.emailUser,
       to: email,
-      subject: "Password Reset OTP",
-      text: `Your OTP for reset password  is ${otp}`,
+      subject: "Reset Password",
+      html: `Click on the following link to reset your password <a href=${resetPasswordUrl}>Click Here</a>`,
     };
 
     transporter.sendMail(mailOptions, (err) => {
       if (err) {
-        res.status(500).json({ code: 500, message: "Failed to send OTP" });
+        res
+          .status(500)
+          .json({
+            code: 500,
+            message: "Failed to send the reset password URL",
+          });
       } else {
-        res.json({ code: 200, token: token, message: "OTP sent successfully" });
+        res.json({
+          code: 200,
+          tokne: token,
+          message: "Reset password URL sent successfully please check your email",
+        });
       }
     });
   } catch (error) {
@@ -116,51 +131,34 @@ export const forgetPassword = async (req: Request, res: Response) => {
 
 // to reset password
 export const resetPassword = async (req: Request, res: Response) => {
-  const { token, otp, newPassword } = req.body;
+  const { confirmPassword } = req.body;
+
   try {
+    const token = req.query.token;
+    // Verify the token
     const decodedToken = jwt.verify(
-      token,
-      process.env.jwtSecret as string
-    ) as jwt.JwtPayload;
-    const nowInSeconds = Math.floor(Date.now() / 1000);
+      token as string,
+      process.env.jwtSecret as Secret
+    );
+    const { email } = decodedToken as JwtPayload;
 
-    if (!decodedToken) {
-      return res
-        .status(400)
-        .json({ code: 400, message: "Invaliddddddddddddd or expired OTP" });
-    }
-    const { expirationTime } = decodedToken;
-    if (new Date() > expirationTime) {
-      return res
-        .status(400)
-        .json({ code: 400, message: "Invalid or expired OTP" });
-    }
-    if (otp !== decodedToken.otp) {
-      return res.status(400).json({ code: 400, message: "Invalid OTP" });
-    }
-
-    // Check if the token is expired
-    if (decodedToken.exp && decodedToken.exp < nowInSeconds) {
-      return res.status(400).json({ code: 400, message: "Expired" });
-    }
-    const { email } = decodedToken;
-    const User = await user.findOne({ email });
-    if (!User) {
+    // Check if email exists in the database
+    const existingUser = await user.findOne({ email });
+    if (!existingUser) {
       return res.status(400).json({ code: 400, message: "User not found" });
     }
-    // Set the new password
-    if (User) {
-      if (!newPassword) {
-        return res
-          .status(400)
-          .json({ code: 400, message: "New password is required" });
-      }
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-      User.password = hashedPassword;
-      await User.save();
-    }
-    return res.json({ code: 200, message: "Password reset successful" });
+    // Hash the new password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(confirmPassword, saltRounds);
+
+    // Update the user's password
+    existingUser.password = hashedPassword;
+    await existingUser.save();
+
+    return res.json({ code: 200, message: "Password reset successfully" });
   } catch (error) {
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res
+      .status(400)
+      .json({ code: 400, message: "Invalid or expired token" });
   }
 };

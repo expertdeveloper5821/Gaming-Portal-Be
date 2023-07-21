@@ -17,7 +17,7 @@ const userModel_1 = require("../models/userModel");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const email_1 = require("../middlewares/email");
-const otpGen_1 = require("../utils/otpGen");
+const uuid_1 = require("uuid"); // Import uuid library
 // for user signup
 const userSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -88,30 +88,42 @@ const forgetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
         // Check if email exists in the database
         const User = yield userModel_1.user.findOne({ email });
         if (!User) {
-            return res
-                .status(400)
-                .json({ code: 400, message: `Account with email ${email} not found` });
+            return res.status(400).json({
+                code: 400,
+                message: `Account with email ${email} not found`,
+            });
         }
-        // setting expiration time of 10 min
-        const otp = (0, otpGen_1.generateOTP)();
-        const expirationTime = new Date(Date.now() + 600000);
+        // Generate a unique reset token
+        const resetToken = (0, uuid_1.v4)();
         // Create the JWT
         const expiresIn = "1h";
-        const token = jsonwebtoken_1.default.sign({ email, expirationTime, otp }, process.env.jwtSecret, {
+        const token = jsonwebtoken_1.default.sign({ email, resetToken }, process.env.jwtSecret, {
             expiresIn,
         });
+        // Construct the reset password URL
+        const resetPasswordUrl = `${process.env.reset_password}?token=${token}`;
+        // Send the reset password URL in the email
         const mailOptions = {
             from: process.env.emailUser,
             to: email,
-            subject: "Password Reset OTP",
-            text: `Your OTP for reset password  is ${otp}`,
+            subject: "Reset Password",
+            html: `Click on the following link to reset your password <a href=${resetPasswordUrl}>Click Here</a>`,
         };
         email_1.transporter.sendMail(mailOptions, (err) => {
             if (err) {
-                res.status(500).json({ code: 500, message: "Failed to send OTP" });
+                res
+                    .status(500)
+                    .json({
+                    code: 500,
+                    message: "Failed to send the reset password URL",
+                });
             }
             else {
-                res.json({ code: 200, token: token, message: "OTP sent successfully" });
+                res.json({
+                    code: 200,
+                    tokne: token,
+                    message: "Reset password URL sent successfully please check your email",
+                });
             }
         });
     }
@@ -122,48 +134,29 @@ const forgetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
 exports.forgetPassword = forgetPassword;
 // to reset password
 const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { token, otp, newPassword } = req.body;
+    const { confirmPassword } = req.body;
     try {
+        const token = req.query.token;
+        // Verify the token
         const decodedToken = jsonwebtoken_1.default.verify(token, process.env.jwtSecret);
-        const nowInSeconds = Math.floor(Date.now() / 1000);
-        if (!decodedToken) {
-            return res
-                .status(400)
-                .json({ code: 400, message: "Invaliddddddddddddd or expired OTP" });
-        }
-        const { expirationTime } = decodedToken;
-        if (new Date() > expirationTime) {
-            return res
-                .status(400)
-                .json({ code: 400, message: "Invalid or expired OTP" });
-        }
-        if (otp !== decodedToken.otp) {
-            return res.status(400).json({ code: 400, message: "Invalid OTP" });
-        }
-        // Check if the token is expired
-        if (decodedToken.exp && decodedToken.exp < nowInSeconds) {
-            return res.status(400).json({ code: 400, message: "Expired" });
-        }
         const { email } = decodedToken;
-        const User = yield userModel_1.user.findOne({ email });
-        if (!User) {
+        // Check if email exists in the database
+        const existingUser = yield userModel_1.user.findOne({ email });
+        if (!existingUser) {
             return res.status(400).json({ code: 400, message: "User not found" });
         }
-        // Set the new password
-        if (User) {
-            if (!newPassword) {
-                return res
-                    .status(400)
-                    .json({ code: 400, message: "New password is required" });
-            }
-            const hashedPassword = yield bcrypt_1.default.hash(newPassword, 10);
-            User.password = hashedPassword;
-            yield User.save();
-        }
-        return res.json({ code: 200, message: "Password reset successful" });
+        // Hash the new password
+        const saltRounds = 10;
+        const hashedPassword = yield bcrypt_1.default.hash(confirmPassword, saltRounds);
+        // Update the user's password
+        existingUser.password = hashedPassword;
+        yield existingUser.save();
+        return res.json({ code: 200, message: "Password reset successfully" });
     }
     catch (error) {
-        return res.status(500).json({ code: 500, error: "Internal server error" });
+        return res
+            .status(400)
+            .json({ code: 400, message: "Invalid or expired token" });
     }
 });
 exports.resetPassword = resetPassword;
