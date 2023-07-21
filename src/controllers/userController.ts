@@ -4,6 +4,8 @@ import bcrypt from "bcrypt";
 import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 import { transporter } from "../middlewares/email";
 import { v4 as uuidv4 } from "uuid"; // Import uuid library
+import { passwordRegex } from "../utils/regexPattern";
+
 
 // for user signup
 export const userSignup = async (req: Request, res: Response) => {
@@ -49,13 +51,13 @@ export const userLogin = async (req: Request, res: Response) => {
     if (!User) {
       return res.status(400).json({
         code: 400,
-        message: `user with email ${email} does not exist`,
+        message: `Invalid Email address or Password`,
       });
     }
     const isPasswordValid = await bcrypt.compare(password, User.password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ code: 401, message: "Invalid password" });
+      return res.status(401).json({ code: 401, message: "Invalid Email address or Password" });
     }
     const token = jwt.sign({ userId: User._id }, process.env.jwtSecret || "", {
       expiresIn: "48h",
@@ -131,7 +133,7 @@ export const forgetPassword = async (req: Request, res: Response) => {
 
 // to reset password
 export const resetPassword = async (req: Request, res: Response) => {
-  const { confirmPassword } = req.body;
+  const { newPassword,confirmPassword } = req.body;
 
   try {
     const token = req.query.token;
@@ -146,6 +148,17 @@ export const resetPassword = async (req: Request, res: Response) => {
     const existingUser = await user.findOne({ email });
     if (!existingUser) {
       return res.status(400).json({ code: 400, message: "User not found" });
+    }
+    // Add validation: Check if the new password and confirm password match
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ code: 400, message: 'Passwords must be same' });
+    }
+    if (!passwordRegex.test(confirmPassword)) {
+      return res.status(400).json({
+        code: 400,
+        message:
+          'Password must contain at least one letter, one digit, one special character (!@#$%^&*()_+), and be at least 6 characters long',
+      });
     }
     // Hash the new password
     const saltRounds = 10;

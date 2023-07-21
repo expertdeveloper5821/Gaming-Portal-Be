@@ -18,6 +18,7 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const email_1 = require("../middlewares/email");
 const uuid_1 = require("uuid"); // Import uuid library
+const regexPattern_1 = require("../utils/regexPattern");
 // for user signup
 const userSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -60,12 +61,12 @@ const userLogin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!User) {
             return res.status(400).json({
                 code: 400,
-                message: `user with email ${email} does not exist`,
+                message: `Invalid Email address or Password`,
             });
         }
         const isPasswordValid = yield bcrypt_1.default.compare(password, User.password);
         if (!isPasswordValid) {
-            return res.status(401).json({ code: 401, message: "Invalid password" });
+            return res.status(401).json({ code: 401, message: "Invalid Email address or Password" });
         }
         const token = jsonwebtoken_1.default.sign({ userId: User._id }, process.env.jwtSecret || "", {
             expiresIn: "48h",
@@ -134,7 +135,7 @@ const forgetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
 exports.forgetPassword = forgetPassword;
 // to reset password
 const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { confirmPassword } = req.body;
+    const { newPassword, confirmPassword } = req.body;
     try {
         const token = req.query.token;
         // Verify the token
@@ -144,6 +145,16 @@ const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         const existingUser = yield userModel_1.user.findOne({ email });
         if (!existingUser) {
             return res.status(400).json({ code: 400, message: "User not found" });
+        }
+        // Add validation: Check if the new password and confirm password match
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ code: 400, message: 'Passwords must be same' });
+        }
+        if (!regexPattern_1.passwordRegex.test(confirmPassword)) {
+            return res.status(400).json({
+                code: 400,
+                message: 'Password must contain at least one letter, one digit, one special character (!@#$%^&*()_+), and be at least 6 characters long',
+            });
         }
         // Hash the new password
         const saltRounds = 10;
