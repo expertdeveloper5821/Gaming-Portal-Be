@@ -6,19 +6,12 @@ interface CustomCorsOptions {
     methods?: string | string[];
     credentials?: boolean;
   }
-  
   // Function to configure and apply CORS middleware
- export  const configureCors = (options?: CustomCorsOptions): express.RequestHandler => {
-    // Default values for CORS options
-    const defaultOrigin = '*';
-    const defaultMethods = 'GET,POST,PUT,DELETE';
-    const defaultCredentials = true;
-  
-    // Prepare CORS options based on custom values or defaults
+  export const configureCors = ({ origin = '*', methods = 'GET,POST,PUT,DELETE', credentials = true }: CustomCorsOptions = {}): express.RequestHandler => {
     const corsOptions: CorsOptions = {
-      origin: options?.origin || defaultOrigin,
-      methods: options?.methods || defaultMethods,
-      credentials: options?.credentials === undefined ? defaultCredentials : options.credentials,
+      origin,
+      methods,
+      credentials,
     };
   
     // Create and return the actual CORS middleware
