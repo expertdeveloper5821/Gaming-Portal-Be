@@ -25,6 +25,7 @@ app.use(passport.session());
 import userAuthRoute from './routes/userAuthRoute';
 import passportRoute from './routes/passportRoute'
 import fbPassportRoute from './routes/fbPassportRoute'
+//  import twitterPassportRoute from './routes/twitterPassportRoute'
 
 // cors middleware 
 app.use(
@@ -39,6 +40,7 @@ app.use(
 app.use('/v1',userAuthRoute)
 app.use('/auth',passportRoute)
 app.use('/fbsocial',fbPassportRoute)
+// app.use('/twittersocial',twitterPassportRoute)
 
   // sample get route
 app.get('/', (req, res) => {

@@ -50,6 +50,7 @@ app.use(passport_1.default.session());
 const userAuthRoute_1 = __importDefault(require("./routes/userAuthRoute"));
 const passportRoute_1 = __importDefault(require("./routes/passportRoute"));
 const fbPassportRoute_1 = __importDefault(require("./routes/fbPassportRoute"));
+//  import twitterPassportRoute from './routes/twitterPassportRoute'
 // cors middleware 
 app.use((0, cors_1.default)({
     origin: "*",
@@ -61,6 +62,7 @@ app.use(body_parser_1.default.json());
 app.use('/v1', userAuthRoute_1.default);
 app.use('/auth', passportRoute_1.default);
 app.use('/fbsocial', fbPassportRoute_1.default);
+// app.use('/twittersocial',twitterPassportRoute)
 // sample get route
 app.get('/', (req, res) => {
     res.send('Hello, Gamers!');
