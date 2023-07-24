@@ -1,21 +1,19 @@
-import express, { Application, Request, Response } from "express";
-import bodyParser from "body-parser";
+import express,{Express, Request, Response} from 'express';
 import './config/db'
-const cors = require('cors')
+import { environmentConfig } from './config/environmentConfig';
+import { configureCors } from './config/corsConfig';
 
-const app: Application = express();
-const port = process.env.PORT || 3000;
+const app:Express = express();
+const port: number = environmentConfig.SERVER_PORT;
 
-// Middleware
-app.use(bodyParser.json());
-app.use(cors());
 
-// Routes
-app.get("/", (req: Request, res: Response) => {
-  res.send("Hello, world!");
-})
-
-// Start the server
+// cors middleware 
+app.use(configureCors());
+// sample get route
+app.get('/', (req:Request, res:Response) => {
+  res.status(200).send('Hello, Gamers!');
+});
+// server listening
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`Server is running on port ${port}...👍️`);
 });

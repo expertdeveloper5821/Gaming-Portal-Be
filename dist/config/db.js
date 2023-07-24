@@ -26,22 +26,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-require("./config/db");
+const mongoose_1 = __importDefault(require("mongoose"));
 const dotenv = __importStar(require("dotenv"));
-const cors_1 = __importDefault(require("cors"));
 dotenv.config();
-const app = (0, express_1.default)();
-const port = process.env.serverPort;
-// cors middleware 
-app.use((0, cors_1.default)({
-    origin: "*",
-    methods: "GET,POST,PUT,DELETE",
-    credentials: true,
-}));
-app.get('/', (req, res) => {
-    res.send('Hello, Gamers!');
-});
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}...👍️`);
+const dbUrl = process.env.DbUrl || '';
+mongoose_1.default
+    .connect(dbUrl)
+    .then(() => {
+    console.log("Database Connected...👍️");
+})
+    .catch((error) => {
+    console.log("Database not connected...😤", error);
 });
