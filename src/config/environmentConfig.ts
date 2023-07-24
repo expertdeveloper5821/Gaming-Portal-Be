@@ -17,7 +17,7 @@ export interface EnvironmentConfig {
 
 export const environmentConfig: EnvironmentConfig = {
   JWT_SECRET: process.env.jwtSecret || 'defaultSecret',
-  SERVER_PORT: process.env.PORT ? parseInt(process.env.PORT, 10) : 3000,
+  SERVER_PORT: process.env.serverPort ? parseInt(process.env.serverPort, 10) : 3000,
   DB_URL: process.env.DbUrl || 'mongodb://localhost:27017/mydatabase',
   DB_HOST: process.env.emailHost || 'localhost',
   EMAIL_USER: process.env.emailUser || 'email@example.com',
