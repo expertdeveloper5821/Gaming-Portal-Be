@@ -1,10 +1,13 @@
-import { user } from "../models/userModel";
+import { user } from "../models/passportModels";
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 import { transporter } from "../middlewares/email";
 import { v4 as uuidv4 } from "uuid"; // Import uuid library
-import { passwordRegex } from "../utils/regexPattern";
+import { passwordRegex } from "../utils/helper";
+import { environmentConfig } from '../config/environmentConfig';
+
+const jwtSecret: string = environmentConfig.JWT_SECRET;
 
 
 // for user signup
@@ -31,7 +34,7 @@ export const userSignup = async (req: Request, res: Response) => {
     // generating a jwt token to specifically identify the user
     const token = jwt.sign(
       { userId: newUser._id },
-      process.env.jwtSecret || ""
+      jwtSecret || ""
     );
     return res.status(200).json({
       token,
@@ -59,9 +62,11 @@ export const userLogin = async (req: Request, res: Response) => {
     if (!isPasswordValid) {
       return res.status(401).json({ code: 401, message: "Invalid Email address or Password" });
     }
-    const token = jwt.sign({ userId: User._id }, process.env.jwtSecret || "", {
+    // creating the jwt token 
+    const token = jwt.sign({ userId: User._id }, jwtSecret || "", {
       expiresIn: "48h",
     });
+    // sending the token in response
     return res.status(200).json({
       token,
       code: 200,
@@ -93,7 +98,7 @@ export const forgetPassword = async (req: Request, res: Response) => {
     const expiresIn = "1h";
     const token = jwt.sign(
       { email, resetToken },
-      process.env.jwtSecret as string,
+      jwtSecret as string,
       {
         expiresIn,
       }
@@ -140,7 +145,7 @@ export const resetPassword = async (req: Request, res: Response) => {
     // Verify the token
     const decodedToken = jwt.verify(
       token as string,
-      process.env.jwtSecret as Secret
+      jwtSecret as Secret
     );
     const { email } = decodedToken as JwtPayload;
 

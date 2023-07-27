@@ -22,21 +22,20 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.transporter = void 0;
-const nodemailer_1 = __importDefault(require("nodemailer"));
+exports.environmentConfig = void 0;
 const dotenv = __importStar(require("dotenv"));
 dotenv.config();
-//  nodemailer transporter
-exports.transporter = nodemailer_1.default.createTransport({
-    host: process.env.emailHost,
-    port: parseInt(process.env.emailPort),
-    secure: false,
-    auth: {
-        user: process.env.emailUser,
-        pass: process.env.emailPassword,
-    },
-});
+exports.environmentConfig = {
+    JWT_SECRET: process.env.jwtSecret || 'defaultSecret',
+    SERVER_PORT: process.env.serverPort ? parseInt(process.env.serverPort, 10) : 3000,
+    DB_URL: process.env.DbUrl || 'mongodb://localhost:27017/mydatabase',
+    DB_HOST: process.env.emailHost || 'localhost',
+    EMAIL_USER: process.env.emailUser || 'email@example.com',
+    EMAIL_PASSWORD: process.env.emailPassword || 'emailPassword',
+    EMAIL_PORT: process.env.emailPort ? parseInt(process.env.emailPort, 10) : 587,
+    EMAIL_FROM: process.env.emailFrom || 'noreply@example.com',
+    CLIENT_ID: process.env.clientID || 'yourClientId',
+    CLIENT_SECRET: process.env.clientSecret || 'yourClientSecret',
+    CLIENT_URL: process.env.clientUrl || 'http://localhost:3000',
+};

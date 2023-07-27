@@ -1,8 +1,7 @@
-import { Router } from "express";
 import nodemailer from "nodemailer";
 import * as dotenv from "dotenv";
 dotenv.config();
-const router = Router();
+
 
 //  nodemailer transporter
  export const transporter = nodemailer.createTransport({

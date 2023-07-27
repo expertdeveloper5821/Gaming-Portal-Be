@@ -13,17 +13,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.resetPassword = exports.forgetPassword = exports.userLogin = exports.userSignup = void 0;
-const userModel_1 = require("../models/userModel");
+const passportModels_1 = require("../models/passportModels");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const email_1 = require("../middlewares/email");
 const uuid_1 = require("uuid"); // Import uuid library
-const regexPattern_1 = require("../utils/regexPattern");
+const helper_1 = require("../utils/helper");
+const environmentConfig_1 = require("../config/environmentConfig");
+const jwtSecret = environmentConfig_1.environmentConfig.JWT_SECRET;
 // for user signup
 const userSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { fullName, userName, email, password } = req.body;
-        const existingUser = yield userModel_1.user.findOne({ email });
+        const existingUser = yield passportModels_1.user.findOne({ email });
         if (existingUser) {
             return res.status(400).json({
                 code: 400,
@@ -32,7 +34,7 @@ const userSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         }
         // hashing the password
         const hashedPassword = yield bcrypt_1.default.hash(password, 10);
-        const newUser = new userModel_1.user({
+        const newUser = new passportModels_1.user({
             fullName,
             userName,
             email,
@@ -41,7 +43,7 @@ const userSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         // saving the user to DB
         yield newUser.save();
         // generating a jwt token to specifically identify the user
-        const token = jsonwebtoken_1.default.sign({ userId: newUser._id }, process.env.jwtSecret || "");
+        const token = jsonwebtoken_1.default.sign({ userId: newUser._id }, jwtSecret || "");
         return res.status(200).json({
             token,
             code: 200,
@@ -57,7 +59,7 @@ exports.userSignup = userSignup;
 const userLogin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email, password } = req.body;
-        const User = yield userModel_1.user.findOne({ email });
+        const User = yield passportModels_1.user.findOne({ email });
         if (!User) {
             return res.status(400).json({
                 code: 400,
@@ -68,9 +70,11 @@ const userLogin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!isPasswordValid) {
             return res.status(401).json({ code: 401, message: "Invalid Email address or Password" });
         }
-        const token = jsonwebtoken_1.default.sign({ userId: User._id }, process.env.jwtSecret || "", {
+        // creating the jwt token 
+        const token = jsonwebtoken_1.default.sign({ userId: User._id }, jwtSecret || "", {
             expiresIn: "48h",
         });
+        // sending the token in response
         return res.status(200).json({
             token,
             code: 200,
@@ -87,7 +91,7 @@ const forgetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
     const { email } = req.body;
     try {
         // Check if email exists in the database
-        const User = yield userModel_1.user.findOne({ email });
+        const User = yield passportModels_1.user.findOne({ email });
         if (!User) {
             return res.status(400).json({
                 code: 400,
@@ -98,7 +102,7 @@ const forgetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
         const resetToken = (0, uuid_1.v4)();
         // Create the JWT
         const expiresIn = "1h";
-        const token = jsonwebtoken_1.default.sign({ email, resetToken }, process.env.jwtSecret, {
+        const token = jsonwebtoken_1.default.sign({ email, resetToken }, jwtSecret, {
             expiresIn,
         });
         // Construct the reset password URL
@@ -139,10 +143,10 @@ const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     try {
         const token = req.query.token;
         // Verify the token
-        const decodedToken = jsonwebtoken_1.default.verify(token, process.env.jwtSecret);
+        const decodedToken = jsonwebtoken_1.default.verify(token, jwtSecret);
         const { email } = decodedToken;
         // Check if email exists in the database
-        const existingUser = yield userModel_1.user.findOne({ email });
+        const existingUser = yield passportModels_1.user.findOne({ email });
         if (!existingUser) {
             return res.status(400).json({ code: 400, message: "User not found" });
         }
@@ -150,7 +154,7 @@ const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         if (newPassword !== confirmPassword) {
             return res.status(400).json({ code: 400, message: 'Passwords must be same' });
         }
-        if (!regexPattern_1.passwordRegex.test(confirmPassword)) {
+        if (!helper_1.passwordRegex.test(confirmPassword)) {
             return res.status(400).json({
                 code: 400,
                 message: 'Password must contain at least one letter, one digit, one special character (!@#$%^&*()_+), and be at least 6 characters long',

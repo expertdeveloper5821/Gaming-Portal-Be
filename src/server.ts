@@ -1,51 +1,16 @@
-import express from 'express';
-import './config/db'
-import * as dotenv from 'dotenv'
-import cors from 'cors';
-import bodyParser from 'body-parser';
-import Session from 'express-session';
+import app from './app';
+import { environmentConfig } from './config/environmentConfig';
+import { printSuccess, printError } from './utils/consoleMessage'; 
 
-dotenv.config()
-
-const app = express();
-const port = process.env.serverPort;
-import passport from 'passport';
-
-// Initialize Passport middleware
-const sessionSecret = process.env.sessionSecret || "defaultSecret";
-app.use(Session({
-  secret :sessionSecret,
-  resave :  false,
-  saveUninitialized : true,
-  cookie : {secure:false}
-}))
-app.use(passport.initialize());
-app.use(passport.session());
-// importing routes
-import userAuthRoute from './routes/userAuthRoute';
-import passportRoute from './routes/passportRoute'
-import fbPassportRoute from './routes/fbPassportRoute'
-
-// cors middleware 
-app.use(
-    cors({
-      origin: "*",
-      methods: "GET,POST,PUT,DELETE",
-      credentials: true,
-    })
-  );
-  app.use(bodyParser.json());
-// using middleware routes
-app.use('/v1',userAuthRoute)
-app.use('/auth',passportRoute)
-app.use('/fbsocial',fbPassportRoute)
-
-  // sample get route
-app.get('/', (req, res) => {
-  res.send('Hello, Gamers!');
-});
+const port: number = environmentConfig.SERVER_PORT;
 
 // server listening
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}...👍️`);
+  printSuccess(`Server is running on port ${port}...👍️`);
+
+  // Simulating an error
+  const error = false;
+  if (error) {
+    printError(`Server could not start on port ${port}...😵`);
+  }
 });
