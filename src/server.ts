@@ -4,6 +4,11 @@ import { printSuccess, printError } from './utils/consoleMessage';
 
 const port: number = environmentConfig.SERVER_PORT;
 
+// sample get route
+app.get('/', (req, res) => {
+  res.status(200).send('Hello, Gamers!');
+});
+
 // server listening
 app.listen(port, () => {
   printSuccess(`Server is running on port ${port}...👍️`);
