@@ -1,19 +1,20 @@
-import express,{Express, Request, Response} from 'express';
-import './config/db'
+import app from './app';
 import { environmentConfig } from './config/environmentConfig';
-import { configureCors } from './config/corsConfig';
+import { printSuccess, printError } from './utils/consoleMessage'; 
 
-const app:Express = express();
 const port: number = environmentConfig.SERVER_PORT;
 
-
-// cors middleware 
-app.use(configureCors());
 // sample get route
-app.get('/', (req:Request, res:Response) => {
+app.get('/', (req, res) => {
   res.status(200).send('Hello, Gamers!');
 });
 // server listening
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}...👍️`);
+  printSuccess(`Server is running on port ${port}...👍️`);
+
+  // Simulating an error
+  const error = false;
+  if (error) {
+    printError(`Server could not start on port ${port}...😵`);
+  }
 });

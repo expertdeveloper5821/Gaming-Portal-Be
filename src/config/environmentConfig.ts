@@ -1,6 +1,7 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
 
+// setting the all env credentails
 export interface EnvironmentConfig {
   JWT_SECRET: string;
   SERVER_PORT: number;

@@ -16,5 +16,3 @@ interface CustomCorsOptions {
     // Create and return the actual CORS middleware
     return cors(corsOptions);
   };
-  
-
