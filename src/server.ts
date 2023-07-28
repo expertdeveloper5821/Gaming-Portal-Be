@@ -1,52 +1,48 @@
-import express from 'express';
+import express,{Express, Request, Response} from 'express';
 import './config/db'
-import * as dotenv from 'dotenv'
-import cors from 'cors';
-import bodyParser from 'body-parser';
-import Session from 'express-session';
-
-dotenv.config()
-
-const app = express();
-const port = process.env.serverPort;
+import { environmentConfig } from './config/environmentConfig';
+import { configureCors } from './config/corsConfig';
 import passport from 'passport';
+import Session from 'express-session';
+import bodyParser from 'body-parser';
+const { authenticateJWT, authorizeRole } = require('./middlewares/authMiddleware');
+const app:Express = express();
+const port: number = environmentConfig.SERVER_PORT;
 
 // Initialize Passport middleware
-const sessionSecret = process.env.sessionSecret || "defaultSecret";
+const sessionSecret = environmentConfig.SESSION_SECRET
 app.use(Session({
   secret :sessionSecret,
   resave :  false,
   saveUninitialized : true,
   cookie : {secure:false}
 }))
+app.use(bodyParser.json());
 app.use(passport.initialize());
 app.use(passport.session());
 // importing routes
 import userAuthRoute from './routes/userAuthRoute';
 import passportRoute from './routes/passportRoute'
-import fbPassportRoute from './routes/fbPassportRoute'
+import protectedRoutes from './routes/protectedRoutes'
+// import fbPassportRoute from './routes/fbPassportRoute'
 //  import twitterPassportRoute from './routes/twitterPassportRoute'
 
-// cors middleware 
-app.use(
-    cors({
-      origin: "*",
-      methods: "GET,POST,PUT,DELETE",
-      credentials: true,
-    })
-  );
-  app.use(bodyParser.json());
 // using middleware routes
 app.use('/v1',userAuthRoute)
 app.use('/auth',passportRoute)
-app.use('/fbsocial',fbPassportRoute)
-// app.use('/twittersocial',twitterPassportRoute)
+app.use('/role',protectedRoutes)
+// app.use('/fbsocial',fbPassportRoute)
 
-  // sample get route
-app.get('/', (req, res) => {
-  res.send('Hello, Gamers!');
+// cors middleware 
+app.use(configureCors());
+// sample get route
+app.get('/', (req:Request, res:Response) => {
+  res.status(200).send('Hello, Gamers!');
 });
-
+// Protected route (requires specific role)
+app.get('/api/admin', authenticateJWT, authorizeRole('admin'), (req:Request, res:Response) => {
+  res.send('This is an admin-only route.');
+});
 // server listening
 app.listen(port, () => {
   console.log(`Server is running on port ${port}...👍️`);

@@ -1,16 +1,16 @@
 import { Router } from "express";
 import nodemailer from "nodemailer";
-import * as dotenv from "dotenv";
-dotenv.config();
+import { environmentConfig } from "../config/environmentConfig";
+
 const router = Router();
 
 //  nodemailer transporter
  export const transporter = nodemailer.createTransport({
-  host: process.env.emailHost as string,
-  port: parseInt(process.env.emailPort as string),
+  host: environmentConfig.EMAIL_HOST as string,
+  port: parseInt(environmentConfig.EMAIL_PORT as unknown as string),
   secure: false,
   auth: {
-    user: process.env.emailUser as string,
-    pass: process.env.emailPassword as string,
+    user: environmentConfig.EMAIL_USER as string,
+    pass: environmentConfig.EMAIL_PASSWORD as string,
   },
 });

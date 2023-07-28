@@ -19,6 +19,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const email_1 = require("../middlewares/email");
 const uuid_1 = require("uuid"); // Import uuid library
 const regexPattern_1 = require("../utils/regexPattern");
+const environmentConfig_1 = require("../config/environmentConfig");
 // for user signup
 const userSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -41,7 +42,7 @@ const userSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         // saving the user to DB
         yield newUser.save();
         // generating a jwt token to specifically identify the user
-        const token = jsonwebtoken_1.default.sign({ userId: newUser._id }, process.env.jwtSecret || "");
+        const token = jsonwebtoken_1.default.sign({ userId: newUser._id }, environmentConfig_1.environmentConfig.JWT_SECRET);
         return res.status(200).json({
             token,
             code: 200,
@@ -49,6 +50,7 @@ const userSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         });
     }
     catch (error) {
+        console.log(error);
         return res.status(500).json({ code: 500, error: "Internal server error" });
     }
 });
@@ -68,7 +70,7 @@ const userLogin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!isPasswordValid) {
             return res.status(401).json({ code: 401, message: "Invalid Email address or Password" });
         }
-        const token = jsonwebtoken_1.default.sign({ userId: User._id }, process.env.jwtSecret || "", {
+        const token = jsonwebtoken_1.default.sign({ userId: User._id }, environmentConfig_1.environmentConfig.JWT_SECRET, {
             expiresIn: "48h",
         });
         return res.status(200).json({
@@ -98,14 +100,14 @@ const forgetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
         const resetToken = (0, uuid_1.v4)();
         // Create the JWT
         const expiresIn = "1h";
-        const token = jsonwebtoken_1.default.sign({ email, resetToken }, process.env.jwtSecret, {
+        const token = jsonwebtoken_1.default.sign({ email, resetToken }, environmentConfig_1.environmentConfig.JWT_SECRET, {
             expiresIn,
         });
         // Construct the reset password URL
-        const resetPasswordUrl = `${process.env.reset_password}?token=${token}`;
+        const resetPasswordUrl = `${environmentConfig_1.environmentConfig.RESET_PASSWORD}?token=${token}`;
         // Send the reset password URL in the email
         const mailOptions = {
-            from: process.env.emailUser,
+            from: environmentConfig_1.environmentConfig.EMAIL_USER,
             to: email,
             subject: "Reset Password",
             html: `Click on the following link to reset your password <a href=${resetPasswordUrl}>Click Here</a>`,
@@ -139,7 +141,7 @@ const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     try {
         const token = req.query.token;
         // Verify the token
-        const decodedToken = jsonwebtoken_1.default.verify(token, process.env.jwtSecret);
+        const decodedToken = jsonwebtoken_1.default.verify(token, environmentConfig_1.environmentConfig.JWT_SECRET);
         const { email } = decodedToken;
         // Check if email exists in the database
         const existingUser = yield userModel_1.user.findOne({ email });

@@ -1,8 +1,7 @@
 import mongoose from "mongoose";
-import * as dotenv from 'dotenv';
-dotenv.config();
+import { environmentConfig } from "./environmentConfig";
 
-const dbUrl = process.env.DbUrl || '';
+const dbUrl:string = environmentConfig.DB_URL || '';
 mongoose
   .connect(dbUrl)
   .then(() => {

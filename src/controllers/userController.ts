@@ -1,11 +1,11 @@
 import { user } from "../models/userModel";
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import jwt, { JwtPayload, Secret } from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import { transporter } from "../middlewares/email";
 import { v4 as uuidv4 } from "uuid"; // Import uuid library
 import { passwordRegex } from "../utils/regexPattern";
-
+import { environmentConfig } from "../config/environmentConfig";
 
 // for user signup
 export const userSignup = async (req: Request, res: Response) => {
@@ -31,7 +31,7 @@ export const userSignup = async (req: Request, res: Response) => {
     // generating a jwt token to specifically identify the user
     const token = jwt.sign(
       { userId: newUser._id },
-      process.env.jwtSecret || ""
+      environmentConfig.JWT_SECRET
     );
     return res.status(200).json({
       token,
@@ -39,6 +39,8 @@ export const userSignup = async (req: Request, res: Response) => {
       message: "user registered successfully",
     });
   } catch (error) {
+    console.log(error);
+
     return res.status(500).json({ code: 500, error: "Internal server error" });
   }
 };
@@ -57,9 +59,11 @@ export const userLogin = async (req: Request, res: Response) => {
     const isPasswordValid = await bcrypt.compare(password, User.password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ code: 401, message: "Invalid Email address or Password" });
+      return res
+        .status(401)
+        .json({ code: 401, message: "Invalid Email address or Password" });
     }
-    const token = jwt.sign({ userId: User._id }, process.env.jwtSecret || "", {
+    const token = jwt.sign({ userId: User._id }, environmentConfig.JWT_SECRET, {
       expiresIn: "48h",
     });
     return res.status(200).json({
@@ -71,7 +75,6 @@ export const userLogin = async (req: Request, res: Response) => {
     return res.status(500).json({ code: 500, error: "Internal server error" });
   }
 };
-
 
 // to forget password
 export const forgetPassword = async (req: Request, res: Response) => {
@@ -93,18 +96,18 @@ export const forgetPassword = async (req: Request, res: Response) => {
     const expiresIn = "1h";
     const token = jwt.sign(
       { email, resetToken },
-      process.env.jwtSecret as string,
+      environmentConfig.JWT_SECRET,
       {
         expiresIn,
       }
     );
 
     // Construct the reset password URL
-    const resetPasswordUrl = `${process.env.reset_password}?token=${token}`;
+    const resetPasswordUrl = `${environmentConfig.RESET_PASSWORD}?token=${token}`;
 
     // Send the reset password URL in the email
     const mailOptions = {
-      from: process.env.emailUser,
+      from: environmentConfig.EMAIL_USER,
       to: email,
       subject: "Reset Password",
       html: `Click on the following link to reset your password <a href=${resetPasswordUrl}>Click Here</a>`,
@@ -112,17 +115,16 @@ export const forgetPassword = async (req: Request, res: Response) => {
 
     transporter.sendMail(mailOptions, (err) => {
       if (err) {
-        res
-          .status(500)
-          .json({
-            code: 500,
-            message: "Failed to send the reset password URL",
-          });
+        res.status(500).json({
+          code: 500,
+          message: "Failed to send the reset password URL",
+        });
       } else {
         res.json({
           code: 200,
           tokne: token,
-          message: "Reset password URL sent successfully please check your email",
+          message:
+            "Reset password URL sent successfully please check your email",
         });
       }
     });
@@ -133,14 +135,14 @@ export const forgetPassword = async (req: Request, res: Response) => {
 
 // to reset password
 export const resetPassword = async (req: Request, res: Response) => {
-  const { newPassword,confirmPassword } = req.body;
+  const { newPassword, confirmPassword } = req.body;
 
   try {
     const token = req.query.token;
     // Verify the token
     const decodedToken = jwt.verify(
       token as string,
-      process.env.jwtSecret as Secret
+      environmentConfig.JWT_SECRET
     );
     const { email } = decodedToken as JwtPayload;
 
@@ -151,13 +153,15 @@ export const resetPassword = async (req: Request, res: Response) => {
     }
     // Add validation: Check if the new password and confirm password match
     if (newPassword !== confirmPassword) {
-      return res.status(400).json({ code: 400, message: 'Passwords must be same' });
+      return res
+        .status(400)
+        .json({ code: 400, message: "Passwords must be same" });
     }
     if (!passwordRegex.test(confirmPassword)) {
       return res.status(400).json({
         code: 400,
         message:
-          'Password must contain at least one letter, one digit, one special character (!@#$%^&*()_+), and be at least 6 characters long',
+          "Password must contain at least one letter, one digit, one special character (!@#$%^&*()_+), and be at least 6 characters long",
       });
     }
     // Hash the new password
@@ -174,4 +178,24 @@ export const resetPassword = async (req: Request, res: Response) => {
       .status(400)
       .json({ code: 400, message: "Invalid or expired token" });
   }
+};
+
+// role based controller
+export const adminController = async (req: Request, res: Response) => {
+  const User:any = user.findById(req.body._id);
+  User.populate("role").exec((error, User) => {
+    if (error) {
+      // Handle error
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    if (!User) {
+      // User not found
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Access the actual role document
+    const userRole = User.role as Role;
+    res.json({ userRole });
+  });
 };
