@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.resetPassword = exports.forgetPassword = exports.userLogin = exports.userSignup = void 0;
+exports.adminController = exports.resetPassword = exports.forgetPassword = exports.userLogin = exports.userSignup = void 0;
 const userModel_1 = require("../models/userModel");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
@@ -59,7 +59,8 @@ exports.userSignup = userSignup;
 const userLogin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email, password } = req.body;
-        const User = yield userModel_1.user.findOne({ email });
+        // const User = await user.findOne({ email });
+        const User = yield userModel_1.user.findOne({ email }).populate('role', 'role');
         if (!User) {
             return res.status(400).json({
                 code: 400,
@@ -68,13 +69,23 @@ const userLogin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         }
         const isPasswordValid = yield bcrypt_1.default.compare(password, User.password);
         if (!isPasswordValid) {
-            return res.status(401).json({ code: 401, message: "Invalid Email address or Password" });
+            return res
+                .status(401)
+                .json({ code: 401, message: "Invalid Email address or Password" });
         }
-        const token = jsonwebtoken_1.default.sign({ userId: User._id }, environmentConfig_1.environmentConfig.JWT_SECRET, {
+        const token = jsonwebtoken_1.default.sign({ userId: User._id, role: User.role }, environmentConfig_1.environmentConfig.JWT_SECRET, {
             expiresIn: "48h",
         });
+        let userData = {
+            userId: User._id,
+            fullName: User.fullName,
+            userName: User.userName,
+            email: User.email,
+            role: User.role,
+            token: token,
+        };
         return res.status(200).json({
-            token,
+            userData,
             code: 200,
             message: "user Login successfully",
         });
@@ -114,9 +125,7 @@ const forgetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
         };
         email_1.transporter.sendMail(mailOptions, (err) => {
             if (err) {
-                res
-                    .status(500)
-                    .json({
+                res.status(500).json({
                     code: 500,
                     message: "Failed to send the reset password URL",
                 });
@@ -150,12 +159,14 @@ const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         }
         // Add validation: Check if the new password and confirm password match
         if (newPassword !== confirmPassword) {
-            return res.status(400).json({ code: 400, message: 'Passwords must be same' });
+            return res
+                .status(400)
+                .json({ code: 400, message: "Passwords must be same" });
         }
         if (!regexPattern_1.passwordRegex.test(confirmPassword)) {
             return res.status(400).json({
                 code: 400,
-                message: 'Password must contain at least one letter, one digit, one special character (!@#$%^&*()_+), and be at least 6 characters long',
+                message: "Password must contain at least one letter, one digit, one special character (!@#$%^&*()_+), and be at least 6 characters long",
             });
         }
         // Hash the new password
@@ -173,3 +184,21 @@ const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.resetPassword = resetPassword;
+// role based controller
+const adminController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const User = userModel_1.user.findById(req.body._id);
+    User.populate("role").exec((error, user) => {
+        if (error) {
+            // Handle error
+            return res.status(500).json({ error: "Internal server error" });
+        }
+        if (!User) {
+            // User not found
+            return res.status(404).json({ error: "User not found" });
+        }
+        // Access the actual role document
+        const userRole = User.role;
+        return res.status(200).json({ code: 200, message: "welcome admin" });
+    });
+});
+exports.adminController = adminController;

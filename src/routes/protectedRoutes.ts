@@ -1,7 +1,10 @@
 import express from 'express'
-import {adminController} from "../controllers/userController";
-import requireRole from '../middlewares/authMiddleware';
+import { adminSignup,role,getRoleById,spectator } from '../controllers/adminController';
 const route = express.Router();
 
-route.post('/admin', requireRole('admin'), adminController)
+route.post('/role', role)
+route.post('/admin/Register', adminSignup)
+route.post('/spectator/Register', spectator)
+route.get('/getRole/:id', getRoleById)
+
  export default route;

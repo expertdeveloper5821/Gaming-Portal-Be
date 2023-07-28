@@ -1,14 +1,34 @@
 import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import { environmentConfig } from '../config/environmentConfig';
 
-const requireRole = (role: string) => (req: Request, res: Response, next: NextFunction) => {
-  // Assuming that your User model has a 'role' property of type 'string'
-  if (req.user && req.user.role === role) {
-    // User has the required role, allow them to proceed
+export const verifyToken = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).json({
+      message: 'Authorization header not found',
+      success: false,
+    });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({
+      message: 'You are not authenticated!',
+      success: false,
+    });
+  }
+
+  try {
+    const decodedToken = jwt.verify(token, environmentConfig.JWT_SECRET) as { [key: string]: any };
+    req.user = decodedToken;
     next();
-  } else {
-    // User doesn't have the required role, respond with an error
-    res.status(403).json({ message: 'Unauthorized' });
+  } catch (error) {
+    return res.status(401).json({
+      message: 'You are not authenticated!',
+      success: false,
+    });
   }
 };
-
-export default requireRole;

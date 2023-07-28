@@ -49,7 +49,8 @@ export const userSignup = async (req: Request, res: Response) => {
 export const userLogin = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-    const User = await user.findOne({ email });
+    // const User = await user.findOne({ email });
+    const User = await user.findOne({email}).populate('role','role');
     if (!User) {
       return res.status(400).json({
         code: 400,
@@ -63,11 +64,24 @@ export const userLogin = async (req: Request, res: Response) => {
         .status(401)
         .json({ code: 401, message: "Invalid Email address or Password" });
     }
-    const token = jwt.sign({ userId: User._id }, environmentConfig.JWT_SECRET, {
-      expiresIn: "48h",
-    });
+    const token = jwt.sign(
+      { userId: User._id, role: User.role },
+      environmentConfig.JWT_SECRET,
+      {
+        expiresIn: "48h",
+      }
+    );
+    let userData = {
+      userId : User._id,
+      fullName: User.fullName,
+      userName: User.userName,
+      email: User.email,
+      role: User.role,
+      token: token,
+    };
+
     return res.status(200).json({
-      token,
+      userData,
       code: 200,
       message: "user Login successfully",
     });
@@ -182,20 +196,18 @@ export const resetPassword = async (req: Request, res: Response) => {
 
 // role based controller
 export const adminController = async (req: Request, res: Response) => {
-  const User:any = user.findById(req.body._id);
-  User.populate("role").exec((error, User) => {
+  const User: any = user.findById(req.body._id);
+  User.populate("role").exec((error: any, user: typeof User | null) => {
     if (error) {
       // Handle error
       return res.status(500).json({ error: "Internal server error" });
     }
-
     if (!User) {
       // User not found
       return res.status(404).json({ error: "User not found" });
     }
-
     // Access the actual role document
-    const userRole = User.role as Role;
-    res.json({ userRole });
+    const userRole = User.role;
+    return res.status(200).json({ code: 200, message: "welcome admin" });
   });
 };

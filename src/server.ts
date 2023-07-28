@@ -30,7 +30,7 @@ import protectedRoutes from './routes/protectedRoutes'
 // using middleware routes
 app.use('/v1',userAuthRoute)
 app.use('/auth',passportRoute)
-app.use('/role',protectedRoutes)
+app.use('/v2',protectedRoutes)
 // app.use('/fbsocial',fbPassportRoute)
 
 // cors middleware 
@@ -38,10 +38,6 @@ app.use(configureCors());
 // sample get route
 app.get('/', (req:Request, res:Response) => {
   res.status(200).send('Hello, Gamers!');
-});
-// Protected route (requires specific role)
-app.get('/api/admin', authenticateJWT, authorizeRole('admin'), (req:Request, res:Response) => {
-  res.send('This is an admin-only route.');
 });
 // server listening
 app.listen(port, () => {
