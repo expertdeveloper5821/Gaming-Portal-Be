@@ -1,12 +1,13 @@
 import mongoose from "mongoose";
 import { environmentConfig } from "./environmentConfig";
+import { printSuccess, printError } from '../utils/consoleMessage'; 
 
 const dbUrl:string = environmentConfig.DB_URL || '';
 mongoose
   .connect(dbUrl)
   .then(() => {
-    console.log("Database Connected...👍️");
+    printSuccess("Database Connected...👍️");
   })
-  .catch((error) => {
-    console.log("Database not connected...😤", error);
+  .catch(() => {
+    printError("Database not connected...😤");
   });

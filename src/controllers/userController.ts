@@ -1,11 +1,14 @@
-import { user } from "../models/userModel";
+import { user } from "../models/passportModels";
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 import { transporter } from "../middlewares/email";
 import { v4 as uuidv4 } from "uuid"; // Import uuid library
-import { passwordRegex } from "../utils/regexPattern";
-import { environmentConfig } from "../config/environmentConfig";
+import { passwordRegex } from "../utils/helper";
+import { environmentConfig } from '../config/environmentConfig';
+
+const jwtSecret: string = environmentConfig.JWT_SECRET;
+
 
 // for user signup
 export const userSignup = async (req: Request, res: Response) => {
@@ -31,7 +34,7 @@ export const userSignup = async (req: Request, res: Response) => {
     // generating a jwt token to specifically identify the user
     const token = jwt.sign(
       { userId: newUser._id },
-      environmentConfig.JWT_SECRET
+      jwtSecret || ""
     );
     return res.status(200).json({
       token,
@@ -47,9 +50,8 @@ export const userSignup = async (req: Request, res: Response) => {
 
 // for user login
 export const userLogin = async (req: Request, res: Response) => {
-  try {
+try {
     const { email, password } = req.body;
-    // const User = await user.findOne({ email });
     const User = await user.findOne({email}).populate('role','role');
     if (!User) {
       return res.status(400).json({
@@ -110,7 +112,7 @@ export const forgetPassword = async (req: Request, res: Response) => {
     const expiresIn = "1h";
     const token = jwt.sign(
       { email, resetToken },
-      environmentConfig.JWT_SECRET,
+      jwtSecret as string,
       {
         expiresIn,
       }
@@ -156,7 +158,7 @@ export const resetPassword = async (req: Request, res: Response) => {
     // Verify the token
     const decodedToken = jwt.verify(
       token as string,
-      environmentConfig.JWT_SECRET
+      jwtSecret as Secret
     );
     const { email } = decodedToken as JwtPayload;
 

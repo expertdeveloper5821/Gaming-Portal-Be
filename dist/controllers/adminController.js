@@ -12,8 +12,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getRoleById = exports.role = exports.spectatorSignup = exports.adminSignup = void 0;
-const userModel_1 = require("../models/userModel");
+exports.getRoleById = exports.role = exports.spectator = exports.adminSignup = void 0;
+const passportModels_1 = require("../models/passportModels");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const environmentConfig_1 = require("../config/environmentConfig");
@@ -22,7 +22,7 @@ const roleModel_1 = require("../models/roleModel");
 const adminSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { fullName, userName, email, password, role } = req.body;
-        const existingUser = yield userModel_1.user.findOne({ email });
+        const existingUser = yield passportModels_1.user.findOne({ email });
         if (existingUser) {
             return res.status(400).json({
                 code: 400,
@@ -31,7 +31,7 @@ const adminSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         }
         // hashing the password
         const hashedPassword = yield bcrypt_1.default.hash(password, 10);
-        const newUser = new userModel_1.user({
+        const newUser = new passportModels_1.user({
             fullName,
             userName,
             email,
@@ -55,10 +55,10 @@ const adminSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 });
 exports.adminSignup = adminSignup;
 // speactator post request 
-const spectatorSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const spectator = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { fullName, userName, email, password, role } = req.body;
-        const existingUser = yield userModel_1.user.findOne({ email });
+        const existingUser = yield passportModels_1.user.findOne({ email });
         if (existingUser) {
             return res.status(400).json({
                 code: 400,
@@ -67,7 +67,7 @@ const spectatorSignup = (req, res) => __awaiter(void 0, void 0, void 0, function
         }
         // hashing the password
         const hashedPassword = yield bcrypt_1.default.hash(password, 10);
-        const newUser = new userModel_1.user({
+        const newUser = new passportModels_1.user({
             fullName,
             userName,
             email,
@@ -89,7 +89,7 @@ const spectatorSignup = (req, res) => __awaiter(void 0, void 0, void 0, function
         return res.status(500).json({ code: 500, error: "Internal server error" });
     }
 });
-exports.spectatorSignup = spectatorSignup;
+exports.spectator = spectator;
 const role = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { role } = req.body;
@@ -114,7 +114,7 @@ exports.role = role;
 const getRoleById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
-        const role = yield userModel_1.user.findById(id).populate('role', 'role');
+        const role = yield passportModels_1.user.findById(id).populate('role', 'role');
         if (!role) {
             return res.status(404).json({ error: "role not found" });
         }

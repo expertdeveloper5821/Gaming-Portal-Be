@@ -1,4 +1,3 @@
-
 // Get the current date
 export function getCurrentDate(): Date {
     return new Date();
@@ -22,4 +21,3 @@ export function getCurrentDate(): Date {
     newDate.setDate(newDate.getDate() + days);
     return newDate;
   }
-  

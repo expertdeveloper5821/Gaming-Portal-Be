@@ -1,8 +1,6 @@
-import { Router } from "express";
 import nodemailer from "nodemailer";
 import { environmentConfig } from "../config/environmentConfig";
 
-const router = Router();
 
 //  nodemailer transporter
  export const transporter = nodemailer.createTransport({

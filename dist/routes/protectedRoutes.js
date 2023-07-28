@@ -8,6 +8,6 @@ const adminController_1 = require("../controllers/adminController");
 const route = express_1.default.Router();
 route.post('/role', adminController_1.role);
 route.post('/admin/Register', adminController_1.adminSignup);
-route.post('/spectator/Register', adminController_1.spectatorSignup);
+route.post('/spectator/Register', adminController_1.spectator);
 route.get('/getRole/:id', adminController_1.getRoleById);
 exports.default = route;
