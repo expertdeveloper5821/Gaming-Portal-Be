@@ -23,6 +23,7 @@ app.use(passport_1.default.session());
 // importing routes
 const userAuthRoute_1 = __importDefault(require("./routes/userAuthRoute"));
 const passportRoute_1 = __importDefault(require("./routes/passportRoute"));
+const protectedRoutes_1 = __importDefault(require("./routes/protectedRoutes"));
 // cors middleware 
 app.use((0, corsConfig_1.configureCors)());
 // accept body middleware
@@ -32,4 +33,5 @@ app.use(express_1.default.urlencoded({ extended: false }));
 // using middleware routes
 app.use('/v1', userAuthRoute_1.default);
 app.use('/auth', passportRoute_1.default);
+app.use('/v2', protectedRoutes_1.default);
 exports.default = app;

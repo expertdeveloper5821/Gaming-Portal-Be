@@ -42,15 +42,17 @@ export const userSignup = async (req: Request, res: Response) => {
       message: "user registered successfully",
     });
   } catch (error) {
+    console.log(error);
+
     return res.status(500).json({ code: 500, error: "Internal server error" });
   }
 };
 
 // for user login
 export const userLogin = async (req: Request, res: Response) => {
-  try {
+try {
     const { email, password } = req.body;
-    const User = await user.findOne({ email });
+    const User = await user.findOne({email}).populate('role','role');
     if (!User) {
       return res.status(400).json({
         code: 400,
@@ -60,15 +62,28 @@ export const userLogin = async (req: Request, res: Response) => {
     const isPasswordValid = await bcrypt.compare(password, User.password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ code: 401, message: "Invalid Email address or Password" });
+      return res
+        .status(401)
+        .json({ code: 401, message: "Invalid Email address or Password" });
     }
-    // creating the jwt token 
-    const token = jwt.sign({ userId: User._id }, jwtSecret || "", {
-      expiresIn: "48h",
-    });
-    // sending the token in response
+    const token = jwt.sign(
+      { userId: User._id, role: User.role },
+      environmentConfig.JWT_SECRET,
+      {
+        expiresIn: "48h",
+      }
+    );
+    let userData = {
+      userId : User._id,
+      fullName: User.fullName,
+      userName: User.userName,
+      email: User.email,
+      role: User.role,
+      token: token,
+    };
+
     return res.status(200).json({
-      token,
+      userData,
       code: 200,
       message: "user Login successfully",
     });
@@ -76,7 +91,6 @@ export const userLogin = async (req: Request, res: Response) => {
     return res.status(500).json({ code: 500, error: "Internal server error" });
   }
 };
-
 
 // to forget password
 export const forgetPassword = async (req: Request, res: Response) => {
@@ -105,11 +119,11 @@ export const forgetPassword = async (req: Request, res: Response) => {
     );
 
     // Construct the reset password URL
-    const resetPasswordUrl = `${process.env.reset_password}?token=${token}`;
+    const resetPasswordUrl = `${environmentConfig.RESET_PASSWORD}?token=${token}`;
 
     // Send the reset password URL in the email
     const mailOptions = {
-      from: process.env.emailUser,
+      from: environmentConfig.EMAIL_USER,
       to: email,
       subject: "Reset Password",
       html: `Click on the following link to reset your password <a href=${resetPasswordUrl}>Click Here</a>`,
@@ -117,17 +131,16 @@ export const forgetPassword = async (req: Request, res: Response) => {
 
     transporter.sendMail(mailOptions, (err) => {
       if (err) {
-        res
-          .status(500)
-          .json({
-            code: 500,
-            message: "Failed to send the reset password URL",
-          });
+        res.status(500).json({
+          code: 500,
+          message: "Failed to send the reset password URL",
+        });
       } else {
         res.json({
           code: 200,
           tokne: token,
-          message: "Reset password URL sent successfully please check your email",
+          message:
+            "Reset password URL sent successfully please check your email",
         });
       }
     });
@@ -138,7 +151,7 @@ export const forgetPassword = async (req: Request, res: Response) => {
 
 // to reset password
 export const resetPassword = async (req: Request, res: Response) => {
-  const { newPassword,confirmPassword } = req.body;
+  const { newPassword, confirmPassword } = req.body;
 
   try {
     const token = req.query.token;
@@ -156,13 +169,15 @@ export const resetPassword = async (req: Request, res: Response) => {
     }
     // Add validation: Check if the new password and confirm password match
     if (newPassword !== confirmPassword) {
-      return res.status(400).json({ code: 400, message: 'Passwords must be same' });
+      return res
+        .status(400)
+        .json({ code: 400, message: "Passwords must be same" });
     }
     if (!passwordRegex.test(confirmPassword)) {
       return res.status(400).json({
         code: 400,
         message:
-          'Password must contain at least one letter, one digit, one special character (!@#$%^&*()_+), and be at least 6 characters long',
+          "Password must contain at least one letter, one digit, one special character (!@#$%^&*()_+), and be at least 6 characters long",
       });
     }
     // Hash the new password
@@ -179,4 +194,22 @@ export const resetPassword = async (req: Request, res: Response) => {
       .status(400)
       .json({ code: 400, message: "Invalid or expired token" });
   }
+};
+
+// role based controller
+export const adminController = async (req: Request, res: Response) => {
+  const User: any = user.findById(req.body._id);
+  User.populate("role").exec((error: any, user: typeof User | null) => {
+    if (error) {
+      // Handle error
+      return res.status(500).json({ error: "Internal server error" });
+    }
+    if (!User) {
+      // User not found
+      return res.status(404).json({ error: "User not found" });
+    }
+    // Access the actual role document
+    const userRole = User.role;
+    return res.status(200).json({ code: 200, message: "welcome admin" });
+  });
 };

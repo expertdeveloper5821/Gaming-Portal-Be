@@ -23,7 +23,8 @@ app.use(passport.session());
 
 // importing routes
 import userAuthRoute from './routes/userAuthRoute';
-import passportRoute from './routes/passportRoute'
+import passportRoute from './routes/passportRoute';
+import protectedRoutes from './routes/protectedRoutes'
 
 
 // cors middleware 
@@ -37,6 +38,7 @@ app.use(express.urlencoded({ extended: false }));
 // using middleware routes
 app.use('/v1',userAuthRoute)
 app.use('/auth',passportRoute)
+app.use('/v2',protectedRoutes)
 
 
 export default app;
