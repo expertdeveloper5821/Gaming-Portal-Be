@@ -213,3 +213,111 @@ export const adminController = async (req: Request, res: Response) => {
     return res.status(200).json({ code: 200, message: "welcome admin" });
   });
 };
+
+// get user by ID
+export const getUserById = async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.id; 
+
+    // Use the findById method to find the user by their ID in the database
+    const foundUser = await user.findById(userId);
+
+    if (!foundUser) {
+      return res.status(404).json({
+        code: 404,
+        message: 'User not found',
+      });
+    }
+
+    // If the user is found, return the user data as the response
+    return res.status(200).json({
+      code: 200,
+      data: foundUser,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ code: 500, error: 'Internal server error' });
+  }
+};
+
+// get all users
+export const getAllUsers = async (req: Request, res: Response) => {
+  try {
+    // Use the find method without any conditions to retrieve all users from the database
+    const allUsers = await user.find();
+
+    if (allUsers.length === 0) {
+      return res.status(404).json({
+        code: 404,
+        message: 'No users found',
+      });
+    }
+
+    // If users are found, return the user data as the response
+    return res.status(200).json({
+      code: 200,
+      data: allUsers,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ code: 500, error: 'Internal server error' });
+  }
+};
+
+
+// update user by id
+export const updateUserById = async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.id; 
+    const updatedUserData = req.body;
+
+    // Use the findByIdAndUpdate method to update the user by their ID in the database
+    const updatedUser = await user.findByIdAndUpdate(userId, updatedUserData, {
+      new: true,
+    });
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        code: 404,
+        message: 'User not found',
+      });
+    }
+
+    // If the user is updated successfully, return the updated user data as the response
+    return res.status(200).json({
+      code: 200,
+      data: updatedUser,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ code: 500, error: 'Internal server error' });
+  }
+};
+
+// delete by id 
+export const deleteUserById = async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.id; 
+
+    // Use the deleteOne method to delete the user by their ID from the database
+    const deletionResult = await user.deleteOne({ _id: userId });
+
+    if (deletionResult.deletedCount === 0) {
+      return res.status(404).json({
+        code: 404,
+        message: 'User not found',
+      });
+    }
+
+    // If the user is deleted successfully, return the deletion result as the response
+    return res.status(200).json({
+      code: 200,
+      message: 'User deleted successfully',
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ code: 500, error: 'Internal server error' });
+  }
+};
+
+

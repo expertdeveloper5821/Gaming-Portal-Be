@@ -1,10 +1,26 @@
-import express from 'express'
-import { adminSignup,role,getRoleById,spectator } from '../controllers/adminController';
+import express from "express";
+import {
+  adminSignup,
+  role,
+  getRoleById,
+  spectator,
+  getAllRole,
+} from "../controllers/adminController";
 const route = express.Router();
 
-route.post('/role', role)
-route.post('/admin/Register', adminSignup)
-route.post('/spectator/Register', spectator)
-route.get('/getRole/:id', getRoleById)
+// create Role
+route.post("/role", role);
 
- export default route;
+// Admin Register
+route.post("/admin/Register", adminSignup);
+
+// Spectator Register
+route.post("/spectator/Register", spectator);
+
+// getRole by Id
+route.get("/getRole/:id", getRoleById);
+
+// get All Role
+route.get("/getAllRole", getAllRole);
+
+export default route;

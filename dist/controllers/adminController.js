@@ -12,9 +12,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getRoleById = exports.role = exports.spectator = exports.adminSignup = void 0;
+exports.getRoleById = exports.getAllRole = exports.role = exports.spectator = exports.adminSignup = void 0;
 const passportModels_1 = require("../models/passportModels");
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const email_1 = require("../middlewares/email");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const environmentConfig_1 = require("../config/environmentConfig");
 const roleModel_1 = require("../models/roleModel");
@@ -36,13 +37,14 @@ const adminSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             userName,
             email,
             password: hashedPassword,
-            role
+            role,
         });
         // saving the user to DB
         yield newUser.save();
         // generating a jwt token to specifically identify the user
         const token = jsonwebtoken_1.default.sign({ userId: newUser._id }, environmentConfig_1.environmentConfig.JWT_SECRET);
         return res.status(200).json({
+            newUser,
             token,
             code: 200,
             message: "user registered successfully",
@@ -54,7 +56,7 @@ const adminSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.adminSignup = adminSignup;
-// speactator post request 
+// speactator post request
 const spectator = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { fullName, userName, email, password, role } = req.body;
@@ -72,16 +74,34 @@ const spectator = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             userName,
             email,
             password: hashedPassword,
-            role
+            role,
         });
         // saving the user to DB
         yield newUser.save();
         // generating a jwt token to specifically identify the user
         const token = jsonwebtoken_1.default.sign({ userId: newUser._id }, environmentConfig_1.environmentConfig.JWT_SECRET);
-        return res.status(200).json({
-            token,
-            code: 200,
-            message: "user registered successfully",
+        // Send the reset password URL in the email
+        const mailOptions = {
+            from: environmentConfig_1.environmentConfig.EMAIL_USER,
+            to: email,
+            subject: "Spectator Credentials",
+            text: `These are the Spectator Credentials Please Do not share with anyone  email ${email} password ${password}`,
+        };
+        email_1.transporter.sendMail(mailOptions, (err) => {
+            if (err) {
+                res.status(500).json({
+                    code: 500,
+                    message: "Failed to send the credential email",
+                });
+            }
+            else {
+                res.json({
+                    newUser,
+                    code: 200,
+                    tokne: token,
+                    message: "Your login crendentials has been sent ot your email please check and continue",
+                });
+            }
         });
     }
     catch (error) {
@@ -90,17 +110,19 @@ const spectator = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.spectator = spectator;
+// create Role
 const role = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { role } = req.body;
         // hashing the password
         const newRole = new roleModel_1.Role({
-            role
+            role,
         });
         // saving the user to DB
         yield newRole.save();
         // generating a jwt token to specifically identify the user
         return res.status(200).json({
+            newRole,
             code: 200,
             message: `${role} role created successfully`,
         });
@@ -111,10 +133,34 @@ const role = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.role = role;
+// get all role
+const getAllRole = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Use the find method without any conditions to retrieve all users from the database
+        const allRoles = yield roleModel_1.Role.find();
+        if (allRoles.length === 0) {
+            return res.status(404).json({
+                code: 404,
+                message: "No Role found",
+            });
+        }
+        // If users are found, return the user data as the response
+        return res.status(200).json({
+            code: 200,
+            data: allRoles,
+        });
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(500).json({ code: 500, error: "Internal server error" });
+    }
+});
+exports.getAllRole = getAllRole;
+// get Role by Id
 const getRoleById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
-        const role = yield passportModels_1.user.findById(id).populate('role', 'role');
+        const role = yield passportModels_1.user.findById(id).populate("role", "role");
         if (!role) {
             return res.status(404).json({ error: "role not found" });
         }

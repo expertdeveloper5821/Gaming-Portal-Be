@@ -57,7 +57,11 @@ passport_1.default.serializeUser(function (user, cb) {
 });
 // passport deserializer
 passport_1.default.deserializeUser((id, done) => {
-    passportModels_1.user.findById(id, "name , email ,username, token", (err, user) => {
-        done(err, user);
+    passportModels_1.user.findOne({ _id: id }, "name email username token")
+        .then((user) => {
+        done(null, user);
+    })
+        .catch((err) => {
+        done(err, null);
     });
 });

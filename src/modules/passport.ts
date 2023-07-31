@@ -19,7 +19,7 @@ passport.use(
         email: profile.emails[0].value,
         userName: profile.displayName,
         fullName: profile.displayName,
-        provider : profile.provider
+        provider : profile.provider 
       };
       try {
         const existingUser = await user.findOne({ email: profile.emails[0].value }).exec();
@@ -47,8 +47,12 @@ passport.serializeUser(function (user: any, cb: any) {
 });
 
 // passport deserializer
-passport.deserializeUser((id:any, done:any ) => {
-  user.findById(id, "name , email ,username, token", (err: any, user: any) => {
-    done(err, user);
-  });
+passport.deserializeUser((id: any, done: any) => {
+  user.findOne({ _id: id }, "name email username token")
+    .then((user) => {
+      done(null, user);
+    })
+    .catch((err) => {
+      done(err, null);
+    });
 });
