@@ -1,8 +1,6 @@
 import express, { Request, Response } from "express";
 import passport from "passport";
 import { user } from "../models/passportModels";
-import dotenv from "dotenv";
-dotenv.config();
 import "../config/db";
 import "../modules/passport";
 import jwt from "jsonwebtoken";

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.adminController = exports.resetPassword = exports.forgetPassword = exports.userLogin = exports.userSignup = void 0;
+exports.deleteUserById = exports.updateUserById = exports.getAllUsers = exports.getUserById = exports.adminController = exports.resetPassword = exports.forgetPassword = exports.userLogin = exports.userSignup = void 0;
 const passportModels_1 = require("../models/passportModels");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
@@ -202,3 +202,101 @@ const adminController = (req, res) => __awaiter(void 0, void 0, void 0, function
     });
 });
 exports.adminController = adminController;
+// get user by ID
+const getUserById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const userId = req.params.id;
+        // Use the findById method to find the user by their ID in the database
+        const foundUser = yield passportModels_1.user.findById(userId);
+        if (!foundUser) {
+            return res.status(404).json({
+                code: 404,
+                message: 'User not found',
+            });
+        }
+        // If the user is found, return the user data as the response
+        return res.status(200).json({
+            code: 200,
+            data: foundUser,
+        });
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(500).json({ code: 500, error: 'Internal server error' });
+    }
+});
+exports.getUserById = getUserById;
+// get all users
+const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Use the find method without any conditions to retrieve all users from the database
+        const allUsers = yield passportModels_1.user.find();
+        if (allUsers.length === 0) {
+            return res.status(404).json({
+                code: 404,
+                message: 'No users found',
+            });
+        }
+        // If users are found, return the user data as the response
+        return res.status(200).json({
+            code: 200,
+            data: allUsers,
+        });
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(500).json({ code: 500, error: 'Internal server error' });
+    }
+});
+exports.getAllUsers = getAllUsers;
+// update user by id
+const updateUserById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const userId = req.params.id;
+        const updatedUserData = req.body;
+        // Use the findByIdAndUpdate method to update the user by their ID in the database
+        const updatedUser = yield passportModels_1.user.findByIdAndUpdate(userId, updatedUserData, {
+            new: true,
+        });
+        if (!updatedUser) {
+            return res.status(404).json({
+                code: 404,
+                message: 'User not found',
+            });
+        }
+        // If the user is updated successfully, return the updated user data as the response
+        return res.status(200).json({
+            code: 200,
+            data: updatedUser,
+        });
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(500).json({ code: 500, error: 'Internal server error' });
+    }
+});
+exports.updateUserById = updateUserById;
+// delete by id 
+const deleteUserById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const userId = req.params.id;
+        // Use the deleteOne method to delete the user by their ID from the database
+        const deletionResult = yield passportModels_1.user.deleteOne({ _id: userId });
+        if (deletionResult.deletedCount === 0) {
+            return res.status(404).json({
+                code: 404,
+                message: 'User not found',
+            });
+        }
+        // If the user is deleted successfully, return the deletion result as the response
+        return res.status(200).json({
+            code: 200,
+            message: 'User deleted successfully',
+        });
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(500).json({ code: 500, error: 'Internal server error' });
+    }
+});
+exports.deleteUserById = deleteUserById;

@@ -5,10 +5,10 @@ import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 import { transporter } from "../middlewares/email";
 import { v4 as uuidv4 } from "uuid"; // Import uuid library
 import { passwordRegex } from "../utils/helper";
-import { environmentConfig } from '../config/environmentConfig';
+import { environmentConfig } from "../config/environmentConfig";
+import { Role } from "../models/roleModel";
 
 const jwtSecret: string = environmentConfig.JWT_SECRET;
-
 
 // for user signup
 export const userSignup = async (req: Request, res: Response) => {
@@ -21,6 +21,8 @@ export const userSignup = async (req: Request, res: Response) => {
         message: `user with email ${email} already exists`,
       });
     }
+    const defaultRole = await Role.findOne({ role: "user" });
+
     // hashing the password
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new user({
@@ -28,14 +30,12 @@ export const userSignup = async (req: Request, res: Response) => {
       userName,
       email,
       password: hashedPassword,
+      role: defaultRole
     });
     // saving the user to DB
     await newUser.save();
     // generating a jwt token to specifically identify the user
-    const token = jwt.sign(
-      { userId: newUser._id },
-      jwtSecret || ""
-    );
+    const token = jwt.sign({ userId: newUser._id }, jwtSecret || "");
     return res.status(200).json({
       token,
       code: 200,
@@ -50,9 +50,9 @@ export const userSignup = async (req: Request, res: Response) => {
 
 // for user login
 export const userLogin = async (req: Request, res: Response) => {
-try {
+  try {
     const { email, password } = req.body;
-    const User = await user.findOne({email}).populate('role','role');
+    const User = await user.findOne({ email }).populate("role", "role");
     if (!User) {
       return res.status(400).json({
         code: 400,
@@ -74,7 +74,7 @@ try {
       }
     );
     let userData = {
-      userId : User._id,
+      userId: User._id,
       fullName: User.fullName,
       userName: User.userName,
       email: User.email,
@@ -110,13 +110,9 @@ export const forgetPassword = async (req: Request, res: Response) => {
 
     // Create the JWT
     const expiresIn = "1h";
-    const token = jwt.sign(
-      { email, resetToken },
-      jwtSecret as string,
-      {
-        expiresIn,
-      }
-    );
+    const token = jwt.sign({ email, resetToken }, jwtSecret as string, {
+      expiresIn,
+    });
 
     // Construct the reset password URL
     const resetPasswordUrl = `${environmentConfig.RESET_PASSWORD}?token=${token}`;
@@ -156,10 +152,7 @@ export const resetPassword = async (req: Request, res: Response) => {
   try {
     const token = req.query.token;
     // Verify the token
-    const decodedToken = jwt.verify(
-      token as string,
-      jwtSecret as Secret
-    );
+    const decodedToken = jwt.verify(token as string, jwtSecret as Secret);
     const { email } = decodedToken as JwtPayload;
 
     // Check if email exists in the database
@@ -212,4 +205,109 @@ export const adminController = async (req: Request, res: Response) => {
     const userRole = User.role;
     return res.status(200).json({ code: 200, message: "welcome admin" });
   });
+};
+
+// get user by ID
+export const getUserById = async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.id;
+
+    // Use the findById method to find the user by their ID in the database
+    const foundUser = await user.findById(userId);
+
+    if (!foundUser) {
+      return res.status(404).json({
+        code: 404,
+        message: "User not found",
+      });
+    }
+
+    // If the user is found, return the user data as the response
+    return res.status(200).json({
+      code: 200,
+      data: foundUser,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ code: 500, error: "Internal server error" });
+  }
+};
+
+// get all users
+export const getAllUsers = async (req: Request, res: Response) => {
+  try {
+    // Use the find method without any conditions to retrieve all users from the database
+    const allUsers = await user.find();
+
+    if (allUsers.length === 0) {
+      return res.status(404).json({
+        code: 404,
+        message: "No users found",
+      });
+    }
+
+    // If users are found, return the user data as the response
+    return res.status(200).json({
+      code: 200,
+      data: allUsers,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ code: 500, error: "Internal server error" });
+  }
+};
+
+// update user by id
+export const updateUserById = async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.id;
+    const updatedUserData = req.body;
+
+    // Use the findByIdAndUpdate method to update the user by their ID in the database
+    const updatedUser = await user.findByIdAndUpdate(userId, updatedUserData, {
+      new: true,
+    });
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        code: 404,
+        message: "User not found",
+      });
+    }
+
+    // If the user is updated successfully, return the updated user data as the response
+    return res.status(200).json({
+      code: 200,
+      data: updatedUser,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ code: 500, error: "Internal server error" });
+  }
+};
+
+// delete by id
+export const deleteUserById = async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.id;
+
+    // Use the deleteOne method to delete the user by their ID from the database
+    const deletionResult = await user.deleteOne({ _id: userId });
+
+    if (deletionResult.deletedCount === 0) {
+      return res.status(404).json({
+        code: 404,
+        message: "User not found",
+      });
+    }
+
+    // If the user is deleted successfully, return the deletion result as the response
+    return res.status(200).json({
+      code: 200,
+      message: "User deleted successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ code: 500, error: "Internal server error" });
+  }
 };

@@ -15,8 +15,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const passport_1 = __importDefault(require("passport"));
 const passportModels_1 = require("../models/passportModels");
-const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
 require("../config/db");
 require("../modules/passport");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));

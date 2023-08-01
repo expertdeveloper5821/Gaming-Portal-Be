@@ -2,6 +2,7 @@ import passport from "passport";
 import { user } from "../models/passportModels";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { environmentConfig } from "../config/environmentConfig";
+import { Role } from "../models/roleModel";
 
 
 // passport strategy for google
@@ -14,12 +15,16 @@ passport.use(
       scope: ["profile", "email"],
     },
     async function (accessToken: String, refreshToken: String, profile: any, cb: any) {   
+
+      const defaultRole = await Role.findOne({ role: "user" });
+
           //  user data
       var userData = {
         email: profile.emails[0].value,
         userName: profile.displayName,
         fullName: profile.displayName,
-        provider : profile.provider
+        provider : profile.provider ,
+        role : defaultRole
       };
       try {
         const existingUser = await user.findOne({ email: profile.emails[0].value }).exec();
@@ -27,7 +32,7 @@ passport.use(
           // User exists, update user information if necessary
           return cb(null, existingUser);
         } else {
-          // saving the user in data base
+          // saving the user in data bases
         const newUser = new user(userData);
           await newUser.save();
           return cb(null, newUser);
@@ -47,8 +52,12 @@ passport.serializeUser(function (user: any, cb: any) {
 });
 
 // passport deserializer
-passport.deserializeUser((id:any, done:any ) => {
-  user.findById(id, "name , email ,username, token", (err: any, user: any) => {
-    done(err, user);
-  });
+passport.deserializeUser((id: any, done: any) => {
+  user.findOne({ _id: id }, "name email username token")
+    .then((user) => {
+      done(null, user);
+    })
+    .catch((err) => {
+      done(err, null);
+    });
 });
