@@ -1,39 +1,20 @@
-import express from 'express';
-import './config/db'
-import cors from 'cors';
-import bodyParser from "body-parser";
-import * as dotenv from 'dotenv'
-dotenv.config()
+import app from './app';
+import { environmentConfig } from './config/environmentConfig';
+import { printSuccess, printError } from './utils/consoleMessage'; 
 
-const app = express();
-const port = process.env.serverPort;
-
-// all routes import here 
-import roomRoute from './routes/serverRoomIDRoute';
-
-// cors middleware 
-app.use(
-    cors({
-      origin: "*",
-      methods: "GET,POST,PUT,DELETE",
-      credentials: true,
-    })
-  );
-
-// accept body middleware
-  app.use(express.json());
-  app.use(bodyParser.urlencoded({ extended: true }));
-  app.use(express.urlencoded({ extended: false }));  
-
-// all routes use as a middleware
-app.use('/v2', roomRoute)
+const port: number = environmentConfig.SERVER_PORT;
 
 // sample get route
 app.get('/', (req, res) => {
-  res.send('Hello, Gamers!');
+  res.status(200).send('Hello, Gamers!');
 });
-
 // server listening
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}...👍️`);
+  printSuccess(`Server is running on port ${port}...👍️`);
+
+  // Simulating an error
+  const error = false;
+  if (error) {
+    printError(`Server could not start on port ${port}...😵`);
+  }
 });
