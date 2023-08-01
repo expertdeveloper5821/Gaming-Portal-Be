@@ -10,6 +10,7 @@ import {
   getAllUsers,
 } from "../controllers/userController";
 const route = express.Router();
+import { verifyToken } from "../middlewares/authMiddleware";
 
 // signup route
 route.post("/signup", userSignup);
@@ -24,15 +25,15 @@ route.post("/forget-password", forgetPassword);
 route.post("/reset-password", resetPassword);
 
 // get user by ID
-route.get("/getuser/:id", getUserById);
+route.get("/getuser/:id", verifyToken('user'),getUserById);
 
 // get Alluser
-route.get("/getalluser", getAllUsers);
+route.get("/getalluser", verifyToken('admin'),getAllUsers);
 
 // update user by id
-route.put("/updateuser/:id", updateUserById);
+route.put("/updateuser/:id", verifyToken('user'),updateUserById);
 
 // delete by id
-route.delete("/deleteuser/:id", deleteUserById);
+route.delete("/deleteuser/:id", verifyToken('user'),deleteUserById);
 
 export default route;
