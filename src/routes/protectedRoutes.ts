@@ -10,6 +10,9 @@ import {
   deleteRole,
   video,
   getAllVideoLink,
+  getVideoById,
+  updateVideoById,
+  deleteVideoById,
 } from "../controllers/adminController";
 import { verifyToken } from "../middlewares/authMiddleware";
 
@@ -41,5 +44,14 @@ route.post("/videolink", verifyToken("admin"), video);
 
 // to get all video link and information
 route.get("/allvideolink", verifyToken("admin"), getAllVideoLink);
+
+// get video by ID
+route.get("/getvideo/:id", verifyToken("admin"), getVideoById);
+
+// updatevideo by id
+route.put("/updatevideo/:id", verifyToken("admin"), updateVideoById);
+
+//  delete video by id
+route.delete("/deletevideo/:id", verifyToken("admin"), deleteVideoById);
 
 export default route;

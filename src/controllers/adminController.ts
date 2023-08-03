@@ -276,3 +276,57 @@ export const getAllVideoLink = async (req: Request, res: Response) => {
     return res.status(500).json({ code: 500, error: "Internal server error" });
   }
 };
+// get video by ID
+export const getVideoById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!validId.test(id)) {
+      return res.status(404).json({ error: "Invalid ID" });
+    }
+    const video = await Video.findById(id);
+    if (!video) {
+      return res.status(404).json({ code: 404, message: 'Video not found' });
+    }
+    res.status(200).json({ code: 200, video });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ code: 500, error: 'Internal server error' });
+  }
+};
+
+//update video by ID
+export const updateVideoById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!validId.test(id)) {
+      return res.status(404).json({ error: "Invalid ID" });
+    }
+    const { videoLink, date, time } = req.body;
+    const updatedVideo = await Video.findByIdAndUpdate(id, { videoLink, date, time }, { new: true });
+    if (!updatedVideo) {
+      return res.status(404).json({ code: 404, message: 'Video not found' });
+    }
+    res.status(200).json({ code: 200, message: 'Video updated successfully', video: updatedVideo });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ code: 500, error: 'Internal server error' });
+  }
+};
+
+// delete video by ID
+export const deleteVideoById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!validId.test(id)) {
+      return res.status(404).json({ error: "Invalid ID" });
+    }
+    const deletedVideo = await Video.findByIdAndDelete(id);
+    if (!deletedVideo) {
+      return res.status(404).json({ code: 404, message: 'Video not found' });
+    }
+    res.status(200).json({ code: 200, message: 'Video deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ code: 500, error: 'Internal server error' });
+  }
+};
