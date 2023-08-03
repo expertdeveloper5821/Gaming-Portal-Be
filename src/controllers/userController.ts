@@ -213,7 +213,7 @@ export const getUserById = async (req: Request, res: Response) => {
   try {
     const userId = req.params.id;
     if (!validId.test(userId)) {
-      return res.status(404).json({ error: "Invalid role ID" });
+      return res.status(404).json({ error: "Invalid user ID" });
     }
     // Use the findById method to find the user by their ID in the database
     const foundUser = await user.findById(userId);
@@ -241,7 +241,6 @@ export const getAllUsers = async (req: Request, res: Response) => {
   try {
     // Use the find method without any conditions to retrieve all users from the database
     const allUsers = await user.find();
-
     if (allUsers.length === 0) {
       return res.status(404).json({
         code: 404,
@@ -267,7 +266,7 @@ export const updateUserById = async (req: Request, res: Response) => {
     const updatedUserData = req.body;
 
     if (!validId.test(userId)) {
-      return res.status(404).json({ error: "Invalid role ID" });
+      return res.status(404).json({ error: "Invalid user ID" });
     }
     // Use the findByIdAndUpdate method to update the user by their ID in the database
     const updatedUser = await user.findByIdAndUpdate(userId, updatedUserData, {
@@ -298,7 +297,7 @@ export const deleteUserById = async (req: Request, res: Response) => {
     const userId = req.params.id;
     
     if (!validId.test(userId)) {
-      return res.status(404).json({ error: "Invalid role ID" });
+      return res.status(404).json({ error: "Invalid user ID" });
     }
     // Use the deleteOne method to delete the user by their ID from the database
     const deletionResult = await user.deleteOne({ _id: userId });

@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import { environmentConfig } from "../config/environmentConfig";
 import { Role } from "../models/roleModel";
 import { validId } from "../utils/pattern";
+import Video from "../models/ytVideo";
 
 // for admin signup
 export const adminSignup = async (req: Request, res: Response) => {
@@ -184,7 +185,9 @@ export const updateRole = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Invalid role ID" });
     }
     if (!validId.test(roleid)) {
-      return res.status(404).json({ error: "provided role ID is of invalid format" });
+      return res
+        .status(404)
+        .json({ error: "provided role ID is of invalid format" });
     }
     // Check if the specified role exists before updating
     const existingRole = await Role.findById(roleid);
@@ -222,7 +225,52 @@ export const deleteRole = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Role not found" });
     }
     // await user.updateMany({ role: id }, { $pull: { role: id } });
-    return res.status(200).json({message : 'deleted successfully'});
+    return res.status(200).json({ message: "deleted successfully" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ code: 500, error: "Internal server error" });
+  }
+};
+
+// youtube video link
+export const video = async (req: Request, res: Response) => {
+  try {
+    const { videoLink, date, time } = req.body;
+    const existingVideo = await Video.findOne({ videoLink });
+    if (existingVideo) {
+      return res.status(400).json({
+        code: 400,
+        message: `same video already exists`,
+      });
+    }
+    // Create a new video document and save it to the database
+    const newVideo = new Video({ videoLink, date, time });
+    await newVideo.save();
+    res
+      .status(200)
+      .json({ code: 200, message: "Video link saved successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ code: 500, error: "Internal server error" });
+  }
+};
+
+// get all video links
+export const getAllVideoLink = async (req: Request, res: Response) => {
+  try {
+    // Use the find method without any conditions to retrieve all users from the database
+    const allVideos = await Video.find();
+    if (allVideos.length === 0) {
+      return res.status(404).json({
+        code: 404,
+        message: "No video link ",
+      });
+    }
+    // If video links are found, return the data as the response
+    return res.status(200).json({
+      code: 200,
+      data: allVideos,
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ code: 500, error: "Internal server error" });

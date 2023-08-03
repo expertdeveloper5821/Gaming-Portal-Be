@@ -6,6 +6,10 @@ const roomIdSchema: Schema = new Schema(
       type: Number,
       required: true,
     },
+    password: {
+      type: String,
+      required: true,
+    },
     gameName: {
       type: String,
       required: true,
