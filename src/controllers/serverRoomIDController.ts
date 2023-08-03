@@ -4,19 +4,20 @@ import RoomId from "../models/serverRoomIDModels";
 // Create a new room
 export const createRoom = async (req: Request, res: Response) => {
   try {
-    const { roomId, gameName, gameType, mapType, userId} = req.body;
+    const { roomId, gameName, gameType, mapType, userId, password} = req.body;
 
-    if (!roomId || !gameName || !gameType || ! mapType) {
+    if (!roomId || !gameName || !gameType || ! mapType || !password) {
       return res.status(400).json({ message: "All fields required" });
     } else {
-      const createdRoom = await RoomId.create({ roomId, gameName, gameType, mapType, userId });
+      const createdRoom = await RoomId.create({ roomId, gameName, gameType, mapType, userId, password });
       return res.status(200).json({
         message: "RoomID created successfully",
         roomId: createdRoom.roomId,
         gameName: createdRoom.gameName,
         gameType: createdRoom.gameType,
         mapType: createdRoom.mapType,
-        userId: createdRoom.userId
+        userId: createdRoom.userId,
+        password : createdRoom.password
       });
     }
   } catch (error) {
