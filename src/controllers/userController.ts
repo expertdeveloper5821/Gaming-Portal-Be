@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from "uuid"; // Import uuid library
 import { passwordRegex } from "../utils/helper";
 import { environmentConfig } from "../config/environmentConfig";
 import { Role } from "../models/roleModel";
+import { validId } from "../utils/pattern";
 
 const jwtSecret: string = environmentConfig.JWT_SECRET;
 
@@ -30,7 +31,7 @@ export const userSignup = async (req: Request, res: Response) => {
       userName,
       email,
       password: hashedPassword,
-      role: defaultRole
+      role: defaultRole,
     });
     // saving the user to DB
     await newUser.save();
@@ -211,7 +212,9 @@ export const adminController = async (req: Request, res: Response) => {
 export const getUserById = async (req: Request, res: Response) => {
   try {
     const userId = req.params.id;
-
+    if (!validId.test(userId)) {
+      return res.status(404).json({ error: "Invalid role ID" });
+    }
     // Use the findById method to find the user by their ID in the database
     const foundUser = await user.findById(userId);
 
@@ -263,6 +266,9 @@ export const updateUserById = async (req: Request, res: Response) => {
     const userId = req.params.id;
     const updatedUserData = req.body;
 
+    if (!validId.test(userId)) {
+      return res.status(404).json({ error: "Invalid role ID" });
+    }
     // Use the findByIdAndUpdate method to update the user by their ID in the database
     const updatedUser = await user.findByIdAndUpdate(userId, updatedUserData, {
       new: true,
@@ -290,7 +296,10 @@ export const updateUserById = async (req: Request, res: Response) => {
 export const deleteUserById = async (req: Request, res: Response) => {
   try {
     const userId = req.params.id;
-
+    
+    if (!validId.test(userId)) {
+      return res.status(404).json({ error: "Invalid role ID" });
+    }
     // Use the deleteOne method to delete the user by their ID from the database
     const deletionResult = await user.deleteOne({ _id: userId });
 
