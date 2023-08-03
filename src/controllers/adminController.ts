@@ -5,6 +5,7 @@ import { transporter } from "../middlewares/email";
 import jwt from "jsonwebtoken";
 import { environmentConfig } from "../config/environmentConfig";
 import { Role } from "../models/roleModel";
+import { validId } from "../utils/pattern";
 
 // for admin signup
 export const adminSignup = async (req: Request, res: Response) => {
@@ -161,6 +162,9 @@ export const getAllRole = async (req: Request, res: Response) => {
 export const getRoleById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    if (!validId.test(id)) {
+      return res.status(404).json({ error: "Invalid role ID" });
+    }
     const role = await user.findById(id).populate("role", "role");
     if (!role) {
       return res.status(404).json({ error: "role not found" });
@@ -176,7 +180,12 @@ export const updateRole = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { roleid } = req.body;
-
+    if (!validId.test(id)) {
+      return res.status(404).json({ error: "Invalid role ID" });
+    }
+    if (!validId.test(roleid)) {
+      return res.status(404).json({ error: "provided role ID is of invalid format" });
+    }
     // Check if the specified role exists before updating
     const existingRole = await Role.findById(roleid);
     if (!existingRole) {
@@ -205,8 +214,10 @@ export const updateRole = async (req: Request, res: Response) => {
 export const deleteRole = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    if (!validId.test(id)) {
+      return res.status(404).json({ error: "Invalid role ID" });
+    }
     const deletedRole = await user.findByIdAndDelete(id);
-
     if (!deletedRole) {
       return res.status(404).json({ error: "Role not found" });
     }
