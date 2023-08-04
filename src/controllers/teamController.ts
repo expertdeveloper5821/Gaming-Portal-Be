@@ -2,15 +2,22 @@ import { user } from "../models/passportModels";
 import { Request, Response } from "express";
 import { environmentConfig } from "../config/environmentConfig";
 import { transporter } from "../middlewares/email";
+import { Team } from "../models/teamModel";
+import { validId } from "../utils/pattern";
+import RoomId from "../models/serverRoomIDModels";
 
 // add players
 export const addTeammates = async (req: Request, res: Response) => {
   try {
-    const { emails }: { emails: string[] } = req.body;
-
+    const {
+      emails,
+      id,
+      leadPlayer,
+    }: { emails: string[]; leadPlayer: string; id: string } = req.body;
     if (!emails || !Array.isArray(emails)) {
       return res.status(400).json({ error: "Invalid input format" });
     }
+    const teamData = await RoomId.findOne({ uuid: id });
 
     // Fetch registered emails from the database
     const allUsers = await user.find();
@@ -37,11 +44,25 @@ export const addTeammates = async (req: Request, res: Response) => {
       });
     }
     if (unregisteredEmails.length === 0) {
-      res.status(200).json({
-        code: 200,
-        message: `Teammates added Successfully`,
-        registeredEmails,
-      });
+      if (teamData) {
+        const newTem = new Team({
+          uuid :teamData?.uuid,
+          gameName: teamData?.gameName,
+          mapType: teamData?.mapType,
+          gameType: teamData?.gameType,
+          leadPlayer: leadPlayer,
+          teammates: emails,
+        });
+        await newTem.save();
+        res.status(200).json({
+          code: 200,
+          message: `Teammates added Successfully`,
+          registeredEmails,
+        });
+      }
+      else{
+        res.status(400).json({code:400,message:"Team not found"})
+      }
     } else {
       res.status(422).json({
         code: 422,
@@ -51,6 +72,119 @@ export const addTeammates = async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
+    console.log(error);
+
     res.status(500).json({ code: 500, message: `Internal Server Error ` });
+  }
+};
+
+// get all Teams
+export const getAllTeams = async (req: Request, res: Response) => {
+  try {
+    // Use the find method without any conditions to retrieve all users from the database
+    const allTeams = await Team.find();
+    if (allTeams.length === 0) {
+      return res.status(404).json({
+        code: 404,
+        message: "No Teams found",
+      });
+    }
+    // If users are found, return the user data as the response
+    return res.status(200).json({
+      code: 200,
+      data: allTeams,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ code: 500, error: "Internal server error" });
+  }
+};
+
+// get Team by ID
+export const getTeamById = async (req: Request, res: Response) => {
+  try {
+    const TeamId = req.params.id;
+    if (!validId.test(TeamId)) {
+      return res.status(404).json({ error: "Invalid user ID" });
+    }
+    // Use the findById method to find the user by their ID in the database
+    const foundTeam = await Team.findById(TeamId);
+
+    if (!foundTeam) {
+      return res.status(404).json({
+        code: 404,
+        message: "Team not found",
+      });
+    }
+
+    // If the user is found, return the user data as the response
+    return res.status(200).json({
+      code: 200,
+      data: foundTeam,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ code: 500, error: "Internal server error" });
+  }
+};
+
+// update user by id
+export const updateTeamById = async (req: Request, res: Response) => {
+  try {
+    const TeamId = req.params.id;
+    const updatedTeamData = req.body;
+
+    if (!validId.test(TeamId)) {
+      return res.status(404).json({ error: "Invalid user ID" });
+    }
+    // Use the findByIdAndUpdate method to update the user by their ID in the database
+    const updatedTeam = await Team.findByIdAndUpdate(TeamId, updatedTeamData, {
+      new: true,
+    });
+
+    if (!updatedTeam) {
+      return res.status(404).json({
+        code: 404,
+        message: "Team not found",
+      });
+    }
+
+    // If the user is updated successfully, return the updated user data as the response
+    return res.status(200).json({
+      code: 200,
+      data: updatedTeam,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ code: 500, error: "Internal server error" });
+  }
+};
+
+// delete by id
+export const deleteTeamById = async (req: Request, res: Response) => {
+  try {
+    const TeamId = req.params.id;
+
+    if (!validId.test(TeamId)) {
+      return res.status(404).json({ error: "Invalid user ID" });
+    }
+    // Use the deleteOne method to delete the user by their ID from the database
+    const deletionResult = await Team.deleteOne({ _id: TeamId });
+
+    if (deletionResult.deletedCount === 0) {
+      return res.status(404).json({
+        code: 404,
+        message: "Team not found",
+      });
+    }
+
+    // If the user is deleted successfully, return the deletion result as the response
+    return res.status(200).json({
+      code: 200,
+      message: "deleted successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ code: 500, error: "Internal server error" });
   }
 };

@@ -1,24 +1,42 @@
 import { Request, Response } from "express";
 import RoomId from "../models/serverRoomIDModels";
+import { v4 as uuidv4 } from "uuid";
+import jwt from "jsonwebtoken";
+import { environmentConfig } from "../config/environmentConfig";
 
 // Create a new room
 export const createRoom = async (req: Request, res: Response) => {
   try {
-    const { roomId, gameName, gameType, mapType, userId, password} = req.body;
+    const { gameName, gameType, mapType, password } = req.body;
 
-    if (!roomId || !gameName || !gameType || ! mapType || !password) {
+    if (!gameName || !gameType || !mapType || !password) {
       return res.status(400).json({ message: "All fields required" });
     } else {
-      const createdRoom = await RoomId.create({ roomId, gameName, gameType, mapType, userId, password });
-      return res.status(200).json({
-        message: "RoomID created successfully",
-        roomId: createdRoom.roomId,
-        gameName: createdRoom.gameName,
-        gameType: createdRoom.gameType,
-        mapType: createdRoom.mapType,
-        userId: createdRoom.userId,
-        password : createdRoom.password
-      });
+      const token = req.header("Authorization")?.replace("Bearer ", "");
+      if (!token) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const secretKey = environmentConfig.JWT_SECRET;
+      try {
+        const decoded: any = jwt.verify(token, secretKey);
+        const userId = decoded.userId;
+        const newUuid = uuidv4();
+        await RoomId.create({
+          uuid: newUuid,
+          gameName,
+          gameType,
+          mapType,
+          password,
+          createdBy: userId,
+        });
+        return res.status(200).json({
+          message: "Room created successfully",
+          uuid: newUuid,
+        });
+      } catch (error) {
+        console.error(error);
+        return res.status(401).json({ message: "Invalid token" });
+      }
     }
   } catch (error) {
     console.error(error);
@@ -28,7 +46,6 @@ export const createRoom = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 // Get all rooms
 export const getAllRooms = async (req: Request, res: Response) => {
