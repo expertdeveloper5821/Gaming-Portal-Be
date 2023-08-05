@@ -7,9 +7,9 @@ import { environmentConfig } from "../config/environmentConfig";
 // Create a new room
 export const createRoom = async (req: Request, res: Response) => {
   try {
-    const { gameName, gameType, mapType, password } = req.body;
+    const { roomId, gameName, gameType, mapType, password } = req.body;
 
-    if (!gameName || !gameType || !mapType || !password) {
+    if (!roomId! || gameName || !gameType || !mapType || !password) {
       return res.status(400).json({ message: "All fields required" });
     } else {
       const token = req.header("Authorization")?.replace("Bearer ", "");
@@ -23,6 +23,7 @@ export const createRoom = async (req: Request, res: Response) => {
         const newUuid = uuidv4();
         await RoomId.create({
           uuid: newUuid,
+          roomId,
           gameName,
           gameType,
           mapType,
