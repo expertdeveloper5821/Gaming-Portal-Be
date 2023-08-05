@@ -16,6 +16,9 @@ export interface EnvironmentConfig {
   CLIENT_URL: string;
   SESSION_SECRET :string;
   RESET_PASSWORD : string;
+  RAZORPAY_API_KEY: string;
+  RAZORPAY_APT_SECRET: string;
+  Payment_SUCCESS_URL: string
 }
 
 export const environmentConfig: EnvironmentConfig = {
@@ -31,5 +34,8 @@ export const environmentConfig: EnvironmentConfig = {
   CLIENT_SECRET: process.env.clientSecret || 'yourClientSecret',
   CLIENT_URL: process.env.clientUrl || 'http://localhost:3000',
   SESSION_SECRET : process.env.sessionSecret || 'sessionsecret',
-  RESET_PASSWORD : process.env.reset_password || 'http://192.168.1.43:3000/reset-password'
+  RESET_PASSWORD : process.env.reset_password || 'http://192.168.1.43:3000/reset-password',
+  RAZORPAY_API_KEY: process.env.razorPayKey || 'razorKey',
+  RAZORPAY_APT_SECRET: process.env.razorPaySecret || 'razorSecret',
+  Payment_SUCCESS_URL: process.env.paymentSuccessUrl || 'http://localhost:3000/paymentsuccess',
 };

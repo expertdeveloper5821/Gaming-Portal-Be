@@ -71,7 +71,7 @@ export const userLogin = async (req: Request, res: Response) => {
       { userId: User._id, role: User.role },
       environmentConfig.JWT_SECRET,
       {
-        expiresIn: "48h",
+        expiresIn: "1h",
       }
     );
     let userData = {
