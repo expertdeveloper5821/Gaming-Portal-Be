@@ -26,6 +26,7 @@ import userAuthRoute from './routes/userAuthRoute';
 import passportRoute from './routes/passportRoute';
 import protectedRoutes from './routes/protectedRoutes';
 import roomRoutes from './routes/serverRoomIDRoute';
+import teamRoutes from './routes/teamRoutes'
 
 
 // cors middleware 
@@ -37,7 +38,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.urlencoded({ extended: false })); 
 
 // using middleware routes
-app.use('/v1',userAuthRoute)
+app.use('/v1',userAuthRoute,teamRoutes)
 app.use('/auth',passportRoute)
 app.use('/v2',protectedRoutes)
 app.use('/v3',roomRoutes)

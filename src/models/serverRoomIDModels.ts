@@ -2,8 +2,12 @@ import mongoose, { Schema } from "mongoose";
 
 const roomIdSchema: Schema = new Schema(
   {
+    uuid: {
+      type: String,
+      required: true,
+    },
     roomId: {
-      type: Number,
+      type: String,
       required: true,
     },
     password: {
@@ -22,11 +26,13 @@ const roomIdSchema: Schema = new Schema(
       type: String,
       required: true,
     },
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'user', require:'false'}
+    createdBy: {
+      type: String, // Assuming the user ID is a string
+      required: true,
+    },
   },
   { timestamps: true }
 );
 
 const RoomId = mongoose.model("RoomId", roomIdSchema);
-
 export default RoomId;

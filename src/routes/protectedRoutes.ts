@@ -55,3 +55,4 @@ route.put("/updatevideo/:id", verifyToken("admin"), updateVideoById);
 route.delete("/deletevideo/:id", verifyToken("admin"), deleteVideoById);
 
 export default route;
+    
