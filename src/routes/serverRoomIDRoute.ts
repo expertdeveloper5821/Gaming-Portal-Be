@@ -6,18 +6,18 @@ import { verifyToken } from "../middlewares/authMiddleware";
 const router = express.Router();
 
 // room creating - Only 'admin' token is allowed
-router.post("/rooms", verifyToken('spectator'),createRoom);
+router.post("/rooms", verifyToken(['spectator']),createRoom);
 
 // get rooms - Only 'admin' token is allowed
-router.get("/rooms", verifyToken('spectator'),getAllRooms);
+router.get("/rooms", verifyToken(['spectator']),getAllRooms);
 
 // get rooms by id - Only 'admin' token is allowed
-router.get("/rooms/:id", verifyToken('spectator'),getRoomById);
+router.get("/rooms/:id", verifyToken(['spectator']),getRoomById);
 
 // update room by id - Only 'admin' token is allowed
-router.put("/rooms/:id", verifyToken('spectator'),updateRoomById);
+router.put("/rooms/:id", verifyToken(['spectator']),updateRoomById);
 
 // delete room by id - Only 'admin' token is allowed
-router.delete("/rooms/:id", verifyToken('spectator'),deleteRoomById);
+router.delete("/rooms/:id", verifyToken(['spectator']),deleteRoomById);
 
 export default router;

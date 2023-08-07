@@ -216,7 +216,7 @@ export const getUserById = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Invalid user ID" });
     }
     // Use the findById method to find the user by their ID in the database
-    const foundUser = await user.findById(userId);
+    const foundUser = await user.findById(userId).populate('role','role');
 
     if (!foundUser) {
       return res.status(404).json({
@@ -240,18 +240,24 @@ export const getUserById = async (req: Request, res: Response) => {
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
     // Use the find method without any conditions to retrieve all users from the database
-    const allUsers = await user.find();
+    const allUsers = await user.find().populate('role','role');
     if (allUsers.length === 0) {
       return res.status(404).json({
         code: 404,
         message: "No users found",
       });
     }
-
     // If users are found, return the user data as the response
     return res.status(200).json({
       code: 200,
-      data: allUsers,
+      data: allUsers.map((data) => {
+        return {
+          fullName: data?.fullName,
+          userName: data?.userName,
+          email: data?.email,
+          role: data?.role,
+        };
+      }),
     });
   } catch (error) {
     console.log(error);
@@ -271,7 +277,7 @@ export const updateUserById = async (req: Request, res: Response) => {
     // Use the findByIdAndUpdate method to update the user by their ID in the database
     const updatedUser = await user.findByIdAndUpdate(userId, updatedUserData, {
       new: true,
-    });
+    }).populate('role','role');
 
     if (!updatedUser) {
       return res.status(404).json({
@@ -283,7 +289,12 @@ export const updateUserById = async (req: Request, res: Response) => {
     // If the user is updated successfully, return the updated user data as the response
     return res.status(200).json({
       code: 200,
-      data: updatedUser,
+      data: {
+        fullName: updatedUser?.fullName,
+        userName: updatedUser?.userName,
+        email: updatedUser?.email,
+        role: updatedUser?.role,
+      },
     });
   } catch (error) {
     console.log(error);
@@ -295,7 +306,7 @@ export const updateUserById = async (req: Request, res: Response) => {
 export const deleteUserById = async (req: Request, res: Response) => {
   try {
     const userId = req.params.id;
-    
+
     if (!validId.test(userId)) {
       return res.status(404).json({ error: "Invalid user ID" });
     }
