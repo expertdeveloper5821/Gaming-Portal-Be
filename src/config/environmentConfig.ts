@@ -18,7 +18,10 @@ export interface EnvironmentConfig {
   RESET_PASSWORD : string;
   RAZORPAY_API_KEY: string;
   RAZORPAY_APT_SECRET: string;
-  Payment_SUCCESS_URL: string
+  Payment_SUCCESS_URL: string;
+  CLOUD_NAME: string;
+  API_KEY: string,
+  API_SECRET: string
 }
 
 export const environmentConfig: EnvironmentConfig = {
@@ -38,4 +41,7 @@ export const environmentConfig: EnvironmentConfig = {
   RAZORPAY_API_KEY: process.env.razorPayKey || 'razorKey',
   RAZORPAY_APT_SECRET: process.env.razorPaySecret || 'razorSecret',
   Payment_SUCCESS_URL: process.env.paymentSuccessUrl || 'http://localhost:3000/paymentsuccess',
+  CLOUD_NAME: process.env.cloudName || 'cloudnery',
+  API_KEY: process.env.apiKey || 'cloudnery',
+  API_SECRET: process.env.apiSecret || 'cloudnery',
 };

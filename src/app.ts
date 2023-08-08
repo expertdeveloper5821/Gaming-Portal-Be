@@ -30,6 +30,7 @@ import protectedRoutes from './routes/protectedRoutes';
 import roomRoutes from './routes/serverRoomIDRoute';
 import teamRoutes from './routes/teamRoutes'
 import paymentRoute from './routes/paymentRoutes';
+import qrCodeRoute from './routes/qrCodeRoute';
 
 
 // cors middleware 
@@ -46,6 +47,7 @@ app.use('/auth',passportRoute)
 app.use('/v2',protectedRoutes)
 app.use('/v3',roomRoutes)
 app.use("/api", paymentRoute);
+app.use('/api/v1/payment', qrCodeRoute)
 
 
 
