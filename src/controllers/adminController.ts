@@ -236,6 +236,9 @@ export const deleteRole = async (req: Request, res: Response) => {
 export const video = async (req: Request, res: Response) => {
   try {
     const { videoLink, date, time } = req.body;
+    if (!videoLink || !date || !time ) {
+      return res.status(400).json({ message: "All fields required" });
+    }
     const existingVideo = await Video.findOne({ videoLink });
     if (existingVideo) {
       return res.status(400).json({

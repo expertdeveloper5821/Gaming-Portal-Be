@@ -4,11 +4,13 @@ import {
   paymentVerification,
 } from "../controllers/paymentController";
 
+import { verifyToken } from "../middlewares/authMiddleware";
+
 const router = express.Router();
 
 
 router.post('/checkout', checkout)
 
-router.post("/paymentverification", paymentVerification)
+router.post("/paymentverification", verifyToken, paymentVerification)
 
 export default router;

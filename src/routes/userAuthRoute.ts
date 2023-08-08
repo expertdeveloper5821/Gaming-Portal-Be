@@ -12,7 +12,7 @@ import {
 const route = express.Router();
 import { verifyToken } from "../middlewares/authMiddleware";
 import {
-  addTeammates
+  addTeammates, deleteTeamById, getAllTeams, getTeamById, updateTeamById
 } from "../controllers/teamController";
 
 // signup route
@@ -41,5 +41,11 @@ route.delete("/deleteuser/:id", verifyToken("user"), deleteUserById);
 
 // add up  on new teammates
 route.post("/addteam", verifyToken('user'), addTeammates);
+route.get("/getallteam",  getAllTeams);
+route.get("/getteambyid/:id",  getTeamById);
+route.get("/updateteam/:id",  updateTeamById);
+route.delete("/deleteteam/:id",  deleteTeamById);
+
+
 
 export default route;

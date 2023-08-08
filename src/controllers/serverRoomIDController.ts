@@ -4,37 +4,32 @@ import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
 import { environmentConfig } from "../config/environmentConfig";
 
-
 // Create a new room
 export const createRoom = async (req: Request, res: Response) => {
   try {
-    const { gameName, gameType, mapType, password } = req.body;
+    const { roomId, gameName, gameType, mapType, password } = req.body;
 
-    if (!gameName || !gameType || !mapType || !password) {
+    if (!roomId || !gameName || !gameType || !mapType || !password) {
       return res.status(400).json({ message: "All fields required" });
     } else {
       const token = req.header("Authorization")?.replace("Bearer ", "");
       if (!token) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-
       const secretKey = environmentConfig.JWT_SECRET;
-
       try {
         const decoded: any = jwt.verify(token, secretKey);
         const userId = decoded.userId;
-
         const newUuid = uuidv4();
-
         await RoomId.create({
           uuid: newUuid,
+          roomId,
           gameName,
           gameType,
           mapType,
           password,
           createdBy: userId,
         });
-
         return res.status(200).json({
           message: "Room created successfully",
           uuid: newUuid,
@@ -52,7 +47,6 @@ export const createRoom = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 // Get all rooms
 export const getAllRooms = async (req: Request, res: Response) => {

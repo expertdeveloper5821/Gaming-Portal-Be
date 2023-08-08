@@ -6,6 +6,10 @@ const roomIdSchema: Schema = new Schema(
       type: String,
       required: true,
     },
+    roomId: {
+      type: String,
+      required: true,
+    },
     password: {
       type: String,
       required: true,
@@ -31,5 +35,4 @@ const roomIdSchema: Schema = new Schema(
 );
 
 const RoomId = mongoose.model("RoomId", roomIdSchema);
-
 export default RoomId;
