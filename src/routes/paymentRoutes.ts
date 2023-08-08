@@ -11,6 +11,6 @@ const router = express.Router();
 
 router.post('/checkout', checkout)
 
-router.post("/paymentverification", verifyToken, paymentVerification)
+router.post("/paymentverification", verifyToken(['user']), paymentVerification)
 
 export default router;

@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { environmentConfig } from '../config/environmentConfig';
 
-const verifyToken = (requiredRole: string) => (req: Request, res: Response, next: NextFunction) => {
+const verifyToken = (allowedRoles: string[]) => (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
@@ -27,10 +27,10 @@ const verifyToken = (requiredRole: string) => (req: Request, res: Response, next
     req.user = decodedToken;
 
     // Check if the user has the required role (e.g., 'admin', 'spectator' or 'user') to access the route
-    if (!decodedToken.role[0] || decodedToken.role[0].role.indexOf(requiredRole) === -1) {
-      // If the user does not have the required role, return 'Unauthorized' message
-      return res.status(401).json({ message: 'Unauthorized.', success: false });
-    }
+    const hasAllowedRole = allowedRoles.some(role => decodedToken.role[0] && decodedToken.role[0].role.indexOf(role) !== -1); 
+        if (!hasAllowedRole) {      
+           // If the user does not have any of the allowed roles, return 'Unauthorized' message     
+     return res.status(401).json({ message: 'Unauthorized.', success: false });     }
 
     next();
   } catch (error) {

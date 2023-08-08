@@ -8,18 +8,18 @@ import {
 
 
 // add up  on new teammates
-route.post("/addteam", addTeammates);
+route.post("/addteam", verifyToken(["user"]), addTeammates);
 
 // get all teams
-route.get("/getallteam",verifyToken('spectator'),  getAllTeams);
+route.get("/getallteam", verifyToken(["user" ,"spectator"]), getAllTeams);
 
 // get team by their Id
-route.get("/getteambyid/:id", verifyToken('spectator'), getTeamById);
+route.get("/getteambyid/:id", verifyToken(["user","spectator"]), getTeamById);
 
 // update team by their Id
-route.put("/updateteam/:id", verifyToken('spectator'), updateTeamById);
+route.put("/updateteam/:id", verifyToken(["user"]), updateTeamById);
 
 // delete team by their Id
-route.delete("/deleteteam/:id", verifyToken('spectator'), deleteTeamById);
+route.delete("/deleteteam/:id", verifyToken(["user"]), deleteTeamById);
 
 export default route;

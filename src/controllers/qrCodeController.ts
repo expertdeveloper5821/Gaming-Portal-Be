@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import { QrCodeImg, Transaction } from "../models/qrCodeModel";
 import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
 import fs from "fs";
@@ -16,7 +16,7 @@ cloudinary.config({
 
 
 // Create a new QrCodeImage
-export const createQrCodeImage = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const createQrCodeImage = async (req: Request, res: Response ): Promise<void> => {
     try {
         const file = req.file;
         if (!file) {
@@ -81,10 +81,13 @@ export const getqrCodeById = async (req: Request, res: Response) => {
 // post payment details by user
 export const createPayment = async (req: Request, res: Response) => {
     try {
-      const { upiId, matchAmount, name } = req.body;
+      const { upiId, matchAmount, name, id } = req.body;
+
+      const qrCodeData = await QrCodeImg.findOne({ uuid: id });
   
       if (!upiId || !matchAmount || !name ) {
         return res.status(400).json({ message: "All fields required" });
+
       } else {
         const token = req.header("Authorization")?.replace("Bearer ", "");
         if (!token) {
@@ -94,15 +97,22 @@ export const createPayment = async (req: Request, res: Response) => {
         try {
           const decoded: any = jwt.verify(token, secretKey);
           const userId = decoded.userId;
-          await Transaction.create({
+          if(qrCodeData){
+            const newTransaction = await Transaction.create({
             upiId,
             matchAmount,
             name,
             paymentBy: userId,
+            uuid: qrCodeData?.uuid,
           });
           return res.status(200).json({
+            _id: newTransaction._id,
             message: "Payment successfully"
+            
           });
+        }else{
+          return res.status(401).json({ message: "uuid not found" });
+        }
         } catch (error) {
           console.error(error);
           return res.status(401).json({ message: "Invalid token" });
@@ -116,3 +126,18 @@ export const createPayment = async (req: Request, res: Response) => {
       });
     }
   };
+
+
+// Get a single payment details by ID
+export const getpaymentdeatilsById = async (req: Request, res: Response) => {
+  try {
+      const { id } = req.params;
+      const room = await Transaction.findById(id);
+      if (!room) {
+          return res.status(404).json({ error: "Payment history not found" });
+      }
+      return res.status(200).json(room);
+  } catch (error) {
+      return res.status(500).json({ error: "Failed to fetch Payment history" });
+  }
+};

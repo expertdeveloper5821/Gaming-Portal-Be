@@ -2,7 +2,7 @@ import express from "express";
 import multer from 'multer';
 import path from "path";
 import bodyParser from "body-parser";
-import { createQrCodeImage, getqrCodeById, createPayment } from "../controllers/qrCodeController";
+import { createQrCodeImage, getqrCodeById, createPayment, getpaymentdeatilsById } from "../controllers/qrCodeController";
 import { verifyToken } from "../middlewares/authMiddleware";
 
 
@@ -33,6 +33,10 @@ router.post("/qrCode", upload.single('qrCodeImg'),  createQrCodeImage);
 router.get("/qrCode/:id", getqrCodeById);
 
 // creating payment - Only 'user' token is allowed
-router.post("/create-payment", verifyToken('spectator'), createPayment);
+router.post("/create-payment", verifyToken(['user']), createPayment);
+
+// get payment by id - Only 'user' token is allowed
+router.get("/get-payment/:id", verifyToken(['user', 'spectator']), getpaymentdeatilsById);
+
 
 export default router;

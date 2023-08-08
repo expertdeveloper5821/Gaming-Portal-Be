@@ -42,11 +42,12 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.urlencoded({ extended: false })); 
 
 // using middleware routes
-app.use('/v1',userAuthRoute,teamRoutes)
+app.use('/api/v1/user',userAuthRoute)
 app.use('/auth',passportRoute)
-app.use('/v2',protectedRoutes)
-app.use('/v3',roomRoutes)
-app.use("/api", paymentRoute);
+app.use('/api/v1/role',protectedRoutes)
+app.use('/api/v1/room',roomRoutes)
+app.use('/api/v1/team',teamRoutes)
+app.use("/api/v1/razorpay", paymentRoute);
 app.use('/api/v1/payment', qrCodeRoute)
 
 

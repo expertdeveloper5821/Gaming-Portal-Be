@@ -46,11 +46,8 @@ export const addTeammates = async (req: Request, res: Response) => {
     if (unregisteredEmails.length === 0) {
       if (teamData) {
         const newTem = new Team({
-          uuid :teamData?.uuid,
-          gameName: teamData?.gameName,
-          mapType: teamData?.mapType,
-          gameType: teamData?.gameType,
           leadPlayer: leadPlayer,
+          uuid: teamData?.uuid,
           teammates: emails,
         });
         await newTem.save();
@@ -59,9 +56,8 @@ export const addTeammates = async (req: Request, res: Response) => {
           message: `Teammates added Successfully`,
           registeredEmails,
         });
-      }
-      else{
-        res.status(400).json({code:400,message:"Team not found"})
+      } else {
+        res.status(400).json({ code: 400, message: "Team not found" });
       }
     } else {
       res.status(422).json({
@@ -81,25 +77,45 @@ export const addTeammates = async (req: Request, res: Response) => {
 // get all Teams
 export const getAllTeams = async (req: Request, res: Response) => {
   try {
-    // Use the find method without any conditions to retrieve all users from the database
+    // Retrieve all teams from the database
     const allTeams = await Team.find();
+    const uuids = allTeams.map((team) => team.uuid);
+
+    // Retrieve gameInfo for each team using the uuids
+    const gameInfoMap: { [uuid: string]: any } = {}; // Map to store game info for each team
+    const gameInfo = await RoomId.find({ uuid: { $in: uuids } });
+    gameInfo.forEach((info) => {
+      gameInfoMap[info.uuid] = {
+        gameType: info.gameType,
+        gameName: info.gameName,
+        mapType: info.mapType,
+      };
+    });
+
     if (allTeams.length === 0) {
       return res.status(404).json({
         code: 404,
         message: "No Teams found",
       });
     }
-    // If users are found, return the user data as the response
+
+    // If teams are found, construct the response data
+    const responseData = allTeams.map((team) => ({
+      uuid: team.uuid,
+      leadPlayer: team.leadPlayer,
+      teammates: team.teammates,
+      registeredGame: gameInfoMap[team.uuid], // Retrieve game info using the map
+    }));
+
     return res.status(200).json({
       code: 200,
-      data: allTeams,
+      data: responseData,
     });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ code: 500, error: "Internal server error" });
   }
 };
-
 // get Team by ID
 export const getTeamById = async (req: Request, res: Response) => {
   try {
@@ -109,6 +125,7 @@ export const getTeamById = async (req: Request, res: Response) => {
     }
     // Use the findById method to find the user by their ID in the database
     const foundTeam = await Team.findById(TeamId);
+    const gameInfo = await RoomId.findOne({ uuid: foundTeam?.uuid });
 
     if (!foundTeam) {
       return res.status(404).json({
@@ -120,7 +137,14 @@ export const getTeamById = async (req: Request, res: Response) => {
     // If the user is found, return the user data as the response
     return res.status(200).json({
       code: 200,
-      data: foundTeam,
+      data: {
+        Team: foundTeam,
+        registeredGame: {
+          gameName: gameInfo?.gameName,
+          gameType: gameInfo?.gameType,
+          mapType: gameInfo?.mapType,
+        },
+      },
     });
   } catch (error) {
     console.log(error);

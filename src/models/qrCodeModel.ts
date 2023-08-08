@@ -20,19 +20,23 @@ const transactionSchema: Schema = new Schema(
   {
     upiId: {
       type: String,
-      required: false,
+      required: true,
     },
     matchAmount: {
-      type: String,
-      required: false,
+      type: Number,
+      required: true,
     },
     name: {
       type: String,
-      required: false,
+      required: true,
     },
     paymentBy: {
       type: String, // Assuming the user ID is a string
-      required: false,
+      required: true,
+    },
+    uuid: {
+      type: String,
+      required: true,
     },
   },
   { timestamps: true }
