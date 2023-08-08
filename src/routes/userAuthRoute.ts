@@ -11,9 +11,7 @@ import {
 } from "../controllers/userController";
 const route = express.Router();
 import { verifyToken } from "../middlewares/authMiddleware";
-import {
-  addTeammates, deleteTeamById, getAllTeams, getTeamById, updateTeamById
-} from "../controllers/teamController";
+
 
 // signup route
 route.post("/signup", userSignup);
@@ -28,24 +26,15 @@ route.post("/forget-password", forgetPassword);
 route.post("/reset-password", resetPassword);
 
 // get user by ID
-route.get("/getuser/:id", verifyToken("user"), getUserById);
+route.get("/getuser/:id", verifyToken(["admin"]), getUserById);
 
 // get Alluser
-route.get("/getalluser", getAllUsers);
+route.get("/getalluser", verifyToken(["admin"]), getAllUsers);
 
 // update user by id
-route.put("/updateuser/:id", verifyToken("user"), updateUserById);
+route.put("/updateuser/:id", verifyToken(["admin"]), updateUserById);
 
 // delete by id
-route.delete("/deleteuser/:id", verifyToken("user"), deleteUserById);
-
-// add up  on new teammates
-route.post("/addteam", verifyToken('user'), addTeammates);
-route.get("/getallteam",  getAllTeams);
-route.get("/getteambyid/:id",  getTeamById);
-route.get("/updateteam/:id",  updateTeamById);
-route.delete("/deleteteam/:id",  deleteTeamById);
-
-
+route.delete("/deleteuser/:id", verifyToken(["admin"]), deleteUserById);
 
 export default route;
