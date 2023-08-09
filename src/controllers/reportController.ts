@@ -9,10 +9,8 @@ import { Transaction } from '../models/qrCodeModel';
 export const downloadReport = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        console.log('Received ID:', id);
 
         const transaction = await Transaction.findById(id);
-        console.log('Retrieved Transaction:', transaction);
 
         if (!transaction) {
             return res.status(404).json({ error: 'Payment history not found' });
