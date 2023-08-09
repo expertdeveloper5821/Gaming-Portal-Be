@@ -28,9 +28,10 @@ import userAuthRoute from './routes/userAuthRoute';
 import passportRoute from './routes/passportRoute';
 import protectedRoutes from './routes/protectedRoutes';
 import roomRoutes from './routes/serverRoomIDRoute';
-import teamRoutes from './routes/teamRoutes'
+import teamRoutes from './routes/teamRoutes';
 import paymentRoute from './routes/paymentRoutes';
 import qrCodeRoute from './routes/qrCodeRoute';
+import winnerRoute from './routes/winnerPlayerRoute';
 
 
 // cors middleware 
@@ -49,7 +50,7 @@ app.use('/api/v1/room',roomRoutes)
 app.use('/api/v1/team',teamRoutes)
 app.use("/api/v1/razorpay", paymentRoute);
 app.use('/api/v1/payment', qrCodeRoute)
-
+app.use('/api/v1/winners', winnerRoute)
 
 
 app.get("/api/getkey", (req, res) =>

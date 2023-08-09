@@ -26,16 +26,16 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// Uploading QR code image - Only 'spectator' token is allowed
+// Uploading QR code image 
 router.post("/qrCode", upload.single('qrCodeImg'),  createQrCodeImage);
 
-// Get QR code - Only 'spectator' token is allowed
+// Get QR code
 router.get("/qrCode/:id", getqrCodeById);
 
 // creating payment - Only 'user' token is allowed
 router.post("/create-payment", verifyToken(['user']), createPayment);
 
-// get payment by id - Only 'user' token is allowed
+// get payment by id - Only 'user, spectator' token is allowed
 router.get("/get-payment/:id", verifyToken(['user', 'spectator']), getpaymentdeatilsById);
 
 
