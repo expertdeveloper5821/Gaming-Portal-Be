@@ -9,10 +9,10 @@ const router = express.Router();
 router.post("/rooms", verifyToken(['spectator']),createRoom);
 
 // get rooms - Only 'spectator' token is allowed
-router.get("/rooms", verifyToken(['spectator']),getAllRooms);
+router.get("/rooms", verifyToken(['spectator', 'user']),getAllRooms);
 
 // get rooms by id - Only 'spectator' token is allowed
-router.get("/rooms/:id", verifyToken(['spectator']),getRoomById);
+router.get("/rooms/:id", verifyToken(['spectator', 'user']),getRoomById);
 
 // update room by id - Only 'spectator' token is allowed
 router.put("/rooms/:id", verifyToken(['spectator']),updateRoomById);
