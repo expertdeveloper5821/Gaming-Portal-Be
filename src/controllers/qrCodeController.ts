@@ -5,7 +5,7 @@ import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 import { environmentConfig } from "../config/environmentConfig";
 import jwt from "jsonwebtoken";
-
+import { user } from "../models/passportModels";
 
 // Configuration
 cloudinary.config({
@@ -132,11 +132,18 @@ export const createPayment = async (req: Request, res: Response) => {
 export const getpaymentdeatilsById = async (req: Request, res: Response) => {
   try {
       const { id } = req.params;
-      const room = await Transaction.findById(id);
-      if (!room) {
+      const payment = await Transaction.findById(id);
+      if (!payment) {
           return res.status(404).json({ error: "Payment history not found" });
       }
-      return res.status(200).json(room);
+
+      const userInfo = await user.findOne({_id:payment.paymentBy })
+
+    if(!userInfo){
+      return res.status(500).json({ error: "User not found" });
+    }
+
+      return res.status(200).json({payment, fullName: userInfo.fullName});
   } catch (error) {
       return res.status(500).json({ error: "Failed to fetch Payment history" });
   }

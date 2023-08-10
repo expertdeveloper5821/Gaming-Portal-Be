@@ -3,6 +3,7 @@ import RoomId from "../models/serverRoomIDModels";
 import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
 import { environmentConfig } from "../config/environmentConfig";
+import { user } from "../models/passportModels";
 
 // Create a new room
 export const createRoom = async (req: Request, res: Response) => {
@@ -52,8 +53,19 @@ export const createRoom = async (req: Request, res: Response) => {
 export const getAllRooms = async (req: Request, res: Response) => {
   try {
     const rooms = await RoomId.find();
-    return res.status(200).json(rooms);
-  } catch (error) {
+
+    const roomsWithUserDetails = await Promise.all(
+      rooms.map(async (room) => {
+        const userInfo = await user.findOne({ _id: room.createdBy });
+        return {
+          rooms,
+          // Add other room properties you want to include
+          createdBy: userInfo ? userInfo.fullName : "Unknown",
+        };
+      })
+    );
+    return res.status(200).json(roomsWithUserDetails);
+  }  catch (error) {
     return res.status(500).json({ error: "Failed to fetch rooms" });
   }
 };
@@ -66,7 +78,13 @@ export const getRoomById = async (req: Request, res: Response) => {
     if (!room) {
       return res.status(404).json({ error: "Room not found" });
     }
-    return res.status(200).json(room);
+
+    const userInfo = await user.findOne({_id:room.createdBy })
+
+    if(!userInfo){
+      return res.status(500).json({ error: "User not found" });
+    }
+    return res.status(200).json({room, fullName: userInfo.fullName });
   } catch (error) {
     return res.status(500).json({ error: "Failed to fetch room" });
   }
