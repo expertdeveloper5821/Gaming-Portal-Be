@@ -7,9 +7,19 @@ import { configureCors } from './config/corsConfig';
 import Razorpay from "razorpay";
 import { environmentConfig } from './config/environmentConfig';
 import path from 'path';
-
+import MongoDBStore from 'connect-mongodb-session';
 
 const app:Express = express();
+
+// MongoDBStore instance
+const MongoDBStoreSession = MongoDBStore(Session);
+
+// Configure MongoDBStore
+const store = new MongoDBStoreSession({
+  uri: environmentConfig.DB_URL, 
+  collection: 'sessions', // Collection name for storing sessions
+});
+
 
 // Initialize Passport middleware
 const sessionSecret = process.env.sessionSecret || "defaultSecret";
@@ -17,7 +27,8 @@ app.use(Session({
   secret :sessionSecret,
   resave :  false,
   saveUninitialized : true,
-  cookie : {secure:false}
+  cookie : {secure:false},
+  store: store,
 }))
 
 

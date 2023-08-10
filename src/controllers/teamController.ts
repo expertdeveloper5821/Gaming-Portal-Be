@@ -99,23 +99,42 @@ export const getAllTeams = async (req: Request, res: Response) => {
       });
     }
 
-    // If teams are found, construct the response data
-    const responseData = allTeams.map((team) => ({
-      uuid: team.uuid,
-      leadPlayer: team.leadPlayer,
-      teammates: team.teammates,
-      registeredGame: gameInfoMap[team.uuid], // Retrieve game info using the map
-    }));
+    // Retrieve details for each teammate of each team
+    const responseData = await Promise.all(
+      allTeams.map(async (team) => {
+        const teammateDetails = await Promise.all(
+          team.teammates.map(async (teammateEmail) => {
+            const teammate = await user.findOne({ email: teammateEmail });
+            if (teammate) {
+              return {
+                email: teammate.email,
+                fullname: teammate.fullName,
+                username: teammate.userName,
+              };
+            }
+            return null;
+          })
+        );
+
+        return {
+          uuid: team.uuid,
+          leadPlayer: team.leadPlayer,
+          teammates: teammateDetails.filter((detail) => detail !== null),
+          registeredGame: gameInfoMap[team.uuid], // Retrieve game info using the map
+        };
+      })
+    );
 
     return res.status(200).json({
       code: 200,
       data: responseData,
     });
-  } catch (error) {
+  }  catch (error) {
     console.log(error);
     return res.status(500).json({ code: 500, error: "Internal server error" });
   }
 };
+
 // get Team by ID
 export const getTeamById = async (req: Request, res: Response) => {
   try {
@@ -123,7 +142,7 @@ export const getTeamById = async (req: Request, res: Response) => {
     if (!validId.test(TeamId)) {
       return res.status(404).json({ error: "Invalid user ID" });
     }
-    // Use the findById method to find the user by their ID in the database
+    // Use the findById method to find the team by its ID in the database
     const foundTeam = await Team.findById(TeamId);
     const gameInfo = await RoomId.findOne({ uuid: foundTeam?.uuid });
 
@@ -134,7 +153,22 @@ export const getTeamById = async (req: Request, res: Response) => {
       });
     }
 
-    // If the user is found, return the user data as the response
+    // Fetch details for each teammate using their email addresses
+    const teammatesDetails = await Promise.all(
+      foundTeam.teammates.map(async (teammateEmail) => {
+        const teammate = await user.findOne({ email: teammateEmail });
+        if (teammate) {
+          return {
+            email: teammate.email,
+            fullname: teammate.fullName, // Assuming this is the field in the user table
+            username: teammate.userName, // Assuming this is the field in the user table
+          };
+        }
+        return null;
+      })
+    );
+
+    // If the user is found, return the team data with teammate details as the response
     return res.status(200).json({
       code: 200,
       data: {
@@ -144,6 +178,7 @@ export const getTeamById = async (req: Request, res: Response) => {
           gameType: gameInfo?.gameType,
           mapType: gameInfo?.mapType,
         },
+        teammates: teammatesDetails,
       },
     });
   } catch (error) {
