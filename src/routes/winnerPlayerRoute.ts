@@ -5,16 +5,16 @@ import { verifyToken } from "../middlewares/authMiddleware";
 
 const router = express.Router();
 
-// winner creating - Only 'spectator' token is allowed
-router.post("/players", verifyToken(['spectator']), postWinningPlayers);
+// winner creating - 
+router.post("/players", verifyToken(['spectator','admin']), postWinningPlayers);
 
-// win players get by id - Only 'spectator, user' token is allowed
-router.get("/players/:id", verifyToken(['spectator', 'user']), getWinningPlayerById);
+// win players get by id 
+router.get("/players/:id", verifyToken(['spectator', 'user','admin']), getWinningPlayerById);
 
-// allwin players get - Only 'spectator, user' token is allowed
-router.get("/players", verifyToken(['spectator', 'user']), getAllWinningPlayers);
+// allwin players get 
+router.get("/players", verifyToken(['spectator', 'user','admin']), getAllWinningPlayers);
 
-// allwin players get - Only 'spectator, user' token is allowed
-router.get("/get-players/:uuid", verifyToken(['spectator', 'user']), getWinnersByRoomUuid);
+// allwin players get 
+router.get("/get-players/:uuid", verifyToken(['spectator', 'user','admin']), getWinnersByRoomUuid);
 
 export default router;

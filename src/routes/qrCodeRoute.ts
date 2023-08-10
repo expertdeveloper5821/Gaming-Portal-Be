@@ -33,10 +33,10 @@ router.post("/qrCode", upload.single('qrCodeImg'),  createQrCodeImage);
 router.get("/qrCode/:id", getqrCodeById);
 
 // creating payment - Only 'user' token is allowed
-router.post("/create-payment", verifyToken(['user']), createPayment);
+router.post("/create-payment", verifyToken(['user', 'spectator', 'admin']), createPayment);
 
 // get payment by id - Only 'user, spectator' token is allowed
-router.get("/get-payment/:id", verifyToken(['user', 'spectator']), getpaymentdeatilsById);
+router.get("/get-payment/:id", verifyToken(['user', 'spectator', 'admin']), getpaymentdeatilsById);
 
 
 export default router;
