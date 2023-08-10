@@ -26,15 +26,15 @@ route.post("/forget-password", forgetPassword);
 route.post("/reset-password", resetPassword);
 
 // get user by ID
-route.get("/getuser/:id", verifyToken(["admin"]), getUserById);
+route.get("/getuser/:id", verifyToken(["admin",'user']), getUserById);
 
 // get Alluser
 route.get("/getalluser", verifyToken(["admin"]), getAllUsers);
 
 // update user by id
-route.put("/updateuser/:id", verifyToken(["admin"]), updateUserById);
+route.put("/updateuser/:id", verifyToken(["admin",'user']), updateUserById);
 
 // delete by id
-route.delete("/deleteuser/:id", verifyToken(["admin"]), deleteUserById);
+route.delete("/deleteuser/:id", verifyToken(["admin",'user']), deleteUserById);
 
 export default route;

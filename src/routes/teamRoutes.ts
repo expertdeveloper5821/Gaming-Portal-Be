@@ -11,10 +11,10 @@ import {
 route.post("/addteam", verifyToken(["user"]), addTeammates);
 
 // get all teams
-route.get("/getallteam", verifyToken(["user" ,"spectator"]), getAllTeams);
+route.get("/getallteam", verifyToken(["user" ,"spectator",'admin']), getAllTeams);
 
 // get team by their Id
-route.get("/getteambyid/:id", verifyToken(["user","spectator"]), getTeamById);
+route.get("/getteambyid/:id", verifyToken(["user","spectator",'admin']), getTeamById);
 
 // update team by their Id
 route.put("/updateteam/:id", verifyToken(["user"]), updateTeamById);
