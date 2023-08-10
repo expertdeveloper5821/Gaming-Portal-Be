@@ -4,6 +4,8 @@ import bodyParser from 'body-parser';
 import Session from 'express-session';
 import passport from 'passport';
 import { configureCors } from './config/corsConfig';
+import Razorpay from "razorpay";
+import { environmentConfig } from './config/environmentConfig';
 
 
 const app:Express = express();
@@ -27,6 +29,8 @@ import passportRoute from './routes/passportRoute';
 import protectedRoutes from './routes/protectedRoutes';
 import roomRoutes from './routes/serverRoomIDRoute';
 import teamRoutes from './routes/teamRoutes'
+import paymentRoute from './routes/paymentRoutes';
+import qrCodeRoute from './routes/qrCodeRoute';
 
 
 // cors middleware 
@@ -43,7 +47,20 @@ app.use('/auth',passportRoute)
 app.use('/api/v1/role',protectedRoutes)
 app.use('/api/v1/room',roomRoutes)
 app.use('/api/v1/team',teamRoutes)
+app.use("/api/v1/razorpay", paymentRoute);
+app.use('/api/v1/payment', qrCodeRoute)
 
+
+
+app.get("/api/getkey", (req, res) =>
+  res.status(200).json({ key: environmentConfig.RAZORPAY_API_KEY })
+);
+
+// razorpay instance
+export const instance = new Razorpay({
+  key_id: environmentConfig.RAZORPAY_API_KEY,
+  key_secret: environmentConfig.RAZORPAY_APT_SECRET,
+});
 
 
 

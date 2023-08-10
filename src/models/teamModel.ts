@@ -9,3 +9,4 @@ const TeamSchema = new mongoose.Schema({
 });
 
 export const Team = mongoose.model("Team", TeamSchema);
+
