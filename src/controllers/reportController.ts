@@ -1,9 +1,11 @@
-import { Request, Response } from 'express';
+import express ,{ Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
 import { generatePDF } from '../middlewares/report';
 import { Transaction } from '../models/qrCodeModel';
 
+const router = express.Router();
+router.use(express.static('public'));
 
 // download report
 export const downloadReport = async (req: Request, res: Response) => {
@@ -16,7 +18,7 @@ export const downloadReport = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Payment history not found' });
         }
 
-        const templatePath = path.join(process.cwd(), 'src/public/report-template/template.html');
+        const templatePath = path.join(__dirname, '../public/report-template/template.html');
         let htmlTemplate = fs.readFileSync(templatePath, 'utf-8');
 
         htmlTemplate = htmlTemplate.replace('{{upiId}}', transaction.upiId)
