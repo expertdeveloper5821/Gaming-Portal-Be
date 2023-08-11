@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import RoomId from "../models/serverRoomIDModels";
 import { v4 as uuidv4 } from "uuid";
+import fs from "fs";
 import jwt from "jsonwebtoken";
 import { environmentConfig } from "../config/environmentConfig";
 import { user } from "../models/passportModels";
@@ -58,6 +59,9 @@ export const createRoom = async (req: Request, res: Response) => {
           mapImg: secure_url,
           createdBy: userId,
         });
+        
+        // Unlink (delete) the uploaded image file
+        fs.unlinkSync(tempPath); // Perform deletion
         
         return res.status(200).json({
           message: "Room created successfully",
