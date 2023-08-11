@@ -26,6 +26,18 @@ const roomIdSchema: Schema = new Schema(
       type: String,
       required: true,
     },
+    version: {
+      type: String,
+      required: true,
+    },
+    time: {
+      type: String,
+      required: true,
+    },
+    date: {
+      type: String,
+      required: true,
+    },
     createdBy: {
       type: String, // Assuming the user ID is a string
       required: true,
