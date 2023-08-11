@@ -9,7 +9,7 @@ const router = express.Router();
 router.post("/rooms", verifyToken(['spectator','admin']),createRoom);
 
 // get room
-router.get("/rooms", verifyToken(['spectator', 'user', 'admin']),getAllRooms);
+router.get("/rooms", getAllRooms);
 
 // get rooms by id 
 router.get("/rooms/:id", verifyToken(['spectator', 'user','admin']),getRoomById);
