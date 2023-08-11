@@ -4,13 +4,14 @@ import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
 import { environmentConfig } from "../config/environmentConfig";
 import { user } from "../models/passportModels";
+import { format } from "date-fns";
 
 // Create a new room
 export const createRoom = async (req: Request, res: Response) => {
   try {
-    const { roomId, gameName, gameType, mapType, password } = req.body;
+    const { roomId, gameName, gameType, mapType, password, version } = req.body;
 
-    if (!roomId || !gameName || !gameType || !mapType || !password) {
+    if (!roomId || !gameName || !gameType || !mapType || !password || !version) {
       return res.status(400).json({ message: "All fields required" });
     } else {
       const token = req.header("Authorization")?.replace("Bearer ", "");
@@ -22,6 +23,9 @@ export const createRoom = async (req: Request, res: Response) => {
         const decoded: any = jwt.verify(token, secretKey);
         const userId = decoded.userId;
         const newUuid = uuidv4();
+
+        const formattedDate = format(new Date(), "dd-MM-yyyy 'at' hh:mm a");
+
         await RoomId.create({
           uuid: newUuid,
           roomId,
@@ -29,7 +33,9 @@ export const createRoom = async (req: Request, res: Response) => {
           gameType,
           mapType,
           password,
+          version,
           createdBy: userId,
+          currentDateAndTime:formattedDate,
         });
         return res.status(200).json({
           message: "Room created successfully",
@@ -131,5 +137,36 @@ export const deleteRoomById = async (req: Request, res: Response) => {
     res.status(200).json({ message: "Room deleted successfully" });
   } catch (error) {
     return res.status(500).json({ error: "Failed to delete room" });
+  }
+};
+
+
+// get all room that created by only that perticular role user
+export const getUserRooms = async (req: Request, res: Response) => {
+  try {
+    const token = req.header("Authorization")?.replace("Bearer ", "");
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const secretKey = environmentConfig.JWT_SECRET;
+    try {
+      const decoded: any = jwt.verify(token, secretKey);
+      const userId = decoded.userId;
+
+      // Fetch rooms associated with the specific user
+      const userRooms = await RoomId.find({ createdBy: userId });
+
+      return res.status(200).json(userRooms);
+    } catch (error) {
+      console.error(error);
+      return res.status(401).json({ message: "Invalid token" });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      error: "Failed to fetch user rooms",
+      success: false,
+    });
   }
 };
