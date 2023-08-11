@@ -4,14 +4,14 @@ import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
 import { environmentConfig } from "../config/environmentConfig";
 import { user } from "../models/passportModels";
-import { format } from "date-fns";
+
 
 // Create a new room
 export const createRoom = async (req: Request, res: Response) => {
   try {
-    const { roomId, gameName, gameType, mapType, password, version } = req.body;
+    const { roomId, gameName, gameType, mapType, password, version, time, date } = req.body;
 
-    if (!roomId || !gameName || !gameType || !mapType || !password || !version) {
+    if (!roomId || !gameName || !gameType || !mapType || !password || !version || !time || !date) {
       return res.status(400).json({ message: "All fields required" });
     } else {
       const token = req.header("Authorization")?.replace("Bearer ", "");
@@ -24,8 +24,6 @@ export const createRoom = async (req: Request, res: Response) => {
         const userId = decoded.userId;
         const newUuid = uuidv4();
 
-        const formattedDate = format(new Date(), "dd-MM-yyyy 'at' hh:mm a");
-
         await RoomId.create({
           uuid: newUuid,
           roomId,
@@ -35,7 +33,8 @@ export const createRoom = async (req: Request, res: Response) => {
           password,
           version,
           createdBy: userId,
-          currentDateAndTime:formattedDate,
+          time,
+          date
         });
         return res.status(200).json({
           message: "Room created successfully",

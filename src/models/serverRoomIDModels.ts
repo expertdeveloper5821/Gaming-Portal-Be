@@ -30,9 +30,13 @@ const roomIdSchema: Schema = new Schema(
       type: String,
       required: true,
     },
-    currentDateAndTime: {
+    time: {
       type: String,
-      required: false,
+      required: true,
+    },
+    date: {
+      type: String,
+      required: true,
     },
     createdBy: {
       type: String, // Assuming the user ID is a string
