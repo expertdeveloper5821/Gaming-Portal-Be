@@ -10,6 +10,7 @@ import { Role } from "../models/roleModel";
 import { validId } from "../utils/pattern";
 
 const jwtSecret: string = environmentConfig.JWT_SECRET;
+const clickHere: string = environmentConfig.LOGIN_PAGE;
 
 // for user signup
 export const userSignup = async (req: Request, res: Response) => {
@@ -26,22 +27,39 @@ export const userSignup = async (req: Request, res: Response) => {
 
     // hashing the password
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new user({
-      fullName,
-      userName,
-      email,
-      password: hashedPassword,
-      role: defaultRole,
-    });
-    // saving the user to DB
-    await newUser.save();
-    // generating a jwt token to specifically identify the user
-    const token = jwt.sign({ userId: newUser._id }, jwtSecret || "");
-    return res.status(200).json({
-      token,
-      code: 200,
-      message: "user registered successfully",
-    });
+
+     // Send the reset password URL in the email
+     const mailOptions = {
+      from: environmentConfig.EMAIL_USER,
+      to: email,
+      subject: "User Credentials",
+      html: `Thankyou for your registration in pattseheadshot.com, <a href=${clickHere}>Click Here</a> for direct login <br>
+      These are the Your login Credentials Please Do not share with anyone  email ${email} password ${password}  </br>`,
+    };
+    transporter.sendMail(mailOptions, (err) => {
+      if(err){
+        res.status(500).json({
+          message: "Failed to send the credential email",
+        });
+      }else{
+        const newUser = new user({
+          fullName,
+          userName,
+          email,
+          password: hashedPassword,
+          role: defaultRole,
+        });
+        // saving the user to DB
+        newUser.save();
+        // generating a jwt token to specifically identify the user
+        const token = jwt.sign({ userId: newUser._id }, jwtSecret || "");
+        return res.status(200).json({
+          token,
+          code: 200,
+          message: "user registered successfully",
+        });
+      }
+    })
   } catch (error) {
     console.log(error);
 

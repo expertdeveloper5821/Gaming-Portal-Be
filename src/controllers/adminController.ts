@@ -7,6 +7,7 @@ import { environmentConfig } from "../config/environmentConfig";
 import { Role } from "../models/roleModel";
 import { validId } from "../utils/pattern";
 import Video from "../models/ytVideo";
+import { v4 as uuidv4 } from "uuid";
 
 // for admin signup
 export const adminSignup = async (req: Request, res: Response) => {
@@ -116,16 +117,18 @@ export const role = async (req: Request, res: Response) => {
         message: `This ${role} role already exists please try with a new Role`,
       });
     }
+    const newUuid = uuidv4();
     // hashing the password
     const newRole = new Role({
       role,
+      uuid: newUuid,
+
     });
     // saving the user to DB
     await newRole.save();
     // generating a jwt token to specifically identify the user
     return res.status(200).json({
       newRole,
-      code: 200,
       message: `${role} role created successfully`,
     });
   } catch (error) {

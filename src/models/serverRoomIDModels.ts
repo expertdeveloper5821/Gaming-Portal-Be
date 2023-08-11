@@ -26,6 +26,10 @@ const roomIdSchema: Schema = new Schema(
       type: String,
       required: true,
     },
+    mapImg: {
+      type: String,
+      required: false,
+    },
     createdBy: {
       type: String, // Assuming the user ID is a string
       required: true,

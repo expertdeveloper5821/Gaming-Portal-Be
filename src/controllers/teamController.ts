@@ -142,7 +142,7 @@ export const getTeamById = async (req: Request, res: Response) => {
     if (!validId.test(TeamId)) {
       return res.status(404).json({ error: "Invalid user ID" });
     }
-    // Use the findById method to find the team by its ID in the database
+    
     const foundTeam = await Team.findById(TeamId);
     const gameInfo = await RoomId.findOne({ uuid: foundTeam?.uuid });
 
@@ -160,8 +160,8 @@ export const getTeamById = async (req: Request, res: Response) => {
         if (teammate) {
           return {
             email: teammate.email,
-            fullname: teammate.fullName, // Assuming this is the field in the user table
-            username: teammate.userName, // Assuming this is the field in the user table
+            fullname: teammate.fullName,
+            username: teammate.userName,
           };
         }
         return null;
@@ -172,16 +172,18 @@ export const getTeamById = async (req: Request, res: Response) => {
     return res.status(200).json({
       code: 200,
       data: {
-        Team: foundTeam,
+        Team: {
+          ...foundTeam.toObject(),
+          teammates: teammatesDetails,
+        },
         registeredGame: {
           gameName: gameInfo?.gameName,
           gameType: gameInfo?.gameType,
           mapType: gameInfo?.mapType,
         },
-        teammates: teammatesDetails,
       },
     });
-  } catch (error) {
+  }  catch (error) {
     console.log(error);
     return res.status(500).json({ code: 500, error: "Internal server error" });
   }

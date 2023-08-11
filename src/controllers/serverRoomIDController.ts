@@ -4,11 +4,22 @@ import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
 import { environmentConfig } from "../config/environmentConfig";
 import { user } from "../models/passportModels";
+import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
+
+
+
+// Configuration
+cloudinary.config({
+  cloud_name: environmentConfig.CLOUD_NAME,
+  api_key: environmentConfig.API_KEY,
+  api_secret: environmentConfig.API_SECRET
+});
 
 // Create a new room
 export const createRoom = async (req: Request, res: Response) => {
   try {
     const { roomId, gameName, gameType, mapType, password } = req.body;
+    const file = req.file;
 
     if (!roomId || !gameName || !gameType || !mapType || !password) {
       return res.status(400).json({ message: "All fields required" });
@@ -18,10 +29,25 @@ export const createRoom = async (req: Request, res: Response) => {
         return res.status(401).json({ message: "Unauthorized" });
       }
       const secretKey = environmentConfig.JWT_SECRET;
+      
+      if (!file) {
+        return res.status(400).json({ message: "File not provided" });
+      }
+      
+      // Perform null check and then destructure 'path' property
+      const tempPath = file.path;
+
       try {
         const decoded: any = jwt.verify(token, secretKey);
         const userId = decoded.userId;
         const newUuid = uuidv4();
+        
+        // Upload the Image to Cloudinary
+        const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(tempPath, {
+            folder: "mapImage",
+        });
+        const secure_url: string = uploadResponse.secure_url;
+        
         await RoomId.create({
           uuid: newUuid,
           roomId,
@@ -29,8 +55,10 @@ export const createRoom = async (req: Request, res: Response) => {
           gameType,
           mapType,
           password,
+          mapImg: secure_url,
           createdBy: userId,
         });
+        
         return res.status(200).json({
           message: "Room created successfully",
           uuid: newUuid,
