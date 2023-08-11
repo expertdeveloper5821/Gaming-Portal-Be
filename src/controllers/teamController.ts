@@ -53,7 +53,7 @@ export const addTeammates = async (req: Request, res: Response) => {
         await newTem.save();
         res.status(200).json({
           code: 200,
-          message: `Teammates added Successfully`,
+          message: `Match registeration success`,
           registeredEmails,
         });
       } else {
