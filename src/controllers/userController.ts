@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 import { transporter } from "../middlewares/email";
-import { v4 as uuidv4 } from "uuid"; // Import uuid library
+import { v4 as uuidv4 } from "uuid";
 import { passwordRegex } from "../utils/helper";
 import { environmentConfig } from "../config/environmentConfig";
 import { Role } from "../models/roleModel";
@@ -34,7 +34,7 @@ export const userSignup = async (req: Request, res: Response) => {
       to: email,
       subject: "User Credentials",
       html: `Thankyou for your registration in pattseheadshot.com, <a href=${clickHere}>Click Here</a> for direct login <br>
-      These are the Your login Credentials Please Do not share with anyone  email ${email} password ${password}  </br>`,
+      These are the Your login Credentials Please Do not share with anyone <br> your email:- ${email} <br> your password:- ${password}  </br>`,
     };
     transporter.sendMail(mailOptions, (err) => {
       if(err){
@@ -42,21 +42,25 @@ export const userSignup = async (req: Request, res: Response) => {
           message: "Failed to send the credential email",
         });
       }else{
+        const newUuid = uuidv4();
         const newUser = new user({
           fullName,
           userName,
           email,
           password: hashedPassword,
           role: defaultRole,
+          userUuid: newUuid,
         });
         // saving the user to DB
         newUser.save();
         // generating a jwt token to specifically identify the user
         const token = jwt.sign({ userId: newUser._id }, jwtSecret || "");
         return res.status(200).json({
+          message: "Registered successfully, Please check your email",
+          userUuid: newUuid,
+          _id: newUser._id,
           token,
-          code: 200,
-          message: "user registered successfully",
+          success: true,
         });
       }
     })

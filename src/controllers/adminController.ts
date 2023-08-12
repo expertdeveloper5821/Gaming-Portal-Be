@@ -22,12 +22,14 @@ export const adminSignup = async (req: Request, res: Response) => {
     }
     // hashing the password
     const hashedPassword = await bcrypt.hash(password, 10);
+    const newUuid = uuidv4();
     const newUser = new user({
       fullName,
       userName,
       email,
       password: hashedPassword,
       role,
+      userUuid: newUuid,
     });
     // saving the user to DB
     await newUser.save();
@@ -41,6 +43,8 @@ export const adminSignup = async (req: Request, res: Response) => {
       token,
       code: 200,
       message: "user registered successfully",
+      userUuid: newUuid,
+      _id: newUser._id
     });
   } catch (error) {
     console.log(error);
@@ -62,12 +66,14 @@ export const spectator = async (req: Request, res: Response) => {
     }
     // hashing the password
     const hashedPassword = await bcrypt.hash(password, 10);
+    const newUuid = uuidv4();
     const newUser = new user({
       fullName,
       userName,
       email,
       password: hashedPassword,
       role,
+      userUuid: newUuid,
     });
     // saving the user to DB
     await newUser.save();
@@ -96,6 +102,8 @@ export const spectator = async (req: Request, res: Response) => {
           tokne: token,
           message:
             "Your login crendentials has been sent ot your email please check and continue",
+            userUuid: newUuid,
+            _id: newUser._id
         });
       }
     });

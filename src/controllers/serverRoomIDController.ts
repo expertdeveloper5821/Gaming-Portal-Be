@@ -35,7 +35,6 @@ export const createRoom = async (req: Request, res: Response) => {
         return res.status(400).json({ message: "File not provided" });
       }
       
-      // Perform null check and then destructure 'path' property
       const tempPath = file.path;
 
       try {
@@ -43,14 +42,12 @@ export const createRoom = async (req: Request, res: Response) => {
         const userId = decoded.userId;
         const newUuid = uuidv4();
         
-        // Upload the Image to Cloudinary
         const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(tempPath, {
             folder: "mapImage",
         });
         const secure_url: string = uploadResponse.secure_url;
-        
 
-        await RoomId.create({
+        const createdRoom = await RoomId.create({
           uuid: newUuid,
           roomId,
           gameName,
@@ -63,13 +60,13 @@ export const createRoom = async (req: Request, res: Response) => {
           time,
           date
         });
-        
-        // Unlink (delete) the uploaded image file
-        fs.unlinkSync(tempPath); // Perform deletion
-        
+
+        fs.unlinkSync(tempPath);
+
         return res.status(200).json({
           message: "Room created successfully",
           uuid: newUuid,
+          _id: createdRoom._id, // Include the created room's ObjectId in the response
         });
       } catch (error) {
         console.error(error);
