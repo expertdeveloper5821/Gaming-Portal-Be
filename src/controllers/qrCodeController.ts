@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { environmentConfig } from "../config/environmentConfig";
 import jwt from "jsonwebtoken";
 import { user } from "../models/passportModels";
+import RoomId from "../models/serverRoomIDModels";
 
 // Configuration
 cloudinary.config({
@@ -43,7 +44,7 @@ export const createQrCodeImage = async (req: Request, res: Response ): Promise<v
         const qrCodeSave = await doc.save();
         if (qrCodeSave._id) {
             // Unlink (delete) the uploaded image file
-            // fs.unlinkSync(tempPath);
+            fs.unlinkSync(tempPath);
 
             res.status(200).json({
                 _id: qrCodeSave._id,
@@ -81,12 +82,15 @@ export const getqrCodeById = async (req: Request, res: Response) => {
 // post payment details by user
 export const createPayment = async (req: Request, res: Response) => {
     try {
-      const { upiId, matchAmount, name, id } = req.body;
+      const { upiId, matchAmount, name, id , roomid} = req.body;
 
       const qrCodeData = await QrCodeImg.findOne({ uuid: id });
+      const roomdata = await RoomId.findOne({roomUuid: roomid})
   
       if (!upiId || !matchAmount || !name ) {
         return res.status(400).json({ message: "All fields required" });
+
+        
 
       } else {
         const token = req.header("Authorization")?.replace("Bearer ", "");
@@ -97,13 +101,14 @@ export const createPayment = async (req: Request, res: Response) => {
         try {
           const decoded: any = jwt.verify(token, secretKey);
           const userId = decoded.userId;
-          if(qrCodeData){
+          if(qrCodeData && roomdata){
             const newTransaction = await Transaction.create({
             upiId,
             matchAmount,
             name,
             paymentBy: userId,
             uuid: qrCodeData?.uuid,
+            roomId: roomdata?.roomUuid
           });
           return res.status(200).json({
             _id: newTransaction._id,

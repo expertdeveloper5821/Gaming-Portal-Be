@@ -2,7 +2,7 @@ import mongoose, { Schema } from "mongoose";
 
 const roomIdSchema: Schema = new Schema(
   {
-    uuid: {
+    roomUuid: {
       type: String,
       required: true,
     },

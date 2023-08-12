@@ -6,6 +6,7 @@ import { Team } from "../models/teamModel";
 import { validId } from "../utils/pattern";
 import RoomId from "../models/serverRoomIDModels";
 import jwt from "jsonwebtoken";
+import { Transaction } from "../models/qrCodeModel";
 
 // add players
 export const addTeammates = async (req: Request, res: Response) => {
@@ -18,7 +19,7 @@ export const addTeammates = async (req: Request, res: Response) => {
     if (!emails || !Array.isArray(emails)) {
       return res.status(400).json({ error: "Invalid input format" });
     }
-    const teamData = await RoomId.findOne({ uuid: roomid });
+    const teamData = await RoomId.findOne({ roomUuid: roomid });
 
     // Fetch registered emails from the database
     const allUsers = await user.find();
@@ -55,7 +56,7 @@ export const addTeammates = async (req: Request, res: Response) => {
         const userId = decoded.userId;
         const newTem = new Team({
           leadPlayer: leadPlayer,
-          roomUuid: teamData?.uuid,
+          roomUuid: teamData?.roomUuid,
           teammates: emails,
           leadPlayerId: userId
         });
@@ -65,7 +66,7 @@ export const addTeammates = async (req: Request, res: Response) => {
           message: `Match registeration success`,
           registeredEmails,
           leadPlayerId: userId,
-          roomUuid: teamData?.uuid,
+          roomUuid: teamData?.roomUuid,
         });
       } else {
         res.status(400).json({ code: 400, message: "Team not found" });
@@ -275,71 +276,6 @@ interface Room {
 }
 
 
-// API to get registered rooms for a user
-export const getUserRegisteredRooms = async (req: Request, res: Response) => {
-  try {
-    const { leadPlayerId } = req.params;
-
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
-    const secretKey = environmentConfig.JWT_SECRET;
-    const decoded: any = jwt.verify(token, secretKey);
-    const userId = decoded.userId;
-
-    if (userId !== leadPlayerId) {
-      return res.status(403).json({ message: 'user id not found ' });
-    }
-
-    const rooms = await Team.find({ leadPlayerId });
-
-    const detailedRooms = await Promise.all(
-      rooms.map(async (room) => {
-        const roomIdData = await RoomId.findOne({ uuid: room.roomUuid });
-
-        if (!roomIdData) {
-          return null; // Handle the case when roomIdData is not found
-        }
-
-        const teammates = await user.find({ email: { $in: room.teammates } });
-
-        return {
-          uuid: roomIdData.uuid,
-          gameName: roomIdData.gameName,
-          gameType: roomIdData.gameType,
-          mapType: roomIdData.mapType,
-          time: roomIdData.time,
-          date: roomIdData.date,
-          roomId: roomIdData.roomId,
-          password: roomIdData.password,
-          version: roomIdData.version,
-          teammates: teammates.map((teammate) => ({
-            fullName: teammate.fullName,
-            email: teammate.email,
-          })),
-        } as Room;
-      })
-    );
-
-    const validDetailedRooms = detailedRooms.filter(
-      (detailedRoom) => detailedRoom !== null
-    );
-
-    res.status(200).json({
-      code: 200,
-      message: 'Rooms and teammates details retrieved successfully',
-      numberOfRooms: validDetailedRooms.length,
-      rooms: validDetailedRooms,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ code: 500, message: 'Internal Server Error' });
-  }
-};
-
-
 // send invite mail to teammates
 export const sendInviteMail = async (req: Request, res: Response) => {
   try {
@@ -423,3 +359,131 @@ export const getInvitedUser =async (req: Request, res: Response) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
+
+
+// user register room details
+export const getUserRegisteredRooms = async (req: Request, res: Response) => {
+  try {
+    const { paymentBy } = req.params;
+
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const secretKey = environmentConfig.JWT_SECRET;
+    const decoded: any = jwt.verify(token, secretKey);
+    const userId = decoded.userId;
+
+    if (userId !== paymentBy) {
+        return res.status(403).json({ message: 'User id not found or does not match' });
+    }
+
+    const rooms = await Transaction.find({ paymentBy });
+
+    const detailedRooms = await Promise.all(
+        rooms.map(async (room) => {
+            const roomIdData = await RoomId.findOne({ roomUuid: room.roomId });
+
+            if (!roomIdData) {
+                return null; // Handle the case when roomIdData is not found
+            }
+            return {
+                uuid: roomIdData.uuid,
+                gameName: roomIdData.gameName,
+                gameType: roomIdData.gameType,
+                mapType: roomIdData.mapType,
+                time: roomIdData.time,
+                date: roomIdData.date,
+                roomId: roomIdData.roomId,
+                password: roomIdData.password,
+                version: roomIdData.version,
+            };
+        })
+    );
+
+    const paymentDetailsArray = rooms.map(room => ({
+        id: room._id,
+        upiId: room.upiId,
+        matchAmount: room.matchAmount,
+        name: room.name,
+    }));
+
+    res.status(200).json({
+        code: 200,
+        message: 'Rooms details retrieved successfully',
+        numberOfRooms: detailedRooms.length,
+        rooms: detailedRooms,
+        paymentDetails: paymentDetailsArray,
+    });
+} catch (error) {
+    console.error(error);
+    res.status(500).json({ code: 500, message: 'Internal Server Error' });
+}
+
+};
+
+
+// API to get registered rooms for a user
+export const getUserRegisteredRoomsWithTeamMates = async (req: Request, res: Response) => {
+  try {
+    const { leadPlayerId } = req.params;
+
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const secretKey = environmentConfig.JWT_SECRET;
+    const decoded: any = jwt.verify(token, secretKey);
+    const userId = decoded.userId;
+
+    if (userId !== leadPlayerId) {
+      return res.status(403).json({ message: 'user id not found ' });
+    }
+
+    const rooms = await Team.find({ leadPlayerId });
+
+    const detailedRooms = await Promise.all(
+      rooms.map(async (room) => {
+        const roomIdData = await RoomId.findOne({ uuid: room.roomUuid });
+
+        if (!roomIdData) {
+          return null; // Handle the case when roomIdData is not found
+        }
+
+        const teammates = await user.find({ email: { $in: room.teammates } });
+
+        return {
+          uuid: roomIdData.uuid,
+          gameName: roomIdData.gameName,
+          gameType: roomIdData.gameType,
+          mapType: roomIdData.mapType,
+          time: roomIdData.time,
+          date: roomIdData.date,
+          roomId: roomIdData.roomId,
+          password: roomIdData.password,
+          version: roomIdData.version,
+          teammates: teammates.map((teammate) => ({
+            fullName: teammate.fullName,
+            email: teammate.email,
+          })),
+        } as Room;
+      })
+    );
+
+    const validDetailedRooms = detailedRooms.filter(
+      (detailedRoom) => detailedRoom !== null
+    );
+
+    res.status(200).json({
+      code: 200,
+      message: 'Rooms and teammates details retrieved successfully',
+      numberOfRooms: validDetailedRooms.length,
+      rooms: validDetailedRooms,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ code: 500, message: 'Internal Server Error' });
+  }
+};

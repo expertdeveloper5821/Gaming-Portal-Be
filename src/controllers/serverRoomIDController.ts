@@ -48,7 +48,7 @@ export const createRoom = async (req: Request, res: Response) => {
         // const secure_url: string = uploadResponse.secure_url;
 
         const createdRoom = await RoomId.create({
-          uuid: newUuid,
+          roomUuid: newUuid,
           roomId,
           gameName,
           gameType,

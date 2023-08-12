@@ -38,6 +38,10 @@ const transactionSchema: Schema = new Schema(
       type: String,
       required: true,
     },
+    roomId: {
+      type: String,
+      required: true,
+    },
   },
   { timestamps: true }
 );
