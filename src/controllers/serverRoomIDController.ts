@@ -19,10 +19,10 @@ cloudinary.config({
 // Create a new room
 export const createRoom = async (req: Request, res: Response) => {
   try {
-    const { roomId, gameName, gameType, mapType, password, version, time, date } = req.body;
+    const { roomId, gameName, gameType, mapType, password, version, time, date, lastServival, highestKill, secondWin, thirdWin } = req.body;
     const file = req.file;
 
-    if (!roomId || !gameName || !gameType || !mapType || !password || !version || !time || !date) {
+    if (!roomId || !gameName || !gameType || !mapType || !password || !version || !time || !date || !lastServival || !highestKill || !secondWin || !thirdWin) {
       return res.status(400).json({ message: "All fields required" });
     } else {
       const token = req.header("Authorization")?.replace("Bearer ", "");
@@ -30,20 +30,20 @@ export const createRoom = async (req: Request, res: Response) => {
         return res.status(401).json({ message: "Unauthorized" });
       }
       const secretKey = environmentConfig.JWT_SECRET;
-      
+
       if (!file) {
         return res.status(400).json({ message: "File not provided" });
       }
-      
+
       const tempPath = file.path;
 
       try {
         const decoded: any = jwt.verify(token, secretKey);
         const userId = decoded.userId;
         const newUuid = uuidv4();
-        
+
         const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(tempPath, {
-            folder: "mapImage",
+          folder: "mapImage",
         });
         const secure_url: string = uploadResponse.secure_url;
 
@@ -58,7 +58,11 @@ export const createRoom = async (req: Request, res: Response) => {
           version,
           createdBy: userId,
           time,
-          date
+          date,
+          lastServival, 
+          highestKill, 
+          secondWin, 
+          thirdWin 
         });
 
         fs.unlinkSync(tempPath);
@@ -98,7 +102,7 @@ export const getAllRooms = async (req: Request, res: Response) => {
       })
     );
     return res.status(200).json(roomsWithUserDetails);
-  }  catch (error) {
+  } catch (error) {
     return res.status(500).json({ error: "Failed to fetch rooms" });
   }
 };
@@ -112,12 +116,12 @@ export const getRoomById = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Room not found" });
     }
 
-    const userInfo = await user.findOne({_id:room.createdBy })
+    const userInfo = await user.findOne({ _id: room.createdBy })
 
-    if(!userInfo){
+    if (!userInfo) {
       return res.status(500).json({ error: "User not found" });
     }
-    return res.status(200).json({room, fullName: userInfo.fullName });
+    return res.status(200).json({ room, fullName: userInfo.fullName });
   } catch (error) {
     return res.status(500).json({ error: "Failed to fetch room" });
   }
