@@ -266,6 +266,10 @@ interface Room {
   gameName: string;
   gameType: string;
   mapType: string;
+  time: string;
+  date: string;
+  roomId: string;
+  password: string;
   teammates: Array<{ fullName: string; email: string }>;
 }
 
@@ -305,6 +309,10 @@ export const getUserRegisteredRooms = async (req: Request, res: Response) => {
           gameName: roomIdData.gameName,
           gameType: roomIdData.gameType,
           mapType: roomIdData.mapType,
+          time: roomIdData.time,
+          date: roomIdData.date,
+          roomId: roomIdData.roomId,
+          password: roomIdData.password,
           teammates: teammates.map((teammate) => ({
             fullName: teammate.fullName,
             email: teammate.email,
