@@ -42,6 +42,22 @@ const roomIdSchema: Schema = new Schema(
       type: String,
       required: true,
     },
+    lastServival: {
+      type: String,
+      required: true,
+    },
+    highestKill: {
+      type: String,
+      required: true,
+    },
+    secondWin: {
+      type: String,
+      required: true,
+    },
+    thirdWin: {
+      type: String,
+      required: true,
+    },
     createdBy: {
       type: String, // Assuming the user ID is a string
       required: true,
