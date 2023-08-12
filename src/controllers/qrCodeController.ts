@@ -43,7 +43,7 @@ export const createQrCodeImage = async (req: Request, res: Response ): Promise<v
         const qrCodeSave = await doc.save();
         if (qrCodeSave._id) {
             // Unlink (delete) the uploaded image file
-            fs.unlinkSync(tempPath);
+            // fs.unlinkSync(tempPath);
 
             res.status(200).json({
                 _id: qrCodeSave._id,
