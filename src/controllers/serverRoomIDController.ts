@@ -1,26 +1,26 @@
 import { Request, Response } from "express";
 import RoomId from "../models/serverRoomIDModels";
 import { v4 as uuidv4 } from "uuid";
-import fs from "fs";
+// import fs from "fs";
 import jwt from "jsonwebtoken";
 import { environmentConfig } from "../config/environmentConfig";
 import { user } from "../models/passportModels";
-import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
+// import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
 
 
-// Configuration
-cloudinary.config({
-  cloud_name: environmentConfig.CLOUD_NAME,
-  api_key: environmentConfig.API_KEY,
-  api_secret: environmentConfig.API_SECRET
-});
+// // Configuration
+// cloudinary.config({
+//   cloud_name: environmentConfig.CLOUD_NAME,
+//   api_key: environmentConfig.API_KEY,
+//   api_secret: environmentConfig.API_SECRET
+// });
 
 
 // Create a new room
 export const createRoom = async (req: Request, res: Response) => {
   try {
     const { roomId, gameName, gameType, mapType, password, version, time, date, lastServival, highestKill, secondWin, thirdWin } = req.body;
-    const file = req.file;
+    // const file = req.file;
 
     if (!roomId || !gameName || !gameType || !mapType || !password || !version || !time || !date || !lastServival || !highestKill || !secondWin || !thirdWin) {
       return res.status(400).json({ message: "All fields required" });
@@ -31,21 +31,21 @@ export const createRoom = async (req: Request, res: Response) => {
       }
       const secretKey = environmentConfig.JWT_SECRET;
 
-      if (!file) {
-        return res.status(400).json({ message: "File not provided" });
-      }
+      // if (!file) {
+      //   return res.status(400).json({ message: "File not provided" });
+      // }
 
-      const tempPath = file.path;
+      // const tempPath = file.path;
 
       try {
         const decoded: any = jwt.verify(token, secretKey);
         const userId = decoded.userId;
         const newUuid = uuidv4();
 
-        const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(tempPath, {
-          folder: "mapImage",
-        });
-        const secure_url: string = uploadResponse.secure_url;
+        // const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(tempPath, {
+        //   folder: "mapImage",
+        // });
+        // const secure_url: string = uploadResponse.secure_url;
 
         const createdRoom = await RoomId.create({
           uuid: newUuid,
@@ -54,7 +54,7 @@ export const createRoom = async (req: Request, res: Response) => {
           gameType,
           mapType,
           password,
-          mapImg: secure_url,
+          // mapImg: secure_url,
           version,
           createdBy: userId,
           time,
@@ -65,7 +65,7 @@ export const createRoom = async (req: Request, res: Response) => {
           thirdWin 
         });
 
-        fs.unlinkSync(tempPath);
+        // fs.unlinkSync(tempPath);
 
         return res.status(200).json({
           message: "Room created successfully",
