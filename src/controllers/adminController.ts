@@ -7,6 +7,7 @@ import { environmentConfig } from "../config/environmentConfig";
 import { Role } from "../models/roleModel";
 import { validId } from "../utils/pattern";
 import Video from "../models/ytVideo";
+import { v4 as uuidv4 } from "uuid";
 
 // for admin signup
 export const adminSignup = async (req: Request, res: Response) => {
@@ -21,12 +22,14 @@ export const adminSignup = async (req: Request, res: Response) => {
     }
     // hashing the password
     const hashedPassword = await bcrypt.hash(password, 10);
+    const newUuid = uuidv4();
     const newUser = new user({
       fullName,
       userName,
       email,
       password: hashedPassword,
       role,
+      userUuid: newUuid,
     });
     // saving the user to DB
     await newUser.save();
@@ -40,6 +43,8 @@ export const adminSignup = async (req: Request, res: Response) => {
       token,
       code: 200,
       message: "user registered successfully",
+      userUuid: newUuid,
+      _id: newUser._id
     });
   } catch (error) {
     console.log(error);
@@ -61,12 +66,14 @@ export const spectator = async (req: Request, res: Response) => {
     }
     // hashing the password
     const hashedPassword = await bcrypt.hash(password, 10);
+    const newUuid = uuidv4();
     const newUser = new user({
       fullName,
       userName,
       email,
       password: hashedPassword,
       role,
+      userUuid: newUuid,
     });
     // saving the user to DB
     await newUser.save();
@@ -95,6 +102,8 @@ export const spectator = async (req: Request, res: Response) => {
           tokne: token,
           message:
             "Your login crendentials has been sent ot your email please check and continue",
+            userUuid: newUuid,
+            _id: newUser._id
         });
       }
     });
@@ -116,16 +125,18 @@ export const role = async (req: Request, res: Response) => {
         message: `This ${role} role already exists please try with a new Role`,
       });
     }
+    const newUuid = uuidv4();
     // hashing the password
     const newRole = new Role({
       role,
+      uuid: newUuid,
+
     });
     // saving the user to DB
     await newRole.save();
     // generating a jwt token to specifically identify the user
     return res.status(200).json({
       newRole,
-      code: 200,
       message: `${role} role created successfully`,
     });
   } catch (error) {

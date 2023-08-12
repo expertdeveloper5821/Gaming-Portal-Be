@@ -26,6 +26,10 @@ const roomIdSchema: Schema = new Schema(
       type: String,
       required: true,
     },
+    mapImg: {
+      type: String,
+      required: false,
+    },
     version: {
       type: String,
       required: true,

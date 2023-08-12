@@ -3,7 +3,7 @@ import express from "express";
 const route = express.Router();
 import { verifyToken } from "../middlewares/authMiddleware";
 import {
-  addTeammates, deleteTeamById, getAllTeams, getTeamById, updateTeamById
+  addTeammates, deleteTeamById, getAllTeams, getTeamById, updateTeamById, getUserRegisteredRooms, sendInviteMail
 } from "../controllers/teamController";
 
 
@@ -21,5 +21,13 @@ route.put("/updateteam/:id", verifyToken(["user"]), updateTeamById);
 
 // delete team by their Id
 route.delete("/deleteteam/:id", verifyToken(["user"]), deleteTeamById);
+
+// get team by their Id
+route.get("/register-room/:leadPlayerId", verifyToken(["user"]), getUserRegisteredRooms);
+
+// port send invite mail
+route.post("/send-invite", verifyToken(["user"]), sendInviteMail)
+
+
 
 export default route;
