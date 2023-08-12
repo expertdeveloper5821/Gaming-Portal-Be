@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Payment Details</title>
+    <style>
+        /* Add your CSS styles here */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0 auto;
+            max-width: 1200px;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+            /* text-align: center; */
+        }
+
+        p {
+            margin-bottom: 10px;
+        }
+
+        /* Additional styles for navigation and footer */
+        .navbar {
+            display: flex;
+            column-gap: 33%;
+            align-items: center;
+            padding: 10px;
+            /* border-bottom: 2px solid rgba(0, 0, 0, 0.404); */
+            background-color: #adcff0;
+        }
+
+        .logo {
+            width: 110px;
+            height: auto;
+        }
+
+        .company-name {
+            text-align: center;
+        }
+
+        .check_add {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .footer {
+            padding: 10px;
+            text-align: center;
+            /* border-top: 2px solid black; */
+            margin-top: 23px;
+            background-color: #adcff0;
+        }
+
+        .formBottom{
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .address_cls {
+            display: flex;
+            justify-content: right;
+            line-height: 1.5;
+        }
+
+        .address_cls p{
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .ceo_info {
+            text-align: right;
+            padding-top: 60px;
+            font-weight: 600;
+
+        }
+
+        .payment-info {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        table {
+            border-collapse: collapse;
+            margin: 2rem auto;
+            width: 100%;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 7px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="navbar">
+        <div>
+            <img class="logo"
+                src="https://technogetic.com/wp-content/uploads/2021/10/logoTG-01__3_-removebg-preview.png"
+                alt="Company Logo">
+        </div>
+        <div class="company-name">
+            <h2>Pattse Headshot</h2>
+        </div>
+    </div>
+    <div class="payment_info">
+        <h1>Payment Invoice</h1>
+        <table>
+            <tr>
+                <th>Field</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td>UPI ID</td>
+                <td>{{upiId}}</td>
+            </tr>
+            <tr>
+                <td>Match Amount</td>
+                <td>{{matchAmount}}</td>
+            </tr>
+            <tr>
+                <td>Name</td>
+                <td>{{name}}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="formBottom">
+        <div class="address_cls">
+            <div class="addressBox">
+            <p>Plot No.E299 - 3rd Floor</p>
+            <p>Corporate Greens</p>
+            <p>Industrial Area,Sector 75</p>
+            <p>Ajit Singh Nagar</p>
+            <p>160055</p>
+        </div>
+    </div>
+    <div class="ceo_info">
+        <p>Founder & CEO<br> Saksham Aggarwal </p>
+    </div>
+    </div>
+
+
+    <div class="footer">
+
+        <div class="check_add">
+            <p>Website: <a href="http://www.pattseheadshot.com">www.pattseheadshot.com</a></p>
+            <p>Contact: +91-1234567890</p>
+            <p>Email: support@pattseheadshot.com</p>
+        </div>
+    </div>
+</body>
+
+</html>
