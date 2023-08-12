@@ -270,6 +270,7 @@ interface Room {
   date: string;
   roomId: string;
   password: string;
+  version: string;
   teammates: Array<{ fullName: string; email: string }>;
 }
 
@@ -313,6 +314,7 @@ export const getUserRegisteredRooms = async (req: Request, res: Response) => {
           date: roomIdData.date,
           roomId: roomIdData.roomId,
           password: roomIdData.password,
+          version: roomIdData.version,
           teammates: teammates.map((teammate) => ({
             fullName: teammate.fullName,
             email: teammate.email,
@@ -382,5 +384,42 @@ export const sendInviteMail = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
+
+
+// get teammates invited by user
+export const getInvitedUser =async (req: Request, res: Response) => {
+  try {
+    // Get the user's ID from the decoded token
+    const token = req.header("Authorization")?.replace("Bearer ", "");
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const secretKey = environmentConfig.JWT_SECRET;
+    const decoded: any = jwt.verify(token, secretKey);
+    const userId = decoded.userId;
+
+    // Find teams where the user is the leadPlayer
+    const invitedTeams = await Team.find({ leadPlayerId: userId });
+
+    // Extract and flatten the invited teammates' email addresses
+    const invitedTeammatesEmails = invitedTeams.map((team) => team.teammates).flat();
+
+    // Find user details for the invited teammates
+    const invitedTeammatesDetails = await user.find({ email: { $in: invitedTeammatesEmails } });
+
+    // Create a response object with the invited teammates' details
+    const response = invitedTeammatesDetails.map((teammate) => ({
+      email: teammate.email,
+      fullName: teammate.fullName,
+      userName: teammate.userName,
+    }));
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 }
