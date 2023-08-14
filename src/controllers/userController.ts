@@ -15,7 +15,7 @@ const clickHere: string = environmentConfig.LOGIN_PAGE;
 // for user signup
 export const userSignup = async (req: Request, res: Response) => {
   try {
-    const { fullName, userName, email, password } = req.body;
+    const { fullName, userName, email, password, upiId } = req.body;
 
     // Password validation check
     if (!passwordRegex.test(password)) {
@@ -59,6 +59,7 @@ export const userSignup = async (req: Request, res: Response) => {
           password: hashedPassword,
           role: defaultRole,
           userUuid: newUuid,
+          upiId
         });
         // saving the user to DB
         newUser.save();
