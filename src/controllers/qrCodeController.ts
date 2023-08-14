@@ -111,8 +111,14 @@ export const createPayment = async (req: Request, res: Response) => {
             roomId: roomdata?.roomUuid
           });
           return res.status(200).json({
+            message: "Payment successfully",
             _id: newTransaction._id,
-            message: "Payment successfully"
+            upiId,
+            matchAmount,
+            name,
+            paymentBy: userId,
+            uuid: qrCodeData?.uuid,
+            roomId: roomdata?.roomUuid
             
           });
         }else{
