@@ -32,7 +32,7 @@ route.post("/send-invite", verifyToken(["user"]), sendInviteMail)
 route.get("/get-team", verifyToken(["user"]), getInvitedUser)
 
 // get room details wiht teams
-route.get("/register-room-mates/:leadPlayerId", verifyToken(["user"]), getUserRegisteredRoomsWithTeamMates);
+route.get("/register-room-mates", verifyToken(["user"]), getUserRegisteredRoomsWithTeamMates);
 
 
 export default route;

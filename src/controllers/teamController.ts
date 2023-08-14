@@ -262,18 +262,6 @@ export const deleteTeamById = async (req: Request, res: Response) => {
   }
 };
 
-interface Room {
-  uuid: string;
-  gameName: string;
-  gameType: string;
-  mapType: string;
-  time: string;
-  date: string;
-  roomId: string;
-  password: string;
-  version: string;
-  teammates: Array<{ fullName: string; email: string }>;
-}
 
 
 // send invite mail to teammates
@@ -323,6 +311,18 @@ export const sendInviteMail = async (req: Request, res: Response) => {
   }
 }
 
+interface Room {
+  uuid: string;
+  gameName: string;
+  gameType: string;
+  mapType: string;
+  time: string;
+  date: string;
+  roomId: string;
+  password: string;
+  version: string;
+  teammates: Array<{ fullName: string; email: string }>;
+}
 
 // get teammates invited by user
 export const getInvitedUser =async (req: Request, res: Response) => {
@@ -422,68 +422,53 @@ export const getUserRegisteredRooms = async (req: Request, res: Response) => {
 }
 
 };
+ 
 
-
-// API to get registered rooms for a user
+// get user regiseter game with teammates
 export const getUserRegisteredRoomsWithTeamMates = async (req: Request, res: Response) => {
   try {
-    const { leadPlayerId } = req.params;
-
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const token = req.header('Authorization')?.replace("Bearer ", "");
     if (!token) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     const secretKey = environmentConfig.JWT_SECRET;
     const decoded: any = jwt.verify(token, secretKey);
     const userId = decoded.userId;
 
-    if (userId !== leadPlayerId) {
-      return res.status(403).json({ message: 'user id not found ' });
+    // Find the user's email
+    const currentUser = await user.findById(userId);
+    const userEmail = currentUser?.email;
+
+    // Find all teams where the user's email is in the teammates array
+    const userTeams = await Team.find({ teammates: userEmail });
+
+    if (userTeams.length === 0) {
+      return res.status(404).json({ code: 404, message: "No registered rooms found for the user and their teammates" });
     }
 
-    const rooms = await Team.find({ leadPlayerId });
+    const registeredRooms = await Promise.all(userTeams.map(async (team) => {
+      const teammateEmails = team.teammates;
+      const teammateDetails = await user.find({ email: { $in: teammateEmails } });
 
-    const detailedRooms = await Promise.all(
-      rooms.map(async (room) => {
-        const roomIdData = await RoomId.findOne({ uuid: room.roomUuid });
+      const teammatesWithDetails = teammateDetails.map(teammate => ({
+        _id: teammate._id,
+        fullName: teammate.fullName, 
+        email: teammate.email,
+      }));
 
-        if (!roomIdData) {
-          return null; // Handle the case when roomIdData is not found
-        }
+      return {
+        roomUuid: team.roomUuid,
+        leadPlayer: team.leadPlayer,
+        teammates: teammatesWithDetails,
+      };
+    }));
 
-        const teammates = await user.find({ email: { $in: room.teammates } });
-
-        return {
-          uuid: roomIdData.uuid,
-          gameName: roomIdData.gameName,
-          gameType: roomIdData.gameType,
-          mapType: roomIdData.mapType,
-          time: roomIdData.time,
-          date: roomIdData.date,
-          roomId: roomIdData.roomId,
-          password: roomIdData.password,
-          version: roomIdData.version,
-          teammates: teammates.map((teammate) => ({
-            fullName: teammate.fullName,
-            email: teammate.email,
-          })),
-        } as Room;
-      })
-    );
-
-    const validDetailedRooms = detailedRooms.filter(
-      (detailedRoom) => detailedRoom !== null
-    );
-
-    res.status(200).json({
-      code: 200,
-      message: 'Rooms and teammates details retrieved successfully',
-      numberOfRooms: validDetailedRooms.length,
-      rooms: validDetailedRooms,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ code: 500, message: 'Internal Server Error' });
+    res.status(200).json({ code: 200, message: "Successfully retrieved registered rooms with teammates", registeredRooms });
+  }  catch (error) {
+    console.log(error);
+    res.status(500).json({ code: 500, message: "Internal Server Error" });
   }
 };
+
+
