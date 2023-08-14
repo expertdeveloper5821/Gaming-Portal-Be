@@ -16,6 +16,15 @@ const clickHere: string = environmentConfig.LOGIN_PAGE;
 export const userSignup = async (req: Request, res: Response) => {
   try {
     const { fullName, userName, email, password } = req.body;
+
+    // Password validation check
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        code: 400,
+        message:
+          "Password must contain at least one letter, one digit, one special character (!@#$%^&*()_+), and be at least 6 characters long",
+      });
+    }
     const existingUser = await user.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
