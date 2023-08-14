@@ -7,7 +7,8 @@ let userRegisterSchema = new mongoose.Schema({
   password: { type: String, required: false },
   provider: {type: String, required:false},
   role: { type: mongoose.Schema.Types.ObjectId, ref: 'Role', require:'false'},
-  userUuid: { type: String, required: false }
+  userUuid: { type: String, required: false },
+  upiId: { type: String, required: false }
 });
 
 export const user = mongoose.model("user", userRegisterSchema);
