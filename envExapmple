@@ -1,0 +1,47 @@
+# Jwt Secret
+jwtSecret=
+
+# Server port
+serverPort = 
+
+# Data Base credentails
+# dev url
+DbUrl = 
+
+# prod url
+# DbUrl = 
+
+
+# Email hosting credentails
+emailHost = 
+emailUser = 
+emailPassword = 
+emailPort = 
+emailFrom = 
+
+# Google api credentails
+clientID = 
+clientSecret = 
+clientUrl = 
+
+# reset passsword URL
+reset_password = 
+login_page = 
+
+# Session Secret
+sessionSecret = 
+
+# facebook credentials
+appID = 
+appSecret =
+siteUrl = 
+
+# Razorpay credentials
+razorPayKey = 
+razorPaySecret = 
+paymentSuccessUrl = 
+
+# cloudinary credentials
+cloudName =  
+apiKey = 
+apiSecret = 

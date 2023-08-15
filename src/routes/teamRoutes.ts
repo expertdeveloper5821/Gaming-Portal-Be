@@ -23,7 +23,7 @@ route.put("/updateteam/:id", verifyToken(["user"]), updateTeamById);
 route.delete("/deleteteam/:id", verifyToken(["user"]), deleteTeamById);
 
 // get team by their Id
-route.get("/register-room/:paymentBy", verifyToken(["user"]), getUserRegisteredRooms);
+route.get("/register-room", verifyToken(["user"]), getUserRegisteredRooms);
 
 // post send invite mail
 route.post("/send-invite", verifyToken(["user"]), sendInviteMail)

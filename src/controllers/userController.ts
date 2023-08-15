@@ -15,7 +15,7 @@ const clickHere: string = environmentConfig.LOGIN_PAGE;
 // for user signup
 export const userSignup = async (req: Request, res: Response) => {
   try {
-    const { fullName, userName, email, password } = req.body;
+    const { fullName, userName, email, password, upiId } = req.body;
 
     // Password validation check
     if (!passwordRegex.test(password)) {
@@ -59,6 +59,7 @@ export const userSignup = async (req: Request, res: Response) => {
           password: hashedPassword,
           role: defaultRole,
           userUuid: newUuid,
+          upiId
         });
         // saving the user to DB
         newUser.save();
@@ -67,7 +68,6 @@ export const userSignup = async (req: Request, res: Response) => {
         return res.status(200).json({
           message: "Registered successfully, Please check your email",
           userUuid: newUuid,
-          _id: newUser._id,
           token,
           success: true,
         });
@@ -106,11 +106,8 @@ export const userLogin = async (req: Request, res: Response) => {
       }
     );
     let userData = {
-      userId: User._id,
       fullName: User.fullName,
-      userName: User.userName,
       email: User.email,
-      role: User.role,
       token: token,
     };
 
@@ -166,7 +163,7 @@ export const forgetPassword = async (req: Request, res: Response) => {
       } else {
         res.json({
           code: 200,
-          tokne: token,
+          token: token,
           message:
             "Reset password URL sent successfully please check your email",
         });
@@ -240,14 +237,22 @@ export const adminController = async (req: Request, res: Response) => {
 };
 
 // get user by ID
-export const getUserById = async (req: Request, res: Response) => {
+export const getUserDetails = async (req: Request, res: Response) => {
   try {
-    const userId = req.params.id;
-    if (!validId.test(userId)) {
-      return res.status(404).json({ error: "Invalid user ID" });
+    // Extract the authentication token from the request headers
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ error: "Authentication token missing" });
     }
+
+    // Verify and decode the token to get the user's ID
+    const decodedToken = jwt.verify(token, jwtSecret) as { userId: string };
+
+    const userId = decodedToken.userId;
+
     // Use the findById method to find the user by their ID in the database
-    const foundUser = await user.findById(userId).populate('role','role');
+    const foundUser = await user.findById(userId).populate('role', 'role');
 
     if (!foundUser) {
       return res.status(404).json({
@@ -256,12 +261,20 @@ export const getUserById = async (req: Request, res: Response) => {
       });
     }
 
-    // If the user is found, return the user data as the response
+    // If the user is found, construct the response object
+    const responseData = {
+      fullName: foundUser.fullName,
+      userName: foundUser.userName,
+      email: foundUser.email,
+      role: foundUser.role,
+    };
+
+    // Return the user data as the response
     return res.status(200).json({
       code: 200,
-      data: foundUser,
+      data: responseData,
     });
-  } catch (error) {
+  }  catch (error) {
     console.log(error);
     return res.status(500).json({ code: 500, error: "Internal server error" });
   }
@@ -299,12 +312,20 @@ export const getAllUsers = async (req: Request, res: Response) => {
 // update user by id
 export const updateUserById = async (req: Request, res: Response) => {
   try {
-    const userId = req.params.id;
+    // Extract the authentication token from the request headers
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ error: "Authentication token missing" });
+    }
+
+    // Verify and decode the token to get the user's ID
+    const decodedToken = jwt.verify(token, jwtSecret) as { userId: string };
+
+    const userId = decodedToken.userId;
+    
     const updatedUserData = req.body;
 
-    if (!validId.test(userId)) {
-      return res.status(404).json({ error: "Invalid user ID" });
-    }
     // Use the findByIdAndUpdate method to update the user by their ID in the database
     const updatedUser = await user.findByIdAndUpdate(userId, updatedUserData, {
       new: true,
@@ -317,15 +338,18 @@ export const updateUserById = async (req: Request, res: Response) => {
       });
     }
 
-    // If the user is updated successfully, return the updated user data as the response
+    // If the user is updated successfully, construct the response object
+    const responseData = {
+      fullName: updatedUser.fullName,
+      userName: updatedUser.userName,
+      email: updatedUser.email,
+      role: updatedUser.role,
+    };
+
+    // Return the updated user data as the response
     return res.status(200).json({
       code: 200,
-      data: {
-        fullName: updatedUser?.fullName,
-        userName: updatedUser?.userName,
-        email: updatedUser?.email,
-        role: updatedUser?.role,
-      },
+      data: responseData,
     });
   } catch (error) {
     console.log(error);
@@ -336,11 +360,18 @@ export const updateUserById = async (req: Request, res: Response) => {
 // delete by id
 export const deleteUserById = async (req: Request, res: Response) => {
   try {
-    const userId = req.params.id;
+    // Extract the authentication token from the request headers
+    const token = req.headers.authorization?.split(' ')[1];
 
-    if (!validId.test(userId)) {
-      return res.status(404).json({ error: "Invalid user ID" });
+    if (!token) {
+      return res.status(401).json({ error: "Authentication token missing" });
     }
+
+    // Verify and decode the token to get the user's ID
+    const decodedToken = jwt.verify(token, jwtSecret) as { userId: string };
+
+    const userId = decodedToken.userId;
+
     // Use the deleteOne method to delete the user by their ID from the database
     const deletionResult = await user.deleteOne({ _id: userId });
 

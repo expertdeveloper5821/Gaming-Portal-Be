@@ -39,7 +39,7 @@ router.get("/rooms", getAllRooms);
 router.get("/rooms/:id", verifyToken(['spectator', 'user','admin']),getRoomById);
 
 // update room by id 
-router.put("/rooms/:id", verifyToken(['spectator','admin']),updateRoomById);
+router.put("/rooms/:id", upload.single('mapImg'), verifyToken(['spectator','admin']),updateRoomById);
 
 // delete room by id 
 router.delete("/rooms/:id", verifyToken(['spectator','admin']),deleteRoomById);

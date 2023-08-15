@@ -272,44 +272,58 @@ export const sendInviteMail = async (req: Request, res: Response) => {
     // Fetch user details for each teammate
     const existingUsers = await user.find({ email: { $in: emails } });
     const existingEmails = existingUsers.map(existingUser => existingUser.email);
-    const nonExistingEmails = [];
+    const nonExistingEmails: string[] = [];
     for (const email of emails) {
       if (!existingEmails.includes(email)) {
         nonExistingEmails.push(email);
       }
-    };
+    }
 
     const registrationUrl = `${environmentConfig.CLIENT_URL}signup`;
 
-    const sentInvitations = [];
-    const alreadyRegistered = [];
+    const sentInvitations: string[] = [];
+    const alreadyRegistered: string[] = [];
 
     // Send emails to teammates
-    for (const email of emails) {
-      if (nonExistingEmails.includes(email)) {
-        await transporter.sendMail({
-          from: environmentConfig.EMAIL_USER,
-          to: email,
-          subject: 'Invitation to Join Team',
-          html: `You have been invited to join the team! Click <a href=${registrationUrl}>here</a> to register and join the team.`,
-        });
-        sentInvitations.push(email);
-      } else {
-        alreadyRegistered.push(email);
-      }
+    for (const email of nonExistingEmails) {
+      await transporter.sendMail({
+        from: environmentConfig.EMAIL_USER,
+        to: email,
+        subject: 'Invitation to Join Team',
+        html: `You have been invited to join the team! Click <a href=${registrationUrl}>here</a> to register and join the team.`,
+      });
+      sentInvitations.push(email);
     }
 
-    const responseMessage = {
-      sentInvitations: sentInvitations,
-      alreadyRegistered: alreadyRegistered,
-    };
+    const responseMessage: { sentInvitations?: string[], alreadyRegistered?: string[] } = {};
 
-    res.status(200).json({ message: responseMessage });
+    if (sentInvitations.length > 0) {
+      responseMessage.sentInvitations = sentInvitations;
+    }
+
+    if (existingEmails.length > 0) {
+      responseMessage.alreadyRegistered = existingEmails;
+    }
+
+    let message = '';
+    if (sentInvitations.length > 0) {
+      message += `Invitations sent to: ${sentInvitations.join(', ')}. `;
+    }
+    if (existingEmails.length > 0) {
+      message += `Already registered: ${existingEmails.join(', ')}. `;
+    }
+
+    if (message === '') {
+      message = 'No invitations sent.';
+    }
+
+    res.status(200).json({ message: message });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 }
+
 
 interface Room {
   uuid: string;
@@ -364,62 +378,56 @@ export const getInvitedUser =async (req: Request, res: Response) => {
 // user register room details
 export const getUserRegisteredRooms = async (req: Request, res: Response) => {
   try {
-    const { paymentBy } = req.params;
-
     const token = req.header('Authorization')?.replace('Bearer ', '');
     if (!token) {
-        return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ message: 'Unauthorized' });
     }
 
     const secretKey = environmentConfig.JWT_SECRET;
     const decoded: any = jwt.verify(token, secretKey);
     const userId = decoded.userId;
 
-    if (userId !== paymentBy) {
-        return res.status(403).json({ message: 'User id not found or does not match' });
-    }
-
-    const rooms = await Transaction.find({ paymentBy });
+    const rooms = await Transaction.find({ paymentBy: userId });
 
     const detailedRooms = await Promise.all(
-        rooms.map(async (room) => {
-            const roomIdData = await RoomId.findOne({ roomUuid: room.roomId });
+      rooms.map(async (room) => {
+        const roomIdData = await RoomId.findOne({ roomUuid: room.roomId });
 
-            if (!roomIdData) {
-                return null; // Handle the case when roomIdData is not found
-            }
-            return {
-                uuid: roomIdData.uuid,
-                gameName: roomIdData.gameName,
-                gameType: roomIdData.gameType,
-                mapType: roomIdData.mapType,
-                time: roomIdData.time,
-                date: roomIdData.date,
-                roomId: roomIdData.roomId,
-                password: roomIdData.password,
-                version: roomIdData.version,
-            };
-        })
+        if (!roomIdData) {
+          return null; // Handle the case when roomIdData is not found
+        }
+        return {
+          uuid: roomIdData.uuid,
+          gameName: roomIdData.gameName,
+          gameType: roomIdData.gameType,
+          mapType: roomIdData.mapType,
+          time: roomIdData.time,
+          date: roomIdData.date,
+          roomId: roomIdData.roomId,
+          password: roomIdData.password,
+          version: roomIdData.version,
+        };
+      })
     );
 
-    const paymentDetailsArray = rooms.map(room => ({
-        id: room._id,
-        upiId: room.upiId,
-        matchAmount: room.matchAmount,
-        name: room.name,
+    const paymentDetailsArray = rooms.map((room) => ({
+      id: room._id,
+      upiId: room.upiId,
+      matchAmount: room.matchAmount,
+      name: room.name,
     }));
 
     res.status(200).json({
-        code: 200,
-        message: 'Rooms details retrieved successfully',
-        numberOfRooms: detailedRooms.length,
-        rooms: detailedRooms,
-        paymentDetails: paymentDetailsArray,
+      code: 200,
+      message: 'Rooms details retrieved successfully',
+      numberOfRooms: detailedRooms.length,
+      rooms: detailedRooms,
+      paymentDetails: paymentDetailsArray,
     });
-} catch (error) {
+  } catch (error) {
     console.error(error);
     res.status(500).json({ code: 500, message: 'Internal Server Error' });
-}
+  }
 
 };
  
@@ -436,12 +444,8 @@ export const getUserRegisteredRoomsWithTeamMates = async (req: Request, res: Res
     const decoded: any = jwt.verify(token, secretKey);
     const userId = decoded.userId;
 
-    // Find the user's email
-    const currentUser = await user.findById(userId);
-    const userEmail = currentUser?.email;
-
-    // Find all teams where the user's email is in the teammates array
-    const userTeams = await Team.find({ teammates: userEmail });
+    // Find all teams where the user is the leadPlayer
+    const userTeams = await Team.find({ leadPlayerId: userId });
 
     if (userTeams.length === 0) {
       return res.status(404).json({ code: 404, message: "No registered rooms found for the user and their teammates" });
@@ -470,5 +474,11 @@ export const getUserRegisteredRoomsWithTeamMates = async (req: Request, res: Res
     res.status(500).json({ code: 500, message: "Internal Server Error" });
   }
 };
+
+
+
+
+
+
 
 
