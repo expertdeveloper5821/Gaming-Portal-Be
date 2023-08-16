@@ -81,35 +81,46 @@ export const getqrCodeById = async (req: Request, res: Response) => {
 
 // post payment details by user
 export const createPayment = async (req: Request, res: Response) => {
-    try {
-      const { upiId, matchAmount, name, id , roomid} = req.body;
+  try {
+    const { upiId, matchAmount, name, id, roomid } = req.body;
 
-      const qrCodeData = await QrCodeImg.findOne({ uuid: id });
-      const roomdata = await RoomId.findOne({roomUuid: roomid})
-  
-      if (!upiId || !matchAmount || !name ) {
-        return res.status(400).json({ message: "All fields required" });
+    const qrCodeData = await QrCodeImg.findOne({ uuid: id });
+    const roomdata = await RoomId.findOne({ roomUuid: roomid });
 
-        
+    if (!upiId || !matchAmount || !name) {
+      return res.status(400).json({ message: "All fields required" });
+    } else {
+      const token = req.header("Authorization")?.replace("Bearer ", "");
+      if (!token) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const secretKey = environmentConfig.JWT_SECRET;
+      try {
+        const decoded: any = jwt.verify(token, secretKey);
+        const userId = decoded.userId;
 
-      } else {
-        const token = req.header("Authorization")?.replace("Bearer ", "");
-        if (!token) {
-          return res.status(401).json({ message: "Unauthorized" });
-        }
-        const secretKey = environmentConfig.JWT_SECRET;
-        try {
-          const decoded: any = jwt.verify(token, secretKey);
-          const userId = decoded.userId;
-          if(qrCodeData && roomdata){
-            const newTransaction = await Transaction.create({
+        if (qrCodeData && roomdata) {
+          // Check if the user has already made a payment for the specified room
+          const existingTransaction = await Transaction.findOne({
+            paymentBy: userId,
+            roomId: roomdata.roomUuid,
+          });
+
+          if (existingTransaction) {
+            return res.status(400).json({
+              message: "You have already made a payment for this room",
+            });
+          }
+
+          const newTransaction = await Transaction.create({
             upiId,
             matchAmount,
             name,
             paymentBy: userId,
             uuid: qrCodeData?.uuid,
-            roomId: roomdata?.roomUuid
+            roomId: roomdata?.roomUuid,
           });
+
           return res.status(200).json({
             message: "Payment successfully",
             _id: newTransaction._id,
@@ -118,24 +129,23 @@ export const createPayment = async (req: Request, res: Response) => {
             name,
             paymentBy: userId,
             uuid: qrCodeData?.uuid,
-            roomId: roomdata?.roomUuid
-            
+            roomId: roomdata?.roomUuid,
           });
-        }else{
-          return res.status(401).json({ message: "uuid not found" });
+        } else {
+          return res.status(401).json({ message: "uuid or roomid not found" });
         }
-        } catch (error) {
-          console.error(error);
-          return res.status(401).json({ message: "Invalid token" });
-        }
+      } catch (error) {
+        console.error(error);
+        return res.status(401).json({ message: "Invalid token" });
       }
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({
-        error: "Failed to initiate payment",
-        success: false,
-      });
     }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      error: "Failed to initiate payment",
+      success: false,
+    });
+  }
   };
 
 
