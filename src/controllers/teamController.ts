@@ -21,6 +21,16 @@ export const addTeammates = async (req: Request, res: Response) => {
     }
     const teamData = await RoomId.findOne({ roomUuid: roomid });
 
+     // Check if the user is already registered in the room
+     const isUserRegistered = await Team.findOne({
+      roomUuid: roomid,
+      teammates: { $in: emails },
+    });
+
+    if (isUserRegistered) {
+      return res.status(409).json({ code: 409, message: "You have already registered in this room" });
+    }
+
     // Fetch registered emails from the database
     const allUsers = await user.find();
     const allEmails = allUsers.map((obj) => {
