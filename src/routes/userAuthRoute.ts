@@ -6,7 +6,7 @@ import {
   updateUserById,
   deleteUserById,
   resetPassword,
-  getUserById,
+  getUserDetails,
   getAllUsers,
 } from "../controllers/userController";
 const route = express.Router();
@@ -25,16 +25,16 @@ route.post("/forget-password", forgetPassword);
 // resetPassword route
 route.post("/reset-password", resetPassword);
 
-// get user by ID
-route.get("/getuser/:id", verifyToken(["admin",'user']), getUserById);
+// get single user 
+route.get("/getuser", verifyToken(["admin",'user','spectator']), getUserDetails);
 
 // get Alluser
-route.get("/getalluser", verifyToken(["admin"]), getAllUsers);
+route.get("/getalluser", verifyToken(["admin", 'spectator']), getAllUsers);
 
-// update user by id
-route.put("/updateuser/:id", verifyToken(["admin",'user']), updateUserById);
+// update user 
+route.put("/updateuser", verifyToken(["admin",'user']), updateUserById);
 
 // delete by id
-route.delete("/deleteuser/:id", verifyToken(["admin",'user']), deleteUserById);
+route.delete("/deleteuser", verifyToken(["admin",'user']), deleteUserById);
 
 export default route;

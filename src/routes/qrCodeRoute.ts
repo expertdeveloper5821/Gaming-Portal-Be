@@ -1,6 +1,5 @@
 import express from "express";
 import multer from 'multer';
-import path from "path";
 import bodyParser from "body-parser";
 import { createQrCodeImage, getqrCodeById, createPayment, getpaymentdeatilsById } from "../controllers/qrCodeController";
 import { verifyToken } from "../middlewares/authMiddleware";
@@ -11,13 +10,8 @@ const router = express.Router();
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({ extended: true }));
 
-// Serve static files from the 'public' directory
-router.use(express.static('public'));
 
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, '../public/qrCodeImage')); 
-    },
     filename: (req, file, cb) => {
         const name = Date.now() + '_' + file.originalname;
         cb(null, name); 
