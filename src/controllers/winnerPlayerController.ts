@@ -10,7 +10,7 @@ export const postWinningPlayers = async (req: Request, res: Response) => {
     try {
         const { winnerName, winningPosition, id } = req.body;
 
-        const roomIdData = await RoomId.findOne({ uuid: id });
+        const roomIdData = await RoomId.findOne({ roomUuid: id });
 
         if (!winnerName || !winningPosition) {
             return res.status(400).json({ message: "All fields required" });
@@ -30,7 +30,7 @@ export const postWinningPlayers = async (req: Request, res: Response) => {
                         winnerName,
                         winningPosition,
                         createdBy: userId,
-                        uuid: roomIdData?.uuid,
+                        uuid: roomIdData?.roomUuid,
                     });
                     return res.status(200).json({
                         message: "Winner info post successfully",
@@ -69,7 +69,7 @@ export const getWinningPlayerById = async (req: Request, res: Response) => {
             return res.status(404).json({ message: "Winner player not found" });
         }
 
-        const roomIdData = await RoomId.findOne({ uuid: winnerPlayer.uuid });
+        const roomIdData = await RoomId.findOne({ roomUuid: winnerPlayer.uuid });
 
         if (!roomIdData) {
             return res.status(404).json({ message: "Room data not found" });
@@ -107,7 +107,7 @@ export const getAllWinningPlayers = async (req: Request, res: Response) => {
         const winningPlayerData = [];
 
         for (const winnerPlayer of winningPlayers) {
-            const roomIdData = await RoomId.findOne({ uuid: winnerPlayer.uuid });
+            const roomIdData = await RoomId.findOne({ roomUuid: winnerPlayer.uuid });
 
             if (!roomIdData) {
                 console.warn(`Room data not found for winner with UUID: ${winnerPlayer.uuid}`);
@@ -150,13 +150,13 @@ export const getWinnersByRoomUuid = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Room UUID parameter is required" });
         }
 
-        const roomIdData = await RoomId.findOne({ uuid: uuid });
+        const roomIdData = await RoomId.findOne({ roomUuid: uuid });
 
         if (!roomIdData) {
             return res.status(404).json({ message: "Room data not found" });
         }
 
-        const winningPlayers = await WinnerPlayer.find({ uuid: roomIdData.uuid }); // Use roomIdData.uuid
+        const winningPlayers = await WinnerPlayer.find({ uuid: roomIdData.roomUuid });
 
         if (!winningPlayers || winningPlayers.length === 0) {
             return res.status(404).json({ message: "No winning players found for this room" });
@@ -167,7 +167,6 @@ export const getWinnersByRoomUuid = async (req: Request, res: Response) => {
             winnerName: winnerPlayer.winnerName,
             winningPosition: winnerPlayer.winningPosition,
             createdBy: winnerPlayer.createdBy,
-            uuid: winnerPlayer.uuid,
             room: {
                 gameName: roomIdData.gameName,
                 gameType: roomIdData.gameType,
