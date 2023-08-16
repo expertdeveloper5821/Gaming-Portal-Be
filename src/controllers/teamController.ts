@@ -335,6 +335,7 @@ interface Room {
   roomId: string;
   password: string;
   version: string;
+  mapImg: string;
   teammates: Array<{ fullName: string; email: string }>;
 }
 
@@ -406,6 +407,7 @@ export const getUserRegisteredRooms = async (req: Request, res: Response) => {
           roomId: roomIdData.roomId,
           password: roomIdData.password,
           version: roomIdData.version,
+          mapImg: roomIdData.mapImg
         };
       })
     );
