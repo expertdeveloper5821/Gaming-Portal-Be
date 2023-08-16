@@ -488,7 +488,51 @@ export const getUserRegisteredRoomsWithTeamMates = async (req: Request, res: Res
 };
 
 
+// get users and teammates in a specific room
+export const getUsersAndTeammatesInRoom = async (req: Request, res: Response) => {
+  try {
+    const { roomUuid } = req.params;
 
+    if (!roomUuid) {
+      return res.status(400).json({ message: "Room UUID is required" });
+    }
+
+    const room = await RoomId.findOne({ roomUuid });
+
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    const teamsInRoom = await Team.find({ roomUuid });
+
+    if (teamsInRoom.length === 0) {
+      return res.status(404).json({ message: "No teams found in this room" });
+    }
+
+    const userAndTeammates = await Promise.all(
+      teamsInRoom.map(async (team) => {
+        const teammateDetails = await user.find({ email: { $in: team.teammates } });
+
+        const teammatesWithDetails = teammateDetails.map(teammate => ({
+          _id: teammate._id,
+          fullName: teammate.fullName, 
+          email: teammate.email,
+        }));
+
+        return {
+          roomUuid: team.roomUuid,
+          leadPlayer: team.leadPlayer,
+          teammates: teammatesWithDetails,
+        };
+      })
+    );
+
+    res.status(200).json({ code: 200, data: userAndTeammates });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ code: 500, message: "Internal Server Error" });
+  }
+};
 
 
 
