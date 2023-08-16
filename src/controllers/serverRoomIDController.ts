@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import RoomId from "../models/serverRoomIDModels";
 import { v4 as uuidv4 } from "uuid";
-import fs from "fs";
 import jwt from "jsonwebtoken";
 import { environmentConfig } from "../config/environmentConfig";
 import { user } from "../models/passportModels";
@@ -42,9 +41,7 @@ export const createRoom = async (req: Request, res: Response) => {
         const userId = decoded.userId;
         const newUuid = uuidv4();
 
-        const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(tempPath, {
-          folder: "mapImage",
-        });
+        const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(tempPath);
         const secure_url: string = uploadResponse.secure_url;
 
         const createdRoom = await RoomId.create({
@@ -64,8 +61,6 @@ export const createRoom = async (req: Request, res: Response) => {
           secondWin, 
           thirdWin 
         });
-
-        fs.unlinkSync(tempPath);
 
         return res.status(200).json({
           message: "Room created successfully",

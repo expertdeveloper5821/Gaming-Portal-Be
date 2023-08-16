@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { QrCodeImg, Transaction } from "../models/qrCodeModel";
 import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
-import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 import { environmentConfig } from "../config/environmentConfig";
 import jwt from "jsonwebtoken";
@@ -28,9 +27,7 @@ export const createQrCodeImage = async (req: Request, res: Response ): Promise<v
         const { path: tempPath } = file;
 
         // Upload the Image to Cloudinary
-        const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(tempPath, {
-            folder: "qrCodeImage",
-        });
+        const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(tempPath);
         const secure_url: string = uploadResponse.secure_url;
         const newUuid = uuidv4();
 
@@ -43,9 +40,6 @@ export const createQrCodeImage = async (req: Request, res: Response ): Promise<v
         // Save the qrCode document
         const qrCodeSave = await doc.save();
         if (qrCodeSave._id) {
-            // Unlink (delete) the uploaded image file
-            fs.unlinkSync(tempPath);
-
             res.status(200).json({
                 _id: qrCodeSave._id,
                 qrCodeImg: secure_url,
