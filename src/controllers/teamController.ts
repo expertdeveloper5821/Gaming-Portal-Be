@@ -424,6 +424,8 @@ interface Room {
   password: string;
   version: string;
   mapImg: string;
+  _id: string;
+  roomUuid: string;
   teammates: Array<{ fullName: string; email: string }>;
 }
 
@@ -487,6 +489,8 @@ export const getUserRegisteredRooms = async (req: Request, res: Response) => {
         }
         return {
           uuid: roomIdData.uuid,
+          _id: roomIdData._id,
+          roomUuid: roomIdData.roomUuid,
           gameName: roomIdData.gameName,
           gameType: roomIdData.gameType,
           mapType: roomIdData.mapType,
@@ -496,6 +500,7 @@ export const getUserRegisteredRooms = async (req: Request, res: Response) => {
           password: roomIdData.password,
           version: roomIdData.version,
           mapImg: roomIdData.mapImg
+
         };
       })
     );
