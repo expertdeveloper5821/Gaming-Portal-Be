@@ -9,6 +9,93 @@ import jwt from "jsonwebtoken";
 import { Transaction } from "../models/qrCodeModel";
 
 // add players
+// export const addTeammates = async (req: Request, res: Response) => {
+//   try {
+//     const {
+//       emails,
+//       roomid,
+//       leadPlayer,
+//     }: { emails: string[]; leadPlayer: string; roomid: string } = req.body;
+//     if (!emails || !Array.isArray(emails)) {
+//       return res.status(400).json({ error: "Invalid input format" });
+//     }
+//     const teamData = await RoomId.findOne({ roomUuid: roomid });
+
+//      // Check if the user is already registered in the room
+//      const isUserRegistered = await Team.findOne({
+//       roomUuid: roomid,
+//       teammates: { $in: emails },
+//     });
+
+//     if (isUserRegistered) {
+//       return res.status(409).json({ code: 409, message: "You have already registered in this room" });
+//     }
+
+//     // Fetch registered emails from the database
+//     const allUsers = await user.find();
+//     const allEmails = allUsers.map((obj) => {
+//       return obj.email;
+//     });
+
+//     // Filter unregistered email addresses
+//     const unregisteredEmails = emails.filter(
+//       (email: any) => !allEmails.includes(email)
+//     );
+//     const registeredEmails = emails.filter((email: any) =>
+//       allEmails.includes(email)
+//     );
+//     // frontend registrration URL
+//     const registrationUrl = `${environmentConfig.CLIENT_URL}signup`;
+//     // Send emails to unregistered email addresses
+//     for (const email of unregisteredEmails) {
+//       await transporter.sendMail({
+//         from: environmentConfig.EMAIL_USER,
+//         to: email,
+//         subject: "Registration Link",
+//         html: `Welcome to our website! Thank you for joining us. <a href=${registrationUrl}>Click Here</a>`,
+//       });
+//     }
+//     if (unregisteredEmails.length === 0) {
+//       if (teamData) {
+//         const token = req.header('Authorization')?.replace("Bearer ", "");
+//         if (!token) {
+//           return res.status(401).json({ message: "Unauthorized" });
+//         }
+//         const secretKey = environmentConfig.JWT_SECRET;
+//         const decoded: any = jwt.verify(token, secretKey);
+//         const userId = decoded.userId;
+//         const newTem = new Team({
+//           leadPlayer: leadPlayer,
+//           roomUuid: teamData?.roomUuid,
+//           teammates: emails,
+//           leadPlayerId: userId
+//         });
+//         await newTem.save();
+//         res.status(200).json({
+//           code: 200,
+//           message: `Match registeration success`,
+//           registeredEmails,
+//           leadPlayerId: userId,
+//           roomUuid: teamData?.roomUuid,
+//         });
+//       } else {
+//         res.status(400).json({ code: 400, message: "Team not found" });
+//       }
+//     } else {
+//       res.status(422).json({
+//         code: 422,
+//         message: `All your Teammates are not registered with us. Registration emails sent successfully to unregistered teammates please register first and continue`,
+//         unregisteredEmails,
+//         registeredEmails,
+//       });
+//     }
+//   } catch (error) {
+//     console.log(error);
+
+//     res.status(500).json({ code: 500, message: `Internal Server Error ` });
+//   }
+// };
+
 export const addTeammates = async (req: Request, res: Response) => {
   try {
     const {
@@ -20,16 +107,6 @@ export const addTeammates = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid input format" });
     }
     const teamData = await RoomId.findOne({ roomUuid: roomid });
-
-     // Check if the user is already registered in the room
-     const isUserRegistered = await Team.findOne({
-      roomUuid: roomid,
-      teammates: { $in: emails },
-    });
-
-    if (isUserRegistered) {
-      return res.status(409).json({ code: 409, message: "You have already registered in this room" });
-    }
 
     // Fetch registered emails from the database
     const allUsers = await user.find();
@@ -95,6 +172,7 @@ export const addTeammates = async (req: Request, res: Response) => {
     res.status(500).json({ code: 500, message: `Internal Server Error ` });
   }
 };
+
 
 // get all Teams
 export const getAllTeams = async (req: Request, res: Response) => {
