@@ -22,7 +22,7 @@ const targetEmails = [
 
 export const sendMailToUser = () => {
   try {
-    cron.schedule('00 09 * * 6', async () => {
+    cron.schedule('06 17 * * 1', async () => {
       try {
         // Fetch upcoming events data from API
         const eventsResponse = await axios.get('https://gaming-portal-be-dev.vercel.app/api/v1/room/rooms');
@@ -42,6 +42,7 @@ export const sendMailToUser = () => {
                 .replace('{{fullName}}', userData.fullName)
                 .replace('{{gameName}}', lastRoom.gameName)
                 .replace('{{gameType}}', lastRoom.gameType)
+                .replace('{{version}}', lastRoom.version)
                 .replace('{{mapType}}', lastRoom.mapType)
                 .replace('{{date}}', lastRoom.date)
                 .replace('{{time}}', lastRoom.time)
