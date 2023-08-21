@@ -1,5 +1,5 @@
 import express from "express";
-import { createRoom, getAllRooms, getRoomById, updateRoomById, deleteRoomById, getUserRooms } from "../controllers/serverRoomIDController";
+import { createRoom, getAllRooms, getRoomById, updateRoomById, deleteRoomById, getUserRooms, getRoomDetails } from "../controllers/serverRoomIDController";
 import { verifyToken } from "../middlewares/authMiddleware";
 import multer from 'multer';
 import bodyParser from "body-parser";
@@ -28,6 +28,9 @@ router.post("/rooms", upload.single('mapImg'), verifyToken(['spectator','admin']
 
 // get room
 router.get("/rooms", getAllRooms);
+
+// get room
+router.get("/allRooms", getRoomDetails);
 
 // get rooms by id 
 router.get("/rooms/:id", verifyToken(['spectator', 'user','admin']),getRoomById);

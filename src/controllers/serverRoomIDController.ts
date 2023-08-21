@@ -201,3 +201,19 @@ export const getUserRooms = async (req: Request, res: Response) => {
     });
   }
 };
+
+
+// Get all rooms
+export const getRoomDetails = async (req: Request, res: Response) => {
+  try {
+    const rooms = await RoomId.find({});
+
+    if (!rooms) {
+      return res.status(404).json({ error: "Room not found" });
+    }
+
+    return res.status(200).json(rooms);
+  } catch (error) {
+    return res.status(500).json({ error: "Failed to fetch rooms" });
+  }
+};
