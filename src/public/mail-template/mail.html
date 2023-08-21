@@ -26,7 +26,13 @@
       background-color: #3355AA;
       color: #ffffff;
       text-align: center;
-      padding: 20px;
+      padding: 10px;
+      /* height: auto; */
+    }
+
+    .header img {
+      width: 200px;
+
     }
 
     .content {
@@ -43,11 +49,11 @@
       display: flex;
       gap: 10px;
       margin-top: 10px;
-      margin-left: 55px;
+      margin-left: 40px;
     }
 
     .social-icons a img {
-      max-width: 30px;
+      max-width: 40px;
       height: auto;
       padding: 25px;
     }
@@ -57,12 +63,24 @@
       background-color: #3355AA;
       color: #ffffff;
       padding: 10px;
+      display: flex;
+      justify-content: space-between;
     }
 
     .footer a {
       color: #ffffff;
-      /* Set link color to white */
       text-decoration: none;
+    }
+
+    .footer-logo {
+      max-width: 200px;
+      margin-right: 20px;
+      display: flex;
+      padding: 20px 0px;
+
+    }
+    .footer-link{
+      text-align: left;
     }
   </style>
 </head>
@@ -71,7 +89,8 @@
 
   <div class="container">
     <div class="header">
-      <h1>PattseHeadshot Newsletter</h1>
+    
+      <h1><img src="https://www.pattseheadshot.com/assets/logolite.svg" alt="PattseHeadshot Logo"></h1>
     </div>
     <div class="content">
       <p>Hello, Dear PattseHeadshot Members, <strong>{{fullName}}</strong>,</p>
@@ -91,7 +110,7 @@
       <hr style="border: 1px solid #ccc; margin: 20px 0;">
 
       <p><strong>Be Online at Schedule Time:</strong> On the event day, make sure you're online and ready to jump into
-        the action at exactly 6:00 PM.</p>
+        the action at exactly Schedule Time!.</p>
 
       <p><strong>Prizes and Rewards:</strong> We've got some fantastic prizes lined up for the winners of the BGMI
         match. It's not just about winning; participating alone will earn you respect and bragging rights among your
@@ -100,16 +119,16 @@
       <p><strong>Stay Connected:</strong> For all updates, announcements, and to interact with our gaming community,
         follow us on our social media platforms:</p>
       <div class="social-icons">
-        <a href="https://twitter.com/headshot_p4491"><img src="https://cdn-icons-png.flaticon.com/512/5969/5969020.png"
+        <a target="_blank" href="https://twitter.com/headshot_p4491"><img src="	https://cdn-icons-png.flaticon.com/512/5969/5969020.png"
             alt="Twitter"></a>
-        <a href="https://www.facebook.com/profile.php?id=100095239340085&is_tour_dismissed=true"><img
-            src="https://cdn-icons-png.flaticon.com/512/4494/4494475.png" alt="Facebook"></a>
-        <a href="https://www.instagram.com/pattseheadshotsj/"><img
-            src="https://cdn-icons-png.flaticon.com/512/174/174855.png" alt="Instagram"></a>
-        <a href="https://t.me/pattseheadshotsj"><img src="https://cdn-icons-png.flaticon.com/512/2111/2111644.png"
+        <a target="_blank" href="https://www.facebook.com/profile.php?id=100095239340085&is_tour_dismissed=true"><img
+            src="https://cdn-icons-png.flaticon.com/512/2626/2626269.png" alt="Facebook"></a>
+        <a target="_blank" href="https://www.instagram.com/pattseheadshotsj/"><img
+            src="https://cdn-icons-png.flaticon.com/512/1384/1384063.png" alt="Instagram"></a>
+        <a target="_blank" href="https://t.me/pattseheadshotsj"><img src="https://cdn-icons-png.flaticon.com/512/2111/2111644.png"
             alt="Telegram"></a>
-        <a href="https://www.youtube.com/channel/UC8GDIEtwWV_67Fxpxfa298Q"><img
-            src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" alt="Telegram"></a>
+        <a target="_blank" href="https://www.youtube.com/channel/UC8GDIEtwWV_67Fxpxfa298Q"><img
+            src="https://cdn-icons-png.flaticon.com/512/4494/4494485.png" alt="Youtube"></a>
       </div>
 
       <p>Don't miss out on this exciting opportunity to showcase your BGMI skills, connect with fellow gamers, and have
@@ -119,10 +138,17 @@
     </div>
 
     <div class="footer">
-      <p><strong>Best regards, The PattseHeadshot Team</strong></p>
-      <p><strong>Contact:</strong> <a href="mailto:support@pattseheadshot.com">support@pattseheadshot.com</a></p>
-      <p><strong>Website:</strong> <a href="http://www.pattseheadshot.com/">www.pattseheadshot.com</a></p>
+      <div>
+        <img src="https://www.pattseheadshot.com/assets/logolite.svg" alt="PattseHeadshot Logo" class="footer-logo">
+      </div>
+      <div class="footer-link">
+        <p><strong>Best regards:- The PattseHeadshot Team</strong></p>
+        <p><strong>Contact:</strong> <a  target="_blank" href="mailto:support@pattseheadshot.com">support@pattseheadshot.com</a></p>
+        <p><strong>Website:</strong> <a target="_blank" href="http://www.pattseheadshot.com/">www.pattseheadshot.com</a></p>
+      </div>
+
     </div>
+  </div>
 
   </div>
 
@@ -130,4 +156,4 @@
 
 </body>
 
-</html>
+</html> 
