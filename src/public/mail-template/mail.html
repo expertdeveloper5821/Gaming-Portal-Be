@@ -1,21 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PattseHeadshot Newsletter</title>
-</head>
-<body style="font-family: Arial, sans-serif; margin: 0; padding: 0;">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f2f2f2;
+    }
 
-<div style="background-color: #f2f2f2; padding: 20px;">
-  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-    <div style="padding: 20px;">
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .header {
+      background-color: #3355AA;
+      color: #ffffff;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    .content h2 {
+      margin: 0;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .social-icons {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      margin-left: 55px;
+    }
+
+    .social-icons a img {
+      max-width: 30px;
+      height: auto;
+      padding: 25px;
+    }
+
+    .footer {
+      text-align: center;
+      background-color: #3355AA;
+      color: #ffffff;
+      padding: 10px;
+    }
+
+    .footer a {
+      color: #ffffff;
+      /* Set link color to white */
+      text-decoration: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h1>PattseHeadshot Newsletter</h1>
+    </div>
+    <div class="content">
       <p>Hello, Dear PattseHeadshot Members, <strong>{{fullName}}</strong>,</p>
-      <p>We hope this message finds you well and in high spirits. We're thrilled to announce our next exciting event.</p>
+      <p>We hope this message finds you well and in high spirits. We're thrilled to announce our next exciting event.
+      </p>
 
       <hr style="border: 1px solid #ccc; margin: 20px 0;">
 
-      <h2 style="margin: 0;">Event Details:</h2>
+      <h2>Event Details:</h2>
       <p><strong>Game:</strong> {{gameName}}</p>
       <p><strong>Type:</strong> {{gameType}}</p>
       <p><strong>Map:</strong> {{mapType}}</p>
@@ -25,26 +90,44 @@
 
       <hr style="border: 1px solid #ccc; margin: 20px 0;">
 
-      <p><strong>Be Online at Schedule Time:</strong> On the event day, make sure you're online and ready to jump into the action at exactly 6:00 PM.</p>
+      <p><strong>Be Online at Schedule Time:</strong> On the event day, make sure you're online and ready to jump into
+        the action at exactly 6:00 PM.</p>
 
-      <p><strong>Prizes and Rewards:</strong> We've got some fantastic prizes lined up for the winners of the BGMI match. It's not just about winning; participating alone will earn you respect and bragging rights among your fellow gamers!</p>
+      <p><strong>Prizes and Rewards:</strong> We've got some fantastic prizes lined up for the winners of the BGMI
+        match. It's not just about winning; participating alone will earn you respect and bragging rights among your
+        fellow gamers!</p>
 
-      <p><strong>Stay Connected:</strong> For all updates, announcements, and to interact with our gaming community, follow us on our social media platforms:</p>
-     
-        <p style="display: flex;">Twitter:-<a style="padding-left: 10px;" href="https://twitter.com/headshot_p4491"><img src="https://cdn-icons-png.flaticon.com/512/5969/5969020.png" alt="Twitter" style="max-width: 20px;"></a></p>
-        <p style="display: flex;">Facebook:-<a style="padding-left: 10px;" href="https://www.facebook.com/profile.php?id=100095239340085&is_tour_dismissed=true"><img src="https://cdn-icons-png.flaticon.com/512/4494/4494475.png" alt="Facebook" style="max-width: 20px;"></a></p>
-        <p style="display: flex;">Instagram:-<a style="padding-left: 10px;" href="https://www.instagram.com/pattseheadshotsj/"><img src="https://cdn-icons-png.flaticon.com/512/174/174855.png" alt="Instagram" style="max-width: 20px;"></a></p>
-        <p style="display: flex;">Telegram:-<a style="padding-left: 10px;" href="https://t.me/pattseheadshotsj"><img src="https://cdn-icons-png.flaticon.com/512/2111/2111644.png" alt="Telegram" style="max-width: 20px;"></a></p>
-      
-      <p>Don't miss out on this exciting opportunity to showcase your BGMI skills, connect with fellow gamers, and have a blast!</p>
-      <p>Spread the word, gather your squad, and let's make this BGMI match an unforgettable gaming experience. See you on the battlefield at 6:00 PM!</p>
+      <p><strong>Stay Connected:</strong> For all updates, announcements, and to interact with our gaming community,
+        follow us on our social media platforms:</p>
+      <div class="social-icons">
+        <a href="https://twitter.com/headshot_p4491"><img src="https://cdn-icons-png.flaticon.com/512/5969/5969020.png"
+            alt="Twitter"></a>
+        <a href="https://www.facebook.com/profile.php?id=100095239340085&is_tour_dismissed=true"><img
+            src="https://cdn-icons-png.flaticon.com/512/4494/4494475.png" alt="Facebook"></a>
+        <a href="https://www.instagram.com/pattseheadshotsj/"><img
+            src="https://cdn-icons-png.flaticon.com/512/174/174855.png" alt="Instagram"></a>
+        <a href="https://t.me/pattseheadshotsj"><img src="https://cdn-icons-png.flaticon.com/512/2111/2111644.png"
+            alt="Telegram"></a>
+        <a href="https://www.youtube.com/channel/UC8GDIEtwWV_67Fxpxfa298Q"><img
+            src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" alt="Telegram"></a>
+      </div>
 
+      <p>Don't miss out on this exciting opportunity to showcase your BGMI skills, connect with fellow gamers, and have
+        a blast!</p>
+      <p>Spread the word, gather your squad, and let's make this BGMI match an unforgettable gaming experience. See you
+        on the battlefield at Schedule Time!</p>
+    </div>
+
+    <div class="footer">
       <p><strong>Best regards, The PattseHeadshot Team</strong></p>
       <p><strong>Contact:</strong> <a href="mailto:support@pattseheadshot.com">support@pattseheadshot.com</a></p>
       <p><strong>Website:</strong> <a href="http://www.pattseheadshot.com/">www.pattseheadshot.com</a></p>
     </div>
+
   </div>
-</div>
+
+
 
 </body>
+
 </html>

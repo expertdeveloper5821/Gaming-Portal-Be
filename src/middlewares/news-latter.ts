@@ -22,7 +22,7 @@ const targetEmails = [
 
 export const sendMailToUser = () => {
   try {
-    cron.schedule('52 18 * * 5', async () => {
+    cron.schedule('00 09 * * 6', async () => {
       try {
         // Fetch upcoming events data from API
         const eventsResponse = await axios.get('https://gaming-portal-be-dev.vercel.app/api/v1/room/rooms');
@@ -71,11 +71,6 @@ export const sendMailToUser = () => {
 
 
 
-
-
-
-
-
 // export const sendMailToUser = () => {
 //   try {
 //     cron.schedule('* * * * *', async () => { 
@@ -100,27 +95,4 @@ export const sendMailToUser = () => {
 
 
 
-// const targetEmails = [ 
-//   'vishal.singh@technogetic.com',
-// ];
-
-// export const sendMailToUser = () => {
-//   try {
-//     cron.schedule('03 16 * * 4', async () => { 
-//       try {
-//         for (const email of targetEmails) {
-//           const userData = await user.findOne({ email });
-//           if (userData) {
-//             const emailToSend = { ...emailContent, to: email }; 
-//             await transporter.sendMail(emailToSend);
-//           }
-//         }
-//       } catch (error) {
-//         console.error("Error fetching user data:", error);
-//       }
-//     });
-//   } catch (error) {
-//     console.error("Cron job scheduling error:", error);
-//   }
-// }
 
