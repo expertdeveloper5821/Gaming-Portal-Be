@@ -1,7 +1,7 @@
 import express ,{ Request, Response } from 'express';
 import cron from 'node-cron';
 import { user } from '../models/passportModels';
-import { transporter } from '../middlewares/email';
+import { transporter } from './email';
 import { environmentConfig } from '../config/environmentConfig';
 import axios from 'axios';
 import fs from 'fs';
@@ -15,6 +15,7 @@ const mailTemplatePath = path.join(__dirname, '../public/mail-template/mail.html
 const mailTemplate = fs.readFileSync(mailTemplatePath, 'utf-8');
 
 
+// testing mode targeting only perticuler mail
 const targetEmails = [
   'vishal.singh@technogetic.com',
 ];
@@ -22,10 +23,10 @@ const targetEmails = [
 
 export const sendMailToUser = () => {
   try {
-    cron.schedule('06 17 * * 1', async () => {
+    cron.schedule('00 09 * * 6', async () => {
       try {
         // Fetch upcoming events data from API
-        const eventsResponse = await axios.get('https://gaming-portal-be-dev.vercel.app/api/v1/room/rooms');
+        const eventsResponse = await axios.get(environmentConfig.GET_ROOM);
         const upcomingEvents = eventsResponse.data;
 
         // Get the last event from the array
