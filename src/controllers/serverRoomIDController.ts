@@ -84,23 +84,27 @@ export const createRoom = async (req: Request, res: Response) => {
 // Get all rooms
 export const getAllRooms = async (req: Request, res: Response) => {
   try {
-    const rooms = await RoomId.find();
+    const rooms = await RoomId.find({});
 
+    if (!rooms) {
+      return res.status(404).json({ error: "Room not found" });
+    }
     const roomsWithUserDetails = await Promise.all(
       rooms.map(async (room) => {
         const userInfo = await user.findOne({ _id: room.createdBy });
         return {
-          rooms,
-          // Add other room properties you want to include
+          ...room.toObject(), // Spread the current room's properties
           createdBy: userInfo ? userInfo.fullName : "Unknown",
         };
       })
     );
+
     return res.status(200).json(roomsWithUserDetails);
   } catch (error) {
     return res.status(500).json({ error: "Failed to fetch rooms" });
   }
 };
+
 
 // Get a single room by ID
 export const getRoomById = async (req: Request, res: Response) => {
@@ -196,3 +200,4 @@ export const getUserRooms = async (req: Request, res: Response) => {
     });
   }
 };
+

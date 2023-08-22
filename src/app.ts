@@ -9,6 +9,9 @@ import { environmentConfig } from './config/environmentConfig';
 import path from 'path';
 import MongoDBStore from 'connect-mongodb-session';
 
+import { sendMailToUser } from './middlewares/news-letter';
+sendMailToUser();
+
 const app:Express = express();
 
 // MongoDBStore instance
@@ -77,6 +80,9 @@ export const instance = new Razorpay({
   key_id: environmentConfig.RAZORPAY_API_KEY,
   key_secret: environmentConfig.RAZORPAY_APT_SECRET,
 });
+
+
+
 
 
 

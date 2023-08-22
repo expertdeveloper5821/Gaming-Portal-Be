@@ -4,7 +4,6 @@
 <head>
     <title>Payment Details</title>
     <style>
-        /* Add your CSS styles here */
         body {
             font-family: Arial, sans-serif;
             margin: 0 auto;
@@ -14,21 +13,19 @@
 
         h1 {
             color: #333;
-            /* text-align: center; */
         }
 
         p {
             margin-bottom: 10px;
         }
 
-        /* Additional styles for navigation and footer */
         .navbar {
             display: flex;
-            column-gap: 33%;
+            column-gap: 28%;
             align-items: center;
+            justify-content: space-between;
             padding: 10px;
-            /* border-bottom: 2px solid rgba(0, 0, 0, 0.404); */
-            background-color: #adcff0;
+            background-color: #96c1ec;
         }
 
         .logo {
@@ -36,8 +33,14 @@
             height: auto;
         }
 
+        .pattlogo {
+            width: 150px;
+
+        }
+
         .company-name {
-            text-align: center;
+            text-align: right;
+
         }
 
         .check_add {
@@ -48,12 +51,11 @@
         .footer {
             padding: 10px;
             text-align: center;
-            /* border-top: 2px solid black; */
             margin-top: 23px;
-            background-color: #adcff0;
+            background-color: #96c1ec;
         }
 
-        .formBottom{
+        .formBottom {
             display: flex;
             justify-content: space-between;
         }
@@ -64,7 +66,7 @@
             line-height: 1.5;
         }
 
-        .address_cls p{
+        .address_cls p {
             margin: 0;
             font-weight: 500;
         }
@@ -97,23 +99,25 @@
             background-color: #f2f2f2;
             font-weight: bold;
         }
-
     </style>
 </head>
 
 <body>
     <div class="navbar">
+        <div class="company-name">
+            <img src="https://www.pattseheadshot.com/assets/logolite.svg" alt="PattseHeadshot Logo" class="pattlogo">
+        </div>
+        <div  class="company-head">
+            <h1>Payment Invoice</h1>
+        </div>
+      
         <div>
             <img class="logo"
                 src="https://technogetic.com/wp-content/uploads/2021/10/logoTG-01__3_-removebg-preview.png"
                 alt="Company Logo">
         </div>
-        <div class="company-name">
-            <h2>Pattse Headshot</h2>
-        </div>
     </div>
     <div class="payment_info">
-        <h1>Payment Invoice</h1>
         <table>
             <tr>
                 <th>Field</th>
@@ -137,16 +141,16 @@
     <div class="formBottom">
         <div class="address_cls">
             <div class="addressBox">
-            <p>Plot No.E299 - 3rd Floor</p>
-            <p>Corporate Greens</p>
-            <p>Industrial Area,Sector 75</p>
-            <p>Ajit Singh Nagar</p>
-            <p>160055</p>
+                <p>Plot No.E299 - 3rd Floor</p>
+                <p>Corporate Greens</p>
+                <p>Industrial Area,Sector 75</p>
+                <p>Ajit Singh Nagar</p>
+                <p>160055</p>
+            </div>
         </div>
-    </div>
-    <div class="ceo_info">
-        <p>Founder & CEO<br> Saksham Aggarwal </p>
-    </div>
+        <div class="ceo_info">
+            <p>Founder & CEO<br> Saksham Aggarwal </p>
+        </div>
     </div>
 
 

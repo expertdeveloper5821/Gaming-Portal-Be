@@ -21,8 +21,9 @@ export interface EnvironmentConfig {
   RAZORPAY_APT_SECRET: string;
   Payment_SUCCESS_URL: string;
   CLOUD_NAME: string;
-  API_KEY: string,
-  API_SECRET: string
+  API_KEY: string;
+  API_SECRET: string;
+  GET_ROOM: string;
 }
 
 export const environmentConfig: EnvironmentConfig = {
@@ -46,4 +47,5 @@ export const environmentConfig: EnvironmentConfig = {
   CLOUD_NAME: process.env.cloudName || 'cloudnery',
   API_KEY: process.env.apiKey || 'cloudnery',
   API_SECRET: process.env.apiSecret || 'cloudnery',
+  GET_ROOM: process.env.getRoom || 'https://gaming-portal-be-dev.vercel.app/api/v1/room/rooms'
 };
