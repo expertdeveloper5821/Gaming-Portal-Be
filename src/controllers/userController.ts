@@ -106,6 +106,7 @@ export const userLogin = async (req: Request, res: Response) => {
       }
     );
     let userData = {
+      userUuid: User.userUuid,
       fullName: User.fullName,
       email: User.email,
       token: token,
@@ -263,6 +264,7 @@ export const getUserDetails = async (req: Request, res: Response) => {
 
     // If the user is found, construct the response object
     const responseData = {
+      userUuid: foundUser.userUuid,
       fullName: foundUser.fullName,
       userName: foundUser.userName,
       email: foundUser.email,
@@ -296,6 +298,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
       code: 200,
       data: allUsers.map((data) => {
         return {
+          userUuid: data?.userUuid,
           fullName: data?.fullName,
           userName: data?.userName,
           email: data?.email,

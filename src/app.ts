@@ -48,6 +48,7 @@ import paymentRoute from './routes/paymentRoutes';
 import qrCodeRoute from './routes/qrCodeRoute';
 import winnerRoute from './routes/winnerPlayerRoute';
 import reportRoute from './routes/reportRoute';
+import dataRoute from './routes/data-transfer-Route';
 
 
 // cors middleware 
@@ -69,6 +70,7 @@ app.use("/api/v1/razorpay", paymentRoute)
 app.use('/api/v1/payment', qrCodeRoute)
 app.use('/api/v1/winners', winnerRoute)
 app.use('/api/v1/report', reportRoute)
+app.use('/api/v1/data', dataRoute)
 
 
 app.get("/api/getkey", (req, res) =>
