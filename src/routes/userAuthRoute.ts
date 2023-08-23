@@ -11,9 +11,6 @@ import {
 } from "../controllers/userController";
 const route = express.Router();
 import { verifyToken } from "../middlewares/authMiddleware";
-import {transferData} from "../middlewares/data-transfer";
-
-route.post('/copy', transferData)
 
 // signup route
 route.post("/signup", userSignup);
