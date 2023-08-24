@@ -1,8 +1,13 @@
+import { log } from 'console';
 import app from './app';
 import { environmentConfig } from './config/environmentConfig';
 import { printSuccess, printError } from './utils/consoleMessage'; 
 
 const port: number = environmentConfig.SERVER_PORT;
+
+console.log(process.env.NODE_ENV);
+
+
 
 // sample get route
 app.get('/', (req, res) => {
