@@ -49,6 +49,7 @@ import qrCodeRoute from './routes/qrCodeRoute';
 import winnerRoute from './routes/winnerPlayerRoute';
 import reportRoute from './routes/reportRoute';
 import dataRoute from './routes/data-transfer-Route';
+import searchRoute from './routes/search-filter-Route';
 
 
 // cors middleware 
@@ -71,6 +72,7 @@ app.use('/api/v1/payment', qrCodeRoute)
 app.use('/api/v1/winners', winnerRoute)
 app.use('/api/v1/report', reportRoute)
 app.use('/api/v1/data', dataRoute)
+app.use('/api/v1/filter', searchRoute)
 
 
 app.get("/api/getkey", (req, res) =>
