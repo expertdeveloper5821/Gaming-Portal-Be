@@ -285,16 +285,16 @@ export const getUserDetails = async (req: Request, res: Response) => {
 // get all users
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
-    const { query } = req.query;
+    const { search } = req.query;
 
     let usersQuery = {};
 
-    if (query) {
+    if (search) {
       usersQuery = {
         $or: [
-          { fullName: { $regex: query, $options: 'i' } },
-          { userName: { $regex: query, $options: 'i' } },
-          { email: { $regex: query, $options: 'i' } },
+          { fullName: { $regex: search, $options: 'i' } },
+          { userName: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } },
         ],
       };
     }
@@ -306,7 +306,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
     if (allUsers.length === 0) {
       return res.status(404).json({
         code: 404,
-        message: query ? "No users found with the provided query" : "No users found",
+        message: search ? "No users found with the provided query" : "No users found",
       });
     }
 
