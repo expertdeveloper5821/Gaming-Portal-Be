@@ -285,15 +285,31 @@ export const getUserDetails = async (req: Request, res: Response) => {
 // get all users
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
-    // Use the find method without any conditions to retrieve all users from the database
-    const allUsers = await user.find().populate('role','role');
+    const { search } = req.query;
+
+    let usersQuery = {};
+
+    if (search) {
+      usersQuery = {
+        $or: [
+          { fullName: { $regex: search, $options: 'i' } },
+          { userName: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } },
+        ],
+      };
+    }
+
+    const allUsers = await user
+      .find(usersQuery)
+      .populate('role', 'role');
+
     if (allUsers.length === 0) {
       return res.status(404).json({
         code: 404,
-        message: "No users found",
+        message: search ? "No users found with the provided query" : "No users found",
       });
     }
-    // If users are found, return the user data as the response
+
     return res.status(200).json({
       code: 200,
       data: allUsers.map((data) => {

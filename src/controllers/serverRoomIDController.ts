@@ -111,24 +111,46 @@ export const createRoom = async (req: Request, res: Response) => {
 // Get all rooms
 export const getAllRooms = async (req: Request, res: Response) => {
   try {
-    const rooms = await RoomId.find({});
+    const { search } = req.query;
 
-    if (!rooms) {
-      return res.status(404).json({ error: "Room not found" });
+    let roomsQuery = {};
+
+    if (search) {
+      roomsQuery = {
+        $or: [
+          { gameName: { $regex: search, $options: 'i' } },
+          { gameType: { $regex: search, $options: 'i' } },
+          { mapType: { $regex: search, $options: 'i' } },
+          { version: { $regex: search, $options: 'i' } },
+          { time: { $regex: search, $options: 'i' } },
+          { date: { $regex: search, $options: 'i' } },
+          { lastSurvival: { $regex: search, $options: 'i' } },
+          { highestKill: { $regex: search, $options: 'i' } },
+          { secondWin: { $regex: search, $options: 'i' } },
+          { thirdWin: { $regex: search, $options: 'i' } },
+        ],
+      };
     }
+
+    const rooms = await RoomId.find(roomsQuery);
+
+    if (rooms.length === 0) {
+      return res.status(404).json({ message: search ? 'No rooms found with the provided query' : 'No rooms found' });
+    }
+
     const roomsWithUserDetails = await Promise.all(
       rooms.map(async (room) => {
         const userInfo = await user.findOne({ _id: room.createdBy });
         return {
-          ...room.toObject(), // Spread the current room's properties
-          createdBy: userInfo ? userInfo.fullName : "Unknown",
+          ...room.toObject(),
+          createdBy: userInfo ? userInfo.fullName : 'Unknown',
         };
       })
     );
 
     return res.status(200).json(roomsWithUserDetails);
   } catch (error) {
-    return res.status(500).json({ error: "Failed to fetch rooms" });
+    return res.status(500).json({ error: 'Failed to fetch rooms' });
   }
 };
 
