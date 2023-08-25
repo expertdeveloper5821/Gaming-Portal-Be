@@ -102,8 +102,6 @@ export const spectator = async (req: Request, res: Response) => {
           tokne: token,
           message:
             "Your login crendentials has been sent ot your email please check and continue",
-            userUuid: newUuid,
-            _id: newUser._id
         });
       }
     });
@@ -190,34 +188,17 @@ export const getRoleById = async (req: Request, res: Response) => {
 // Update role by ID
 export const updateRole = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const { roleid } = req.body;
-    if (!validId.test(id)) {
-      return res.status(404).json({ error: "Invalid role ID" });
-    }
-    if (!validId.test(roleid)) {
-      return res
-        .status(404)
-        .json({ error: "provided role ID is of invalid format" });
-    }
-    // Check if the specified role exists before updating
-    const existingRole = await Role.findById(roleid);
-    if (!existingRole) {
-      return res.status(400).json({ error: "Role does not exist" });
-    }
+    const { userUuid } = req.params; 
+    const updatedData = req.body; 
 
-    // Find the user by ID and update the 'role' field with the specified role ID
-    const updatedUser = await user.findByIdAndUpdate(
-      id,
-      { role: roleid }, // Update the 'role' field with the new role ID
-      { new: true }
-    );
+    // Find the user by UUID and update their information
+    const updatedUser = await user.findOneAndUpdate({ userUuid }, updatedData, { new: true });
 
     if (!updatedUser) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    return res.status(200).json(updatedUser);
+    return res.status(200).json({ message: "User updated successfully", user: updatedUser });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ code: 500, error: "Internal server error" });
@@ -227,16 +208,12 @@ export const updateRole = async (req: Request, res: Response) => {
 // Delete role by ID
 export const deleteRole = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    if (!validId.test(id)) {
-      return res.status(404).json({ error: "Invalid role ID" });
+    const { userUuid } = req.params; 
+    const deletedUser = await user.findOneAndDelete({ userUuid }); 
+    if (!deletedUser) {
+      return res.status(404).json({ error: "User not found" });
     }
-    const deletedRole = await user.findByIdAndDelete(id);
-    if (!deletedRole) {
-      return res.status(404).json({ error: "Role not found" });
-    }
-    // await user.updateMany({ role: id }, { $pull: { role: id } });
-    return res.status(200).json({ message: "deleted successfully" });
+    return res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ code: 500, error: "Internal server error" });

@@ -12,7 +12,6 @@ import {
 const route = express.Router();
 import { verifyToken } from "../middlewares/authMiddleware";
 
-
 // signup route
 route.post("/signup", userSignup);
 

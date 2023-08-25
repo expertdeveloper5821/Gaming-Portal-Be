@@ -18,10 +18,36 @@ cloudinary.config({
 // Create a new room
 export const createRoom = async (req: Request, res: Response) => {
   try {
-    const { roomId, gameName, gameType, mapType, password, version, time, date, lastServival, highestKill, secondWin, thirdWin } = req.body;
+    const {
+      roomId,
+      gameName,
+      gameType,
+      mapType,
+      password,
+      version,
+      time,
+      date,
+      lastServival,
+      highestKill,
+      secondWin,
+      thirdWin
+    } = req.body;
     const file = req.file;
 
-    if (!roomId || !gameName || !gameType || !mapType || !password || !version || !time || !date || !lastServival || !highestKill || !secondWin || !thirdWin) {
+    if (
+      !roomId ||
+      !gameName ||
+      !gameType ||
+      !mapType ||
+      !password ||
+      !version ||
+      !time ||
+      !date ||
+      !lastServival ||
+      !highestKill ||
+      !secondWin ||
+      !thirdWin
+    ) {
       return res.status(400).json({ message: "All fields required" });
     } else {
       const token = req.header("Authorization")?.replace("Bearer ", "");
@@ -30,19 +56,20 @@ export const createRoom = async (req: Request, res: Response) => {
       }
       const secretKey = environmentConfig.JWT_SECRET;
 
-      if (!file) {
-        return res.status(400).json({ message: "File not provided" });
-      }
-
-      const tempPath = file.path;
+      const tempPath = file?.path; // Use optional chaining to handle the case where file is not provided
 
       try {
         const decoded: any = jwt.verify(token, secretKey);
         const userId = decoded.userId;
         const newUuid = uuidv4();
 
-        const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(tempPath);
-        const secure_url: string = uploadResponse.secure_url;
+        let secure_url: string | null = null;
+        if (tempPath) {
+          const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(
+            tempPath
+          );
+          secure_url = uploadResponse.secure_url;
+        }
 
         const createdRoom = await RoomId.create({
           roomUuid: newUuid,
@@ -56,16 +83,16 @@ export const createRoom = async (req: Request, res: Response) => {
           createdBy: userId,
           time,
           date,
-          lastServival, 
-          highestKill, 
-          secondWin, 
-          thirdWin 
+          lastServival,
+          highestKill,
+          secondWin,
+          thirdWin
         });
 
         return res.status(200).json({
           message: "Room created successfully",
           uuid: newUuid,
-          _id: createdRoom._id, 
+          _id: createdRoom._id
         });
       } catch (error) {
         console.error(error);
@@ -76,7 +103,7 @@ export const createRoom = async (req: Request, res: Response) => {
     console.error(error);
     return res.status(500).json({
       error: "Failed to create room",
-      success: false,
+      success: false
     });
   }
 };
@@ -136,16 +163,16 @@ export const updateRoomById = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Room ID is required" });
     }
 
-      const existingRoom = await RoomId.findById(roomId);
+    const existingRoom = await RoomId.findById(roomId);
 
-      if (!existingRoom) {
-        return res.status(404).json({ message: "Room not found" });
-      }
+    if (!existingRoom) {
+      return res.status(404).json({ message: "Room not found" });
+    }
 
-      // Update the room data
-      await RoomId.findByIdAndUpdate(roomId, updatedRoomData);
+    // Update the room data
+    await RoomId.findByIdAndUpdate(roomId, updatedRoomData);
 
-      return res.status(200).json({ message: "Room updated successfully" });
+    return res.status(200).json({ message: "Room updated successfully" });
 
   } catch (error) {
     console.error(error);
