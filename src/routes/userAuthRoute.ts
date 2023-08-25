@@ -25,7 +25,7 @@ route.post("/forget-password", forgetPassword);
 route.post("/reset-password", resetPassword);
 
 // get single user 
-route.get("/getuser", verifyToken(["admin",'user','spectator']), getUserDetails);
+route.get("/getuser", getUserDetails);
 
 // get Alluser
 route.get("/getalluser", verifyToken(["admin", 'spectator']), getAllUsers);

@@ -87,7 +87,4 @@ export const instance = new Razorpay({
 
 
 
-
-
-
 export default app;
