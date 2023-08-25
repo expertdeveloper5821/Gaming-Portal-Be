@@ -111,24 +111,48 @@ export const createRoom = async (req: Request, res: Response) => {
 // Get all rooms
 export const getAllRooms = async (req: Request, res: Response) => {
   try {
-    const rooms = await RoomId.find({});
+    const { query } = req.query;
 
-    if (!rooms) {
-      return res.status(404).json({ error: "Room not found" });
+    let roomsQuery = {};
+
+    if (query) {
+      roomsQuery = {
+        $or: [
+          { roomId: { $regex: query, $options: 'i' } },
+          { password: { $regex: query, $options: 'i' } },
+          { gameName: { $regex: query, $options: 'i' } },
+          { gameType: { $regex: query, $options: 'i' } },
+          { mapType: { $regex: query, $options: 'i' } },
+          { version: { $regex: query, $options: 'i' } },
+          { time: { $regex: query, $options: 'i' } },
+          { date: { $regex: query, $options: 'i' } },
+          { lastSurvival: { $regex: query, $options: 'i' } },
+          { highestKill: { $regex: query, $options: 'i' } },
+          { secondWin: { $regex: query, $options: 'i' } },
+          { thirdWin: { $regex: query, $options: 'i' } },
+        ],
+      };
     }
+
+    const rooms = await RoomId.find(roomsQuery);
+
+    if (rooms.length === 0) {
+      return res.status(404).json({ message: query ? 'No rooms found with the provided query' : 'No rooms found' });
+    }
+
     const roomsWithUserDetails = await Promise.all(
       rooms.map(async (room) => {
         const userInfo = await user.findOne({ _id: room.createdBy });
         return {
-          ...room.toObject(), // Spread the current room's properties
-          createdBy: userInfo ? userInfo.fullName : "Unknown",
+          ...room.toObject(),
+          createdBy: userInfo ? userInfo.fullName : 'Unknown',
         };
       })
     );
 
     return res.status(200).json(roomsWithUserDetails);
   } catch (error) {
-    return res.status(500).json({ error: "Failed to fetch rooms" });
+    return res.status(500).json({ error: 'Failed to fetch rooms' });
   }
 };
 
