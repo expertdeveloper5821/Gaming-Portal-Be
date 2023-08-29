@@ -141,11 +141,18 @@ export const addTeammates = async (req: Request, res: Response) => {
         const secretKey = environmentConfig.JWT_SECRET;
         const decoded: any = jwt.verify(token, secretKey);
         const userId = decoded.userId;
+
+        const leadPlayerUser = await user.findOne({ email: leadPlayer });
+        if (!leadPlayerUser) {
+          return res.status(400).json({ code: 400, message: "Lead player not found" });
+        }
+
         const newTem = new Team({
           leadPlayer: leadPlayer,
           roomUuid: teamData?.roomUuid,
           teammates: emails,
-          leadPlayerId: userId
+          leadPlayerId: userId,
+          teamDetails: leadPlayerUser.teamName
         });
         await newTem.save();
         res.status(200).json({
@@ -154,6 +161,7 @@ export const addTeammates = async (req: Request, res: Response) => {
           registeredEmails,
           leadPlayerId: userId,
           roomUuid: teamData?.roomUuid,
+          teamDetails: leadPlayerUser.teamName
         });
       } else {
         res.status(400).json({ code: 400, message: "Team not found" });
@@ -430,14 +438,14 @@ interface Room {
 }
 
 // get teammates invited by user
-export const getInvitedUser =async (req: Request, res: Response) => {
+export const getInvitedUser = async (req: Request, res: Response) => {
   try {
     // Get the user's ID from the decoded token
     const token = req.header("Authorization")?.replace("Bearer ", "");
     if (!token) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    
+
     const secretKey = environmentConfig.JWT_SECRET;
     const decoded: any = jwt.verify(token, secretKey);
     const userId = decoded.userId;
@@ -525,7 +533,7 @@ export const getUserRegisteredRooms = async (req: Request, res: Response) => {
   }
 
 };
- 
+
 
 // get user regiseter game with teammates
 export const getUserRegisteredRoomsWithTeamMates = async (req: Request, res: Response) => {
@@ -552,19 +560,20 @@ export const getUserRegisteredRoomsWithTeamMates = async (req: Request, res: Res
 
       const teammatesWithDetails = teammateDetails.map(teammate => ({
         _id: teammate._id,
-        fullName: teammate.fullName, 
+        fullName: teammate.fullName,
         email: teammate.email,
       }));
 
       return {
         roomUuid: team.roomUuid,
         leadPlayer: team.leadPlayer,
+        teamDetails: team.teamDetails,
         teammates: teammatesWithDetails,
       };
     }));
 
     res.status(200).json({ code: 200, message: "Successfully retrieved registered rooms with teammates", registeredRooms });
-  }  catch (error) {
+  } catch (error) {
     console.log(error);
     res.status(500).json({ code: 500, message: "Internal Server Error" });
   }
@@ -598,7 +607,7 @@ export const getUsersAndTeammatesInRoom = async (req: Request, res: Response) =>
 
         const teammatesWithDetails = teammateDetails.map(teammate => ({
           _id: teammate._id,
-          fullName: teammate.fullName, 
+          fullName: teammate.fullName,
           email: teammate.email,
         }));
 

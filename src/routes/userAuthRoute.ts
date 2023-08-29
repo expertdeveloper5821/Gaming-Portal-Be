@@ -3,14 +3,31 @@ import {
   userSignup,
   userLogin,
   forgetPassword,
-  updateUserById,
-  deleteUserById,
+  userUpdate,
+  userDelete,
   resetPassword,
   getUserDetails,
   getAllUsers,
 } from "../controllers/userController";
 const route = express.Router();
 import { verifyToken } from "../middlewares/authMiddleware";
+import multer from 'multer';
+import bodyParser from "body-parser";
+
+
+
+route.use(bodyParser.json());
+route.use(bodyParser.urlencoded({ extended: true }));
+
+
+const storage = multer.diskStorage({
+  filename: (req, file, cb) => {
+    const name = Date.now() + '_' + file.originalname;
+    cb(null, name);
+  }
+});
+
+const upload = multer({ storage: storage });
 
 // signup route
 route.post("/signup", userSignup);
@@ -31,9 +48,9 @@ route.get("/getuser", getUserDetails);
 route.get("/getalluser", verifyToken(["admin", 'spectator']), getAllUsers);
 
 // update user 
-route.put("/updateuser", verifyToken(["admin",'user']), updateUserById);
+route.put("/updateuser", upload.single('profilePic'), verifyToken(["admin", 'user']), userUpdate);
 
 // delete by id
-route.delete("/deleteuser", verifyToken(["admin",'user']), deleteUserById);
+route.delete("/deleteuser", verifyToken(["admin", 'user']), userDelete);
 
 export default route;

@@ -8,6 +8,15 @@ import { passwordRegex } from "../utils/helper";
 import { environmentConfig } from "../config/environmentConfig";
 import { Role } from "../models/roleModel";
 import { validId } from "../utils/pattern";
+import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
+
+
+// Configuration
+cloudinary.config({
+  cloud_name: environmentConfig.CLOUD_NAME,
+  api_key: environmentConfig.API_KEY,
+  api_secret: environmentConfig.API_SECRET
+});
 
 const jwtSecret: string = environmentConfig.JWT_SECRET;
 const clickHere: string = environmentConfig.LOGIN_PAGE;
@@ -37,8 +46,8 @@ export const userSignup = async (req: Request, res: Response) => {
     // hashing the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-     // Send the reset password URL in the email
-     const mailOptions = {
+    // Send the reset password URL in the email
+    const mailOptions = {
       from: environmentConfig.EMAIL_USER,
       to: email,
       subject: "User Credentials",
@@ -46,11 +55,11 @@ export const userSignup = async (req: Request, res: Response) => {
       These are the Your login Credentials Please Do not share with anyone <br> your email:- ${email} <br> your password:- ${password}  </br>`,
     };
     transporter.sendMail(mailOptions, (err) => {
-      if(err){
+      if (err) {
         res.status(500).json({
           message: "Failed to send the credential email",
         });
-      }else{
+      } else {
         const newUuid = uuidv4();
         const newUser = new user({
           fullName,
@@ -121,6 +130,7 @@ export const userLogin = async (req: Request, res: Response) => {
     return res.status(500).json({ code: 500, error: "Internal server error" });
   }
 };
+
 
 // to forget password
 export const forgetPassword = async (req: Request, res: Response) => {
@@ -269,6 +279,10 @@ export const getUserDetails = async (req: Request, res: Response) => {
       userName: foundUser.userName,
       email: foundUser.email,
       role: foundUser.role,
+      upiId: foundUser.upiId,
+      phoneNumber: foundUser.phoneNumber,
+      teamName: foundUser.teamName,
+      profilePic: foundUser.profilePic
     };
 
     // Return the user data as the response
@@ -276,7 +290,7 @@ export const getUserDetails = async (req: Request, res: Response) => {
       code: 200,
       data: responseData,
     });
-  }  catch (error) {
+  } catch (error) {
     console.log(error);
     return res.status(500).json({ code: 500, error: "Internal server error" });
   }
@@ -329,26 +343,38 @@ export const getAllUsers = async (req: Request, res: Response) => {
 };
 
 // update user by id
-export const updateUserById = async (req: Request, res: Response) => {
+export const userUpdate = async (req: Request, res: Response) => {
   try {
-    // Extract the authentication token from the request headers
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {
       return res.status(401).json({ error: "Authentication token missing" });
     }
 
-    // Verify and decode the token to get the user's ID
     const decodedToken = jwt.verify(token, jwtSecret) as { userId: string };
 
     const userId = decodedToken.userId;
-    
+
     const updatedUserData = req.body;
 
-    // Use the findByIdAndUpdate method to update the user by their ID in the database
+    const file = req.file;
+    const tempPath = file?.path;
+
+    let secure_url: string | null = null;
+    if (tempPath) {
+      const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(
+        tempPath
+      );
+      secure_url = uploadResponse.secure_url;
+    }
+
+    if (secure_url) {
+      updatedUserData.profilePic = secure_url; // Update profilePic field in updatedUserData
+    }
+
     const updatedUser = await user.findByIdAndUpdate(userId, updatedUserData, {
       new: true,
-    }).populate('role','role');
+    }).populate('role', 'role');
 
     if (!updatedUser) {
       return res.status(404).json({
@@ -357,18 +383,10 @@ export const updateUserById = async (req: Request, res: Response) => {
       });
     }
 
-    // If the user is updated successfully, construct the response object
-    const responseData = {
-      fullName: updatedUser.fullName,
-      userName: updatedUser.userName,
-      email: updatedUser.email,
-      role: updatedUser.role,
-    };
-
     // Return the updated user data as the response
     return res.status(200).json({
       code: 200,
-      data: responseData,
+      data: updatedUser,
     });
   } catch (error) {
     console.log(error);
@@ -377,7 +395,7 @@ export const updateUserById = async (req: Request, res: Response) => {
 };
 
 // delete by id
-export const deleteUserById = async (req: Request, res: Response) => {
+export const userDelete = async (req: Request, res: Response) => {
   try {
     // Extract the authentication token from the request headers
     const token = req.headers.authorization?.split(' ')[1];
@@ -411,3 +429,5 @@ export const deleteUserById = async (req: Request, res: Response) => {
     return res.status(500).json({ code: 500, error: "Internal server error" });
   }
 };
+
+

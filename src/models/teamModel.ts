@@ -6,7 +6,8 @@ const TeamSchema = new mongoose.Schema({
   teammates: {
     type: [String],
   },
-  leadPlayerId: { type: String, required: false}
+  leadPlayerId: { type: String, required: false},
+  teamDetails: { type: String, required: false}
 });
 
 export const Team = mongoose.model("Team", TeamSchema);
