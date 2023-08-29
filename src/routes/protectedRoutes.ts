@@ -34,10 +34,10 @@ route.get("/getAllRole", verifyToken(["admin"]), getAllRole);
 route.get("/getRole/:id", verifyToken(["admin"]), getRoleById);
 
 // update Role - Only 'admin' token is allowed
-route.put("/updaterole/:id", verifyToken(["admin"]), updateRole);
+route.put("/updaterole/:userUuid", verifyToken(["admin"]), updateRole);
 
 // delete Role - Only 'admin' token is allowed
-route.delete("/deleterole/:id", verifyToken(["admin"]), deleteRole);
+route.delete("/deleterole/:userUuid", verifyToken(["admin"]), deleteRole);
 
 // to post the video link and information
 route.post("/videolink", verifyToken(["admin",'spectator']), video);
