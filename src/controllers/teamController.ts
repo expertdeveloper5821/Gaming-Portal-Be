@@ -121,6 +121,19 @@ export const addTeammates = async (req: Request, res: Response) => {
     const registeredEmails = emails.filter((email: any) =>
       allEmails.includes(email)
     );
+
+    // Check if any of the registered users are already in a team
+    const usersInOtherTeams = await Team.find({ teammates: { $in: registeredEmails } });
+
+    if (usersInOtherTeams.length > 0) {
+      const usersInOtherTeamEmails = usersInOtherTeams.map((team) => team.teammates);
+      return res.status(422).json({
+        code: 422,
+        message: `The following users are already in different teams:`,
+        usersInOtherTeams: usersInOtherTeamEmails,
+      });
+    }
+
     // frontend registrration URL
     const registrationUrl = `${environmentConfig.CLIENT_URL}signup`;
     // Send emails to unregistered email addresses
@@ -158,6 +171,7 @@ export const addTeammates = async (req: Request, res: Response) => {
         res.status(200).json({
           code: 200,
           message: `Match registeration success`,
+          _id: newTem._id,
           registeredEmails,
           leadPlayerId: userId,
           roomUuid: teamData?.roomUuid,
@@ -225,6 +239,7 @@ export const getAllTeams = async (req: Request, res: Response) => {
         );
 
         return {
+          _id: team._id,
           uuid: team.roomUuid,
           leadPlayer: team.leadPlayer,
           teammates: teammateDetails.filter((detail) => detail !== null),
@@ -459,11 +474,12 @@ export const getInvitedUser = async (req: Request, res: Response) => {
     // Find user details for the invited teammates
     const invitedTeammatesDetails = await user.find({ email: { $in: invitedTeammatesEmails } });
 
-    // Create a response object with the invited teammates' details
+    // Create a response object with the invited teammates' details and team name
     const response = invitedTeammatesDetails.map((teammate) => ({
       email: teammate.email,
       fullName: teammate.fullName,
       userName: teammate.userName,
+      teamName: invitedTeams.find((team) => team.teammates.includes(teammate.email))?.teamDetails,
     }));
 
     res.status(200).json(response);
