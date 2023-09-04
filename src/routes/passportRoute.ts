@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import passport from "passport";
-import { user } from "../models/passportModels";
+import { user as User } from "../models/passportModels";
 import "../config/db";
 import "../modules/passport";
 import jwt from "jsonwebtoken";
@@ -20,13 +20,14 @@ router.get(
   passport.authenticate("google", {
     failureRedirect: `${clientUrl}?token=error`,
   }),
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     // Redirect to the client with the token
     const user = req.user;
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
     try {
+      await User.populate(user, { path: 'role' });
       const token = jwt.sign({ user }, jwtSecret!, { expiresIn: "1h" });
       res.redirect(`${clientUrl}?token=${token}`);
     } catch (error) {
@@ -43,7 +44,7 @@ router.get("/verify", async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Token not found" });
     }
     const decoded = jwt.verify(token as string, jwtSecret!) as { user: any };
-    const foundUser = await user.findById(decoded.user._id).exec(); 
+    const foundUser = await User.findById(decoded.user._id).exec(); 
     if (!foundUser) {
       return res.status(400).json({ message: "User not found" });
     }
