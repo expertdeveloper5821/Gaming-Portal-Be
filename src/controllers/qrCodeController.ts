@@ -102,7 +102,7 @@ export const createPayment = async (req: Request, res: Response) => {
 
           if (existingTransaction) {
             return res.status(400).json({
-              message: "You have already enter in this room",
+              message: "You have already register in this room",
             });
           }
 
