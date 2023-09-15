@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { environmentConfig } from "../config/environmentConfig";
 import { user } from "../models/passportModels";
 import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
+import moment from 'moment-timezone';
 
 
 // Configuration
@@ -26,6 +27,7 @@ export const createRoom = async (req: Request, res: Response) => {
       password,
       version,
       dateAndTime,
+      enteryFee,
       lastServival,
       highestKill,
       secondWin,
@@ -41,6 +43,7 @@ export const createRoom = async (req: Request, res: Response) => {
       !password ||
       !version ||
       !dateAndTime ||
+      !enteryFee ||
       !lastServival ||
       !highestKill ||
       !secondWin ||
@@ -54,7 +57,7 @@ export const createRoom = async (req: Request, res: Response) => {
       }
       const secretKey = environmentConfig.JWT_SECRET;
 
-      const tempPath = file?.path; 
+      const tempPath = file?.path;
 
       try {
         const decoded: any = jwt.verify(token, secretKey);
@@ -70,10 +73,10 @@ export const createRoom = async (req: Request, res: Response) => {
         }
 
         // Parse date and time into Date objects
-        const parsedDateAndTime = new Date(dateAndTime);
+        const parsedDateAndTime = moment(req.body.dateAndTime).tz('Asia/Kolkata');
 
-        if (isNaN(parsedDateAndTime.getTime())) {
-          return res.status(400).json({ message: "Invalid date or time format" });
+        if (!parsedDateAndTime.isValid()) {
+          return res.status(400).json({ message: 'Invalid date or time format' });
         }
 
         const createdRoom = await RoomId.create({
@@ -86,7 +89,8 @@ export const createRoom = async (req: Request, res: Response) => {
           mapImg: secure_url,
           version,
           createdBy: userId,
-          dateAndTime: parsedDateAndTime,
+          dateAndTime: new Date(),
+          enteryFee,
           lastServival,
           highestKill,
           secondWin,
@@ -126,8 +130,7 @@ export const getAllRooms = async (req: Request, res: Response) => {
           { gameType: { $regex: search, $options: 'i' } },
           { mapType: { $regex: search, $options: 'i' } },
           { version: { $regex: search, $options: 'i' } },
-          { time: { $regex: search, $options: 'i' } },
-          { date: { $regex: search, $options: 'i' } },
+          { enteryFee: { $regex: search, $options: 'i' } },
           { lastSurvival: { $regex: search, $options: 'i' } },
           { highestKill: { $regex: search, $options: 'i' } },
           { secondWin: { $regex: search, $options: 'i' } },
@@ -159,6 +162,27 @@ export const getAllRooms = async (req: Request, res: Response) => {
 };
 
 
+interface CustomRoom {
+  _id: unknown;
+  dateAndTime: string;
+  roomUuid: string;
+  roomId: string;
+  password: string;
+  gameName: string;
+  gameType: string;
+  mapType: string;
+  mapImg: string;
+  version: string;
+  enteryFee: string;
+  lastServival: string;
+  highestKill: string;
+  secondWin: string;
+  thirdWin: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Get a single room by ID
 export const getRoomById = async (req: Request, res: Response) => {
   try {
@@ -173,7 +197,43 @@ export const getRoomById = async (req: Request, res: Response) => {
     if (!userInfo) {
       return res.status(500).json({ error: "User not found" });
     }
-    return res.status(200).json({ room, fullName: userInfo.fullName });
+
+    // Convert the ISO timestamp to IST (UTC+5:30)
+    const isoTimestamp = moment(room.dateAndTime);
+    const istTimestamp = isoTimestamp.tz('Asia/Kolkata'); // Use tz method to set timezone
+
+    // Format the date and time in the desired format
+    const formattedDateTime = istTimestamp.format('DD/MM/YYYY h:mm A'); // Format as "15/09/2023 9:51 PM"
+
+    // Create a custom room object including all details and the "date" and "time" fields
+    const customRoom: CustomRoom = {
+      _id: room._id, 
+      dateAndTime: room.dateAndTime,
+      roomUuid: room.roomUuid,
+      roomId: room.roomId,
+      password: room.password,
+      gameName: room.gameName,
+      gameType: room.gameType,
+      mapType: room.mapType,
+      mapImg: room.mapImg,
+      version: room.version,
+      enteryFee: room.enteryFee,
+      lastServival: room.lastServival,
+      highestKill: room.highestKill,
+      secondWin: room.secondWin,
+      thirdWin: room.thirdWin,
+      createdBy: room.createdBy,
+      createdAt: room.createdAt,
+      updatedAt: room.updatedAt
+    };
+
+    return res.status(200).json({
+      room: {
+        ...customRoom,
+        formattedDateTime, // Add the formatted date and time to the response
+      },
+      fullName: userInfo.fullName,
+    });
   } catch (error) {
     return res.status(500).json({ error: "Failed to fetch room" });
   }
@@ -253,4 +313,3 @@ export const getUserRooms = async (req: Request, res: Response) => {
     });
   }
 };
-
