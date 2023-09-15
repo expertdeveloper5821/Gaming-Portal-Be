@@ -8,7 +8,8 @@ import {
   resetPassword,
   getUserDetails,
   getAllUsers,
-  sendInviteMail
+  sendInviteMail,
+  sendEmailToUser
 } from "../controllers/userController";
 const route = express.Router();
 import { verifyToken } from "../middlewares/authMiddleware";
@@ -29,6 +30,8 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage: storage });
+
+route.post("/signup", sendEmailToUser);
 
 // signup route
 route.post("/signup", userSignup);

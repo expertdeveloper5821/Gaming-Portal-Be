@@ -549,5 +549,65 @@ export const sendInviteMail = async (req: Request, res: Response) => {
 };
 
 
+import axios from 'axios';
+export const sendEmailToUser = async (req: Request, res: Response) => {
+  try {
+    const users = await user.find({}, 'email');
 
+    if (!users || users.length === 0) {
+      return res.status(404).json({ message: 'No users found in the database.' });
+    }
+
+    const roomsResponse = await axios.get('http://localhost:5000/api/v1/room/rooms'); 
+
+    const rooms = roomsResponse.data;
+
+    if (!rooms || rooms.length === 0) {
+      return res.status(404).json({ message: 'No rooms found.' });
+    }
+
+    const commonMailOptions = {
+      from: environmentConfig.EMAIL_USER,
+      subject: 'PattseHeadshot Newsletter: Join Us for a BGMI Match Today',
+    };
+
+    for (const currentUser of users) {
+      const mailOptions = {
+        ...commonMailOptions,
+        to: currentUser.email,
+        html: generateEmailContent(rooms),
+      };
+
+      await transporter.sendMail(mailOptions);
+    }
+
+    return res.status(200).json({ message: 'Email sent to all users successfully.' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error.' });
+  }
+}
+
+function generateEmailContent(rooms: any[]) {
+  let content = '<p>Room Details:</p>';
+
+  rooms.forEach((room) => {
+    content += `
+      <p><b>Hello, PattseHeadshot User: Join Us for a BGMI Match Today</b></p>
+      <p>Game Name: ${room.gameName}</p>
+      <p>Game Type: ${room.gameType}</p>
+      <p>Map Type: ${room.mapType}</p>
+      <p>Version: ${room.version}</p>
+      <p>Time: ${room.time}</p>
+      <p>Date: ${room.date}</p>
+      <p>Last Survival: ${room.lastServival}</p>
+      <p>Highest Kill: ${room.highestKill}</p>
+      <p>Second Win: ${room.secondWin}</p>
+      <p>Third Win: ${room.thirdWin}</p>
+      <img src="${room.mapImg}" alt="Map Image" width="200" height="200" />
+    `;
+  });
+
+  return content;
+}
 
