@@ -38,6 +38,10 @@ const roomIdSchema: Schema = new Schema(
       type: Date,
       required: true,
     },
+    entryFee: {
+      type: String,
+      required: true,
+    },
     lastServival: {
       type: String,
       required: true,

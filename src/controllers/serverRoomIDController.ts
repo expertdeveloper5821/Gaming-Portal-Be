@@ -27,7 +27,7 @@ export const createRoom = async (req: Request, res: Response) => {
       password,
       version,
       dateAndTime,
-      enteryFee,
+      entryFee,
       lastServival,
       highestKill,
       secondWin,
@@ -35,22 +35,22 @@ export const createRoom = async (req: Request, res: Response) => {
     } = req.body;
     const file = req.file;
 
-    if (
-      !roomId ||
-      !gameName ||
-      !gameType ||
-      !mapType ||
-      !password ||
-      !version ||
-      !dateAndTime ||
-      !enteryFee ||
-      !lastServival ||
-      !highestKill ||
-      !secondWin ||
-      !thirdWin
-    ) {
-      return res.status(400).json({ message: "All fields required" });
-    } else {
+    // if (
+    //   !roomId ||
+    //   !gameName ||
+    //   !gameType ||
+    //   !mapType ||
+    //   !password ||
+    //   !version ||
+    //   !dateAndTime ||
+    //   !entryFee ||
+    //   !lastServival ||
+    //   !highestKill ||
+    //   !secondWin ||
+    //   !thirdWin
+    // ) {
+    //   return res.status(400).json({ message: "All fields required" });
+    // } else {
       const token = req.header("Authorization")?.replace("Bearer ", "");
       if (!token) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -89,8 +89,8 @@ export const createRoom = async (req: Request, res: Response) => {
           mapImg: secure_url,
           version,
           createdBy: userId,
-          dateAndTime: new Date(),
-          enteryFee,
+          dateAndTime,
+          entryFee,
           lastServival,
           highestKill,
           secondWin,
@@ -106,7 +106,7 @@ export const createRoom = async (req: Request, res: Response) => {
         console.error(error);
         return res.status(401).json({ message: "Invalid token" });
       }
-    }
+    // }
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -130,7 +130,7 @@ export const getAllRooms = async (req: Request, res: Response) => {
           { gameType: { $regex: search, $options: 'i' } },
           { mapType: { $regex: search, $options: 'i' } },
           { version: { $regex: search, $options: 'i' } },
-          { enteryFee: { $regex: search, $options: 'i' } },
+          { entryFee: { $regex: search, $options: 'i' } },
           { lastSurvival: { $regex: search, $options: 'i' } },
           { highestKill: { $regex: search, $options: 'i' } },
           { secondWin: { $regex: search, $options: 'i' } },
@@ -173,7 +173,7 @@ interface CustomRoom {
   mapType: string;
   mapImg: string;
   version: string;
-  enteryFee: string;
+  entryFee: string;
   lastServival: string;
   highestKill: string;
   secondWin: string;
@@ -198,12 +198,7 @@ export const getRoomById = async (req: Request, res: Response) => {
       return res.status(500).json({ error: "User not found" });
     }
 
-    // Convert the ISO timestamp to IST (UTC+5:30)
-    const isoTimestamp = moment(room.dateAndTime);
-    const istTimestamp = isoTimestamp.tz('Asia/Kolkata'); // Use tz method to set timezone
 
-    // Format the date and time in the desired format
-    const formattedDateTime = istTimestamp.format('DD/MM/YYYY h:mm A'); // Format as "15/09/2023 9:51 PM"
 
     // Create a custom room object including all details and the "date" and "time" fields
     const customRoom: CustomRoom = {
@@ -217,7 +212,7 @@ export const getRoomById = async (req: Request, res: Response) => {
       mapType: room.mapType,
       mapImg: room.mapImg,
       version: room.version,
-      enteryFee: room.enteryFee,
+      entryFee: room.enteryFee,
       lastServival: room.lastServival,
       highestKill: room.highestKill,
       secondWin: room.secondWin,
@@ -230,7 +225,6 @@ export const getRoomById = async (req: Request, res: Response) => {
     return res.status(200).json({
       room: {
         ...customRoom,
-        formattedDateTime, // Add the formatted date and time to the response
       },
       fullName: userInfo.fullName,
     });
