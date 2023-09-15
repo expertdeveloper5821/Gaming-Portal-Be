@@ -34,11 +34,11 @@ const roomIdSchema: Schema = new Schema(
       type: String,
       required: true,
     },
-    time: {
-      type: String,
+    dateAndTime: {
+      type: Date,
       required: true,
     },
-    date: {
+    enteryFee: {
       type: String,
       required: true,
     },

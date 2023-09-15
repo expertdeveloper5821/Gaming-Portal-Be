@@ -8,6 +8,7 @@ import {
   resetPassword,
   getUserDetails,
   getAllUsers,
+  sendInviteMail
 } from "../controllers/userController";
 const route = express.Router();
 import { verifyToken } from "../middlewares/authMiddleware";
@@ -44,6 +45,7 @@ route.post("/reset-password", resetPassword);
 // get single user 
 route.get("/getuser", getUserDetails);
 
+
 // get Alluser
 route.get("/getalluser", verifyToken(["admin", 'spectator']), getAllUsers);
 
@@ -52,5 +54,9 @@ route.put("/updateuser", upload.single('profilePic'), verifyToken(["admin", 'use
 
 // delete by id
 route.delete("/deleteuser", verifyToken(["admin", 'user']), userDelete);
+
+// post send invite mail
+route.post("/send-invite", verifyToken(["user"]), sendInviteMail)
+
 
 export default route;

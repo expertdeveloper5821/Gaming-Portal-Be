@@ -1,14 +1,14 @@
 import { user } from "../models/passportModels";
-import { Request, Response } from "express";
+import { Request, Response, response } from "express";
 import bcrypt from "bcrypt";
 import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 import { transporter } from "../middlewares/email";
 import { v4 as uuidv4 } from "uuid";
-import { passwordRegex } from "../utils/helper";
+import { passwordRegex, emailValidate } from "../utils/helper";
 import { environmentConfig } from "../config/environmentConfig";
 import { Role } from "../models/roleModel";
-import { validId } from "../utils/pattern";
 import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
+import { Team } from "../models/teamModel";
 
 
 // Configuration
@@ -24,70 +24,107 @@ const clickHere: string = environmentConfig.LOGIN_PAGE;
 // for user signup
 export const userSignup = async (req: Request, res: Response) => {
   try {
-    const { fullName, userName, email, password, upiId } = req.body;
+    const { fullName, email, password } = req.body;
+    const { invitationToken } = req.query;
+
+    if (!fullName || !email || !password) {
+      return res.status(400).json({
+        message: "All fields are required",
+      });
+    }
+
+    // Email validation check using regex pattern
+    if (!emailValidate(email)) {
+      return res.status(400).json({
+        message: "Invalid email format",
+      });
+    }
 
     // Password validation check
     if (!passwordRegex.test(password)) {
       return res.status(400).json({
-        code: 400,
         message:
           "Password must contain at least one letter, one digit, one special character (!@#$%^&*()_+), and be at least 6 characters long",
       });
     }
+
     const existingUser = await user.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
-        code: 400,
-        message: `user with email ${email} already exists`,
+        message: `User with email ${email} already exists`,
       });
     }
+
     const defaultRole = await Role.findOne({ role: "user" });
 
-    // hashing the password
+    // Hashing the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Send the reset password URL in the email
-    const mailOptions = {
-      from: environmentConfig.EMAIL_USER,
-      to: email,
-      subject: "User Credentials",
-      html: `Thankyou for your registration in pattseheadshot.com, <a href=${clickHere}>Click Here</a> for direct login <br>
-      These are the Your login Credentials Please Do not share with anyone <br> your email:- ${email} <br> your password:- ${password}  </br>`,
-    };
-    transporter.sendMail(mailOptions, (err) => {
-      if (err) {
-        res.status(500).json({
-          message: "Failed to send the credential email",
-        });
-      } else {
-        const newUuid = uuidv4();
-        const newUser = new user({
-          fullName,
-          userName,
-          email,
-          password: hashedPassword,
-          role: defaultRole,
-          userUuid: newUuid,
-          upiId
-        });
-        // saving the user to DB
-        newUser.save();
-        // generating a jwt token to specifically identify the user
-        const token = jwt.sign({ userId: newUser._id }, jwtSecret || "");
-        return res.status(200).json({
-          message: "Registered successfully, Please check your email",
-          userUuid: newUuid,
-          token,
-          success: true,
+    if (invitationToken && typeof invitationToken === 'string') {
+      // Handle registration with an invitation token
+      let decodedToken;
+      try {
+        decodedToken = jwt.verify(invitationToken, jwtSecret) as {
+          userId: string;
+          teamName: string;
+        };
+      } catch (error) {
+        console.error('Error verifying token:', error);
+        return res.status(401).json({
+          message: "Invalid token",
         });
       }
-    })
-  } catch (error) {
-    console.log(error);
 
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+      const invitedUserId = decodedToken.userId;
+
+      const newUuid = uuidv4();
+      const newUser = new user({
+        fullName,
+        email,
+        password: hashedPassword,
+        role: defaultRole, // Assign the role
+        userUuid: newUuid,
+      });
+
+      await newUser.save();
+
+      const invitedUserTeam = await Team.findOne({ leadPlayerId: invitedUserId });
+
+      if (invitedUserTeam) {
+        invitedUserTeam.teamMates.push(newUser._id.toString());
+        await invitedUserTeam.save();
+      }
+
+      return res.status(200).json({
+        message: "Registered successfully",
+        userUuid: newUuid,
+        success: true,
+      });
+    } else {
+      // Handle registration without an invitation token
+      const newUuid = uuidv4();
+      const newUser = new user({
+        fullName,
+        email,
+        password: hashedPassword,
+        role: defaultRole, // Assign the role
+        userUuid: newUuid,
+      });
+
+      await newUser.save();
+
+      return res.status(200).json({
+        message: "Registered successfully",
+        userUuid: newUuid,
+        success: true,
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 // for user login
 export const userLogin = async (req: Request, res: Response) => {
@@ -96,7 +133,6 @@ export const userLogin = async (req: Request, res: Response) => {
     const User = await user.findOne({ email }).populate("role", "role");
     if (!User) {
       return res.status(400).json({
-        code: 400,
         message: `Invalid Email address or Password`,
       });
     }
@@ -105,7 +141,7 @@ export const userLogin = async (req: Request, res: Response) => {
     if (!isPasswordValid) {
       return res
         .status(401)
-        .json({ code: 401, message: "Invalid Email address or Password" });
+        .json({ message: "Invalid Email address or Password" });
     }
     const token = jwt.sign(
       { userId: User._id, role: User.role },
@@ -118,16 +154,19 @@ export const userLogin = async (req: Request, res: Response) => {
       userUuid: User.userUuid,
       fullName: User.fullName,
       email: User.email,
+      phoneNumber: User.phoneNumber,
+      upiId: User.upiId,
+      userName: User.userName,
+      profilePic: User.profilePic,
       token: token,
     };
 
     return res.status(200).json({
       userData,
-      code: 200,
       message: "user Login successfully",
     });
   } catch (error) {
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -140,7 +179,6 @@ export const forgetPassword = async (req: Request, res: Response) => {
     const User = await user.findOne({ email });
     if (!User) {
       return res.status(400).json({
-        code: 400,
         message: `Account with email ${email} not found`,
       });
     }
@@ -168,12 +206,10 @@ export const forgetPassword = async (req: Request, res: Response) => {
     transporter.sendMail(mailOptions, (err) => {
       if (err) {
         res.status(500).json({
-          code: 500,
           message: "Failed to send the reset password URL",
         });
       } else {
         res.json({
-          code: 200,
           token: token,
           message:
             "Reset password URL sent successfully please check your email",
@@ -181,14 +217,13 @@ export const forgetPassword = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
 // to reset password
 export const resetPassword = async (req: Request, res: Response) => {
   const { newPassword, confirmPassword } = req.body;
-
   try {
     const token = req.query.token;
     // Verify the token
@@ -198,17 +233,16 @@ export const resetPassword = async (req: Request, res: Response) => {
     // Check if email exists in the database
     const existingUser = await user.findOne({ email });
     if (!existingUser) {
-      return res.status(400).json({ code: 400, message: "User not found" });
+      return res.status(400).json({ message: "User not found" });
     }
     // Add validation: Check if the new password and confirm password match
     if (newPassword !== confirmPassword) {
       return res
         .status(400)
-        .json({ code: 400, message: "Passwords must be same" });
+        .json({ message: "Passwords must be same" });
     }
     if (!passwordRegex.test(confirmPassword)) {
       return res.status(400).json({
-        code: 400,
         message:
           "Password must contain at least one letter, one digit, one special character (!@#$%^&*()_+), and be at least 6 characters long",
       });
@@ -221,11 +255,11 @@ export const resetPassword = async (req: Request, res: Response) => {
     existingUser.password = hashedPassword;
     await existingUser.save();
 
-    return res.json({ code: 200, message: "Password reset successfully" });
+    return res.json({ message: "Password reset successfully" });
   } catch (error) {
     return res
       .status(400)
-      .json({ code: 400, message: "Invalid or expired token" });
+      .json({ message: "Invalid or expired token" });
   }
 };
 
@@ -243,7 +277,7 @@ export const adminController = async (req: Request, res: Response) => {
     }
     // Access the actual role document
     const userRole = User.role;
-    return res.status(200).json({ code: 200, message: "welcome admin" });
+    return res.status(200).json({ message: "welcome admin" });
   });
 };
 
@@ -267,7 +301,6 @@ export const getUserDetails = async (req: Request, res: Response) => {
 
     if (!foundUser) {
       return res.status(404).json({
-        code: 404,
         message: "User not found",
       });
     }
@@ -281,13 +314,11 @@ export const getUserDetails = async (req: Request, res: Response) => {
       role: foundUser.role,
       upiId: foundUser.upiId,
       phoneNumber: foundUser.phoneNumber,
-      teamName: foundUser.teamName,
       profilePic: foundUser.profilePic
     };
 
     // Return the user data as the response
     return res.status(200).json({
-      code: 200,
       data: responseData,
     });
   } catch (error) {
@@ -296,7 +327,7 @@ export const getUserDetails = async (req: Request, res: Response) => {
   }
 };
 
-// get all users
+// get all user
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
     const { search } = req.query;
@@ -309,6 +340,8 @@ export const getAllUsers = async (req: Request, res: Response) => {
           { fullName: { $regex: search, $options: 'i' } },
           { userName: { $regex: search, $options: 'i' } },
           { email: { $regex: search, $options: 'i' } },
+          { upiId: { $regex: search, $options: 'i' } },
+          { phoneNumber: { $regex: search, $options: 'i' } },
         ],
       };
     }
@@ -319,26 +352,27 @@ export const getAllUsers = async (req: Request, res: Response) => {
 
     if (allUsers.length === 0) {
       return res.status(404).json({
-        code: 404,
         message: search ? "No users found with the provided query" : "No users found",
       });
     }
 
     return res.status(200).json({
-      code: 200,
       data: allUsers.map((data) => {
         return {
           userUuid: data?.userUuid,
           fullName: data?.fullName,
           userName: data?.userName,
           email: data?.email,
+          upiId: data?.upiId,
+          phoneNumber: data?.phoneNumber,
+          profilePic: data?.profilePic,
           role: data?.role,
         };
       }),
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -378,19 +412,22 @@ export const userUpdate = async (req: Request, res: Response) => {
 
     if (!updatedUser) {
       return res.status(404).json({
-        code: 404,
         message: "User not found",
       });
     }
 
+    if (!updatedUser._id) {
+      console.log("Error updating user:", updatedUser);
+      return res.status(500).json({ error: "Error updating user" });
+    }
+
     // Return the updated user data as the response
     return res.status(200).json({
-      code: 200,
       data: updatedUser,
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -414,20 +451,103 @@ export const userDelete = async (req: Request, res: Response) => {
 
     if (deletionResult.deletedCount === 0) {
       return res.status(404).json({
-        code: 404,
         message: "User not found",
       });
     }
 
     // If the user is deleted successfully, return the deletion result as the response
     return res.status(200).json({
-      code: 200,
       message: "User deleted successfully",
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+
+// send invite mail to teammates
+export const sendInviteMail = async (req: Request, res: Response) => {
+  try {
+    const { teamName, emails } = req.body;
+
+    // Verify the JWT token from the request headers to get the user's _id
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: "Authentication token missing" });
+    }
+    
+    const decodedToken = jwt.verify(token, jwtSecret) as { userId: string };
+    const userId = decodedToken.userId;
+
+    // Check if the team name already exists in the Team table
+    const existingTeam = await Team.findOne({ teamName });
+
+    if (existingTeam) {
+      return res.status(400).json({ error: "Team name already exists" });
+    }
+
+    // Save the teamName in the Team table
+    const team = new Team({ teamName });
+    await team.save();
+
+    // Add the user's _id to the leadPlayerId array in the Team table
+    await Team.updateOne({ _id: team._id }, { $addToSet: { leadPlayerId: userId } });
+
+    // Configure the registration URL (replace with your actual registration URL)
+    const registrationUrl = environmentConfig.CLIENT_URL;
+
+    const sentInvitations: string[] = [];
+    const alreadyRegistered: string[] = [];
+
+    // Send invitation emails to the provided email addresses
+    for (const email of emails) {
+      const existingUser = await user.findOne({ email });
+
+      if (existingUser) {
+        // User with this email is already registered
+        alreadyRegistered.push(email);
+      } else {
+        const invitationToken = jwt.sign(
+          { teamId: team._id, teamName, userId },
+          jwtSecret,
+          { expiresIn: '1h' } // Set an expiration time for the token
+        );
+
+        const invitationLink = `${registrationUrl}?invitationToken=${invitationToken}`;
+
+        await transporter.sendMail({
+          from: 'your-email@example.com',
+          to: email,
+          subject: 'Invitation to Join the Team',
+          html: `You have been invited to join the team ${teamName}. Click <a href="${invitationLink}">here</a> to register and join the team.`,
+        });
+
+        sentInvitations.push(email);
+      }
+    }
+
+    let message = '';
+
+    if (sentInvitations.length > 0) {
+      message += `Invitations sent to: ${sentInvitations.join(', ')}. `;
+    }
+
+    if (alreadyRegistered.length > 0) {
+      message += `Already registered: ${alreadyRegistered.join(', ')}. `;
+    }
+
+    if (message === '') {
+      message = 'No invitations sent.';
+    }
+
+    return res.status(200).json({ message: message });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+
 
 

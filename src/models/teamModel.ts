@@ -1,13 +1,13 @@
 import mongoose from "mongoose";
 
 const TeamSchema = new mongoose.Schema({
-  roomUuid: { type: String, required: true },
-  leadPlayer: { type: String, required: true },
-  teammates: {
+  roomUuid: { type: String, required: false },
+  squadLeader: { type: String, required: false },
+  teamMates: {
     type: [String],
   },
-  leadPlayerId: { type: String, required: false},
-  teamDetails: { type: String, required: false}
+  leadPlayerId: { type: mongoose.Schema.Types.ObjectId, ref: 'user' }, 
+  teamName: { type: String, required: false }
 });
 
 export const Team = mongoose.model("Team", TeamSchema);

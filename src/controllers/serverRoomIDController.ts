@@ -25,8 +25,8 @@ export const createRoom = async (req: Request, res: Response) => {
       mapType,
       password,
       version,
-      time,
-      date,
+      dateAndTime,
+      enteryFee,
       lastServival,
       highestKill,
       secondWin,
@@ -41,8 +41,8 @@ export const createRoom = async (req: Request, res: Response) => {
       !mapType ||
       !password ||
       !version ||
-      !time ||
-      !date ||
+      !dateAndTime ||
+      !enteryFee ||
       !lastServival ||
       !highestKill ||
       !secondWin ||
@@ -56,7 +56,7 @@ export const createRoom = async (req: Request, res: Response) => {
       }
       const secretKey = environmentConfig.JWT_SECRET;
 
-      const tempPath = file?.path; // Use optional chaining to handle the case where file is not provided
+      const tempPath = file?.path; 
 
       try {
         const decoded: any = jwt.verify(token, secretKey);
@@ -71,6 +71,13 @@ export const createRoom = async (req: Request, res: Response) => {
           secure_url = uploadResponse.secure_url;
         }
 
+        // Parse date and time into Date objects
+        const parsedDateAndTime = new Date(dateAndTime);
+
+        if (isNaN(parsedDateAndTime.getTime())) {
+          return res.status(400).json({ message: "Invalid date or time format" });
+        }
+
         const createdRoom = await RoomId.create({
           roomUuid: newUuid,
           roomId,
@@ -81,8 +88,8 @@ export const createRoom = async (req: Request, res: Response) => {
           mapImg: secure_url,
           version,
           createdBy: userId,
-          time,
-          date,
+          dateAndTime: parsedDateAndTime,
+          enteryFee,
           lastServival,
           highestKill,
           secondWin,
@@ -122,8 +129,7 @@ export const getAllRooms = async (req: Request, res: Response) => {
           { gameType: { $regex: search, $options: 'i' } },
           { mapType: { $regex: search, $options: 'i' } },
           { version: { $regex: search, $options: 'i' } },
-          { time: { $regex: search, $options: 'i' } },
-          { date: { $regex: search, $options: 'i' } },
+          { enteryFee: { $regex: search, $options: 'i' } },
           { lastSurvival: { $regex: search, $options: 'i' } },
           { highestKill: { $regex: search, $options: 'i' } },
           { secondWin: { $regex: search, $options: 'i' } },

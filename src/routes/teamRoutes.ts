@@ -4,7 +4,7 @@ const route = express.Router();
 import { verifyToken } from "../middlewares/authMiddleware";
 import {
   addTeammates, deleteTeamById, getAllTeams, getTeamById, updateTeamById,
-   getUserRegisteredRooms, sendInviteMail, getInvitedUser, getUserRegisteredRoomsWithTeamMates, getUsersAndTeammatesInRoom
+   getUserRegisteredRooms, getUserRegisteredRoomsWithTeamMates, getUsersAndTeammatesInRoom
 } from "../controllers/teamController";
 
 
@@ -12,7 +12,7 @@ import {
 route.post("/addteam", verifyToken(["user"]), addTeammates);
 
 // get all teams
-route.get("/getallteam", verifyToken(["user" ,"spectator",'admin']), getAllTeams);
+route.get("/getallteam", verifyToken(['admin']), getAllTeams);
 
 // get team by their Id
 route.get("/getteambyid/:id", verifyToken(["user","spectator",'admin']), getTeamById);
@@ -25,12 +25,6 @@ route.delete("/deleteteam/:id", verifyToken(["user"]), deleteTeamById);
 
 // get team by their Id
 route.get("/register-room", verifyToken(["user"]), getUserRegisteredRooms);
-
-// post send invite mail
-route.post("/send-invite", verifyToken(["user"]), sendInviteMail)
-
-// get user invited by user 
-route.get("/get-team", verifyToken(["user"]), getInvitedUser)
 
 // get room details wiht teams
 route.get("/register-room-mates", verifyToken(["user"]), getUserRegisteredRoomsWithTeamMates);

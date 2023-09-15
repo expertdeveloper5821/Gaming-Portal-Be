@@ -8,93 +8,6 @@ import RoomId from "../models/serverRoomIDModels";
 import jwt from "jsonwebtoken";
 import { Transaction } from "../models/qrCodeModel";
 
-// add players
-// export const addTeammates = async (req: Request, res: Response) => {
-//   try {
-//     const {
-//       emails,
-//       roomid,
-//       leadPlayer,
-//     }: { emails: string[]; leadPlayer: string; roomid: string } = req.body;
-//     if (!emails || !Array.isArray(emails)) {
-//       return res.status(400).json({ error: "Invalid input format" });
-//     }
-//     const teamData = await RoomId.findOne({ roomUuid: roomid });
-
-//      // Check if the user is already registered in the room
-//      const isUserRegistered = await Team.findOne({
-//       roomUuid: roomid,
-//       teammates: { $in: emails },
-//     });
-
-//     if (isUserRegistered) {
-//       return res.status(409).json({ code: 409, message: "You have already registered in this room" });
-//     }
-
-//     // Fetch registered emails from the database
-//     const allUsers = await user.find();
-//     const allEmails = allUsers.map((obj) => {
-//       return obj.email;
-//     });
-
-//     // Filter unregistered email addresses
-//     const unregisteredEmails = emails.filter(
-//       (email: any) => !allEmails.includes(email)
-//     );
-//     const registeredEmails = emails.filter((email: any) =>
-//       allEmails.includes(email)
-//     );
-//     // frontend registrration URL
-//     const registrationUrl = `${environmentConfig.CLIENT_URL}signup`;
-//     // Send emails to unregistered email addresses
-//     for (const email of unregisteredEmails) {
-//       await transporter.sendMail({
-//         from: environmentConfig.EMAIL_USER,
-//         to: email,
-//         subject: "Registration Link",
-//         html: `Welcome to our website! Thank you for joining us. <a href=${registrationUrl}>Click Here</a>`,
-//       });
-//     }
-//     if (unregisteredEmails.length === 0) {
-//       if (teamData) {
-//         const token = req.header('Authorization')?.replace("Bearer ", "");
-//         if (!token) {
-//           return res.status(401).json({ message: "Unauthorized" });
-//         }
-//         const secretKey = environmentConfig.JWT_SECRET;
-//         const decoded: any = jwt.verify(token, secretKey);
-//         const userId = decoded.userId;
-//         const newTem = new Team({
-//           leadPlayer: leadPlayer,
-//           roomUuid: teamData?.roomUuid,
-//           teammates: emails,
-//           leadPlayerId: userId
-//         });
-//         await newTem.save();
-//         res.status(200).json({
-//           code: 200,
-//           message: `Match registeration success`,
-//           registeredEmails,
-//           leadPlayerId: userId,
-//           roomUuid: teamData?.roomUuid,
-//         });
-//       } else {
-//         res.status(400).json({ code: 400, message: "Team not found" });
-//       }
-//     } else {
-//       res.status(422).json({
-//         code: 422,
-//         message: `All your Teammates are not registered with us. Registration emails sent successfully to unregistered teammates please register first and continue`,
-//         unregisteredEmails,
-//         registeredEmails,
-//       });
-//     }
-//   } catch (error) {
-//     console.log(error);
-
-//     res.status(500).json({ code: 500, message: `Internal Server Error ` });
-//   }
-// };
 
 export const addTeammates = async (req: Request, res: Response) => {
   try {
@@ -103,94 +16,48 @@ export const addTeammates = async (req: Request, res: Response) => {
       roomid,
       leadPlayer,
     }: { emails: string[]; leadPlayer: string; roomid: string } = req.body;
+
     if (!emails || !Array.isArray(emails)) {
       return res.status(400).json({ error: "Invalid input format" });
     }
+
     const teamData = await RoomId.findOne({ roomUuid: roomid });
 
-    // Fetch registered emails from the database
-    const allUsers = await user.find();
-    const allEmails = allUsers.map((obj) => {
-      return obj.email;
-    });
-
-    // Filter unregistered email addresses
-    const unregisteredEmails = emails.filter(
-      (email: any) => !allEmails.includes(email)
-    );
-    const registeredEmails = emails.filter((email: any) =>
-      allEmails.includes(email)
-    );
-
-    // Check if any of the registered users are already in a team
-    const usersInOtherTeams = await Team.find({ teammates: { $in: registeredEmails } });
-
-    if (usersInOtherTeams.length > 0) {
-      const usersInOtherTeamEmails = usersInOtherTeams.map((team) => team.teammates);
-      return res.status(422).json({
-        code: 422,
-        message: `The following users are already in different teams:`,
-        usersInOtherTeams: usersInOtherTeamEmails,
-      });
-    }
-
-    // frontend registrration URL
-    const registrationUrl = `${environmentConfig.CLIENT_URL}signup`;
-    // Send emails to unregistered email addresses
-    for (const email of unregisteredEmails) {
-      await transporter.sendMail({
-        from: environmentConfig.EMAIL_USER,
-        to: email,
-        subject: "Registration Link",
-        html: `Welcome to our website! Thank you for joining us. <a href=${registrationUrl}>Click Here</a>`,
-      });
-    }
-    if (unregisteredEmails.length === 0) {
-      if (teamData) {
-        const token = req.header('Authorization')?.replace("Bearer ", "");
-        if (!token) {
-          return res.status(401).json({ message: "Unauthorized" });
-        }
-        const secretKey = environmentConfig.JWT_SECRET;
-        const decoded: any = jwt.verify(token, secretKey);
-        const userId = decoded.userId;
-
-        const leadPlayerUser = await user.findOne({ email: leadPlayer });
-        if (!leadPlayerUser) {
-          return res.status(400).json({ code: 400, message: "Lead player not found" });
-        }
-
-        const newTem = new Team({
-          leadPlayer: leadPlayer,
-          roomUuid: teamData?.roomUuid,
-          teammates: emails,
-          leadPlayerId: userId,
-          teamDetails: leadPlayerUser.teamName
-        });
-        await newTem.save();
-        res.status(200).json({
-          code: 200,
-          message: `Match registeration success`,
-          _id: newTem._id,
-          registeredEmails,
-          leadPlayerId: userId,
-          roomUuid: teamData?.roomUuid,
-          teamDetails: leadPlayerUser.teamName
-        });
-      } else {
-        res.status(400).json({ code: 400, message: "Team not found" });
+    if (teamData) {
+      const token = req.header("Authorization")?.replace("Bearer ", "");
+      if (!token) {
+        return res.status(401).json({ message: "Unauthorized" });
       }
-    } else {
-      res.status(422).json({
-        code: 422,
-        message: `All your Teammates are not registered with us. Registration emails sent successfully to unregistered teammates please register first and continue`,
-        unregisteredEmails,
-        registeredEmails,
+      const secretKey = environmentConfig.JWT_SECRET;
+      const decoded: any = jwt.verify(token, secretKey);
+      const userId = decoded.userId;
+
+      const leadPlayerUser = await user.findOne({ email: leadPlayer });
+      if (!leadPlayerUser) {
+        return res
+          .status(400)
+          .json({ code: 400, message: "Lead player not found" });
+      }
+
+      const newTeam = new Team({
+        leadPlayer: leadPlayer,
+        roomUuid: teamData?.roomUuid,
+        teammates: emails,
+        leadPlayerId: userId
       });
+      await newTeam.save();
+      res.status(200).json({
+        code: 200,
+        message: `Match registration success`,
+        _id: newTeam._id,
+        leadPlayerId: userId,
+        roomUuid: teamData?.roomUuid
+      });
+    } else {
+      res.status(400).json({ code: 400, message: "Team not found" });
     }
   } catch (error) {
     console.log(error);
-
     res.status(500).json({ code: 500, message: `Internal Server Error ` });
   }
 };
@@ -225,7 +92,7 @@ export const getAllTeams = async (req: Request, res: Response) => {
     const responseData = await Promise.all(
       allTeams.map(async (team) => {
         const teammateDetails = await Promise.all(
-          team.teammates.map(async (teammateEmail) => {
+          team.teamMates.map(async (teammateEmail) => {
             const teammate = await user.findOne({ email: teammateEmail });
             if (teammate) {
               return {
@@ -241,9 +108,8 @@ export const getAllTeams = async (req: Request, res: Response) => {
         return {
           _id: team._id,
           uuid: team.roomUuid,
-          leadPlayer: team.leadPlayer,
+          leadPlayer: team.squadLeader,
           teammates: teammateDetails.filter((detail) => detail !== null),
-          registeredGame: gameInfoMap[team.roomUuid], // Retrieve game info using the map
         };
       })
     );
@@ -278,7 +144,7 @@ export const getTeamById = async (req: Request, res: Response) => {
 
     // Fetch details for each teammate using their email addresses
     const teammatesDetails = await Promise.all(
-      foundTeam.teammates.map(async (teammateEmail) => {
+      foundTeam.teamMates.map(async (teammateEmail) => {
         const teammate = await user.findOne({ email: teammateEmail });
         if (teammate) {
           return {
@@ -374,68 +240,6 @@ export const deleteTeamById = async (req: Request, res: Response) => {
 };
 
 
-
-// send invite mail to teammates
-export const sendInviteMail = async (req: Request, res: Response) => {
-  try {
-    const { emails } = req.body;
-
-    // Fetch user details for each teammate
-    const existingUsers = await user.find({ email: { $in: emails } });
-    const existingEmails = existingUsers.map(existingUser => existingUser.email);
-    const nonExistingEmails: string[] = [];
-    for (const email of emails) {
-      if (!existingEmails.includes(email)) {
-        nonExistingEmails.push(email);
-      }
-    }
-
-    const registrationUrl = `${environmentConfig.CLIENT_URL}signup`;
-
-    const sentInvitations: string[] = [];
-    const alreadyRegistered: string[] = [];
-
-    // Send emails to teammates
-    for (const email of nonExistingEmails) {
-      await transporter.sendMail({
-        from: environmentConfig.EMAIL_USER,
-        to: email,
-        subject: 'Invitation to Join Team',
-        html: `You have been invited to join the team! Click <a href=${registrationUrl}>here</a> to register and join the team.`,
-      });
-      sentInvitations.push(email);
-    }
-
-    const responseMessage: { sentInvitations?: string[], alreadyRegistered?: string[] } = {};
-
-    if (sentInvitations.length > 0) {
-      responseMessage.sentInvitations = sentInvitations;
-    }
-
-    if (existingEmails.length > 0) {
-      responseMessage.alreadyRegistered = existingEmails;
-    }
-
-    let message = '';
-    if (sentInvitations.length > 0) {
-      message += `Invitations sent to: ${sentInvitations.join(', ')}. `;
-    }
-    if (existingEmails.length > 0) {
-      message += `Already registered: ${existingEmails.join(', ')}. `;
-    }
-
-    if (message === '') {
-      message = 'No invitations sent.';
-    }
-
-    res.status(200).json({ message: message });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
-  }
-}
-
-
 interface Room {
   uuid: string;
   gameName: string;
@@ -450,43 +254,6 @@ interface Room {
   _id: string;
   roomUuid: string;
   teammates: Array<{ fullName: string; email: string }>;
-}
-
-// get teammates invited by user
-export const getInvitedUser = async (req: Request, res: Response) => {
-  try {
-    // Get the user's ID from the decoded token
-    const token = req.header("Authorization")?.replace("Bearer ", "");
-    if (!token) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const secretKey = environmentConfig.JWT_SECRET;
-    const decoded: any = jwt.verify(token, secretKey);
-    const userId = decoded.userId;
-
-    // Find teams where the user is the leadPlayer
-    const invitedTeams = await Team.find({ leadPlayerId: userId });
-
-    // Extract and flatten the invited teammates' email addresses
-    const invitedTeammatesEmails = invitedTeams.map((team) => team.teammates).flat();
-
-    // Find user details for the invited teammates
-    const invitedTeammatesDetails = await user.find({ email: { $in: invitedTeammatesEmails } });
-
-    // Create a response object with the invited teammates' details and team name
-    const response = invitedTeammatesDetails.map((teammate) => ({
-      email: teammate.email,
-      fullName: teammate.fullName,
-      userName: teammate.userName,
-      teamName: invitedTeams.find((team) => team.teammates.includes(teammate.email))?.teamDetails,
-    }));
-
-    res.status(200).json(response);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
 }
 
 
@@ -571,7 +338,7 @@ export const getUserRegisteredRoomsWithTeamMates = async (req: Request, res: Res
     }
 
     const registeredRooms = await Promise.all(userTeams.map(async (team) => {
-      const teammateEmails = team.teammates;
+      const teammateEmails = team.teamMates;
       const teammateDetails = await user.find({ email: { $in: teammateEmails } });
 
       const teammatesWithDetails = teammateDetails.map(teammate => ({
@@ -582,8 +349,7 @@ export const getUserRegisteredRoomsWithTeamMates = async (req: Request, res: Res
 
       return {
         roomUuid: team.roomUuid,
-        leadPlayer: team.leadPlayer,
-        teamDetails: team.teamDetails,
+        leadPlayer: team.squadLeader,
         teammates: teammatesWithDetails,
       };
     }));
@@ -619,7 +385,7 @@ export const getUsersAndTeammatesInRoom = async (req: Request, res: Response) =>
 
     const userAndTeammates = await Promise.all(
       teamsInRoom.map(async (team) => {
-        const teammateDetails = await user.find({ email: { $in: team.teammates } });
+        const teammateDetails = await user.find({ email: { $in: team.teamMates } });
 
         const teammatesWithDetails = teammateDetails.map(teammate => ({
           _id: teammate._id,
@@ -629,7 +395,7 @@ export const getUsersAndTeammatesInRoom = async (req: Request, res: Response) =>
 
         return {
           roomUuid: team.roomUuid,
-          leadPlayer: team.leadPlayer,
+          leadPlayer: team.squadLeader,
           teammates: teammatesWithDetails,
         };
       })
