@@ -102,7 +102,7 @@ export const createPayment = async (req: Request, res: Response) => {
 
           if (existingTransaction) {
             return res.status(400).json({
-              message: "You have already made a payment for this room",
+              message: "You have already register in this room",
             });
           }
 
@@ -141,8 +141,6 @@ export const createPayment = async (req: Request, res: Response) => {
     });
   }
   };
-
-
 
 // Get a single payment details by ID
 export const getpaymentdeatilsById = async (req: Request, res: Response) => {

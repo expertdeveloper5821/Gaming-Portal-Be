@@ -31,7 +31,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-route.post("/signup", sendEmailToUser);
+route.post("/send-email", sendEmailToUser);
 
 // signup route
 route.post("/signup", userSignup);

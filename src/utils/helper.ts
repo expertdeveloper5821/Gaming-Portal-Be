@@ -11,4 +11,15 @@ export const emailValidate = (email: string): boolean => {
   
   
   
-  
+
+  // function convertToIST(inputDate: string | number | Date) {
+  //   var dateUTC = new Date(inputDate);
+  //   var dateTime = dateUTC.getTime();
+  //   var dateIST = new Date(dateTime);
+  //   dateIST.setHours(dateIST.getHours() + 5);
+  //   dateIST.setMinutes(dateIST.getMinutes() + 30);
+  //   return dateIST;
+  // }
+  // var inputDate = "2023-09-15T02:00:00Z"; 
+  // var convertedDate = convertToIST(inputDate);
+  // console.log(convertedDate);
