@@ -34,79 +34,61 @@ export const createRoom = async (req: Request, res: Response) => {
       thirdWin
     } = req.body;
     const file = req.file;
+    const token = req.header("Authorization")?.replace("Bearer ", "");
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const secretKey = environmentConfig.JWT_SECRET;
 
-    // if (
-    //   !roomId ||
-    //   !gameName ||
-    //   !gameType ||
-    //   !mapType ||
-    //   !password ||
-    //   !version ||
-    //   !dateAndTime ||
-    //   !entryFee ||
-    //   !lastServival ||
-    //   !highestKill ||
-    //   !secondWin ||
-    //   !thirdWin
-    // ) {
-    //   return res.status(400).json({ message: "All fields required" });
-    // } else {
-      const token = req.header("Authorization")?.replace("Bearer ", "");
-      if (!token) {
-        return res.status(401).json({ message: "Unauthorized" });
+    const tempPath = file?.path;
+
+    try {
+      const decoded: any = jwt.verify(token, secretKey);
+      const userId = decoded.userId;
+      const newUuid = uuidv4();
+
+      let secure_url: string | null = null;
+      if (tempPath) {
+        const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(
+          tempPath
+        );
+        secure_url = uploadResponse.secure_url;
       }
-      const secretKey = environmentConfig.JWT_SECRET;
 
-      const tempPath = file?.path;
+      // Parse date and time into Date objects
+      const parsedDateAndTime = moment(req.body.dateAndTime).tz('Asia/Kolkata');
 
-      try {
-        const decoded: any = jwt.verify(token, secretKey);
-        const userId = decoded.userId;
-        const newUuid = uuidv4();
-
-        let secure_url: string | null = null;
-        if (tempPath) {
-          const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(
-            tempPath
-          );
-          secure_url = uploadResponse.secure_url;
-        }
-
-        // Parse date and time into Date objects
-        const parsedDateAndTime = moment(req.body.dateAndTime).tz('Asia/Kolkata');
-
-        if (!parsedDateAndTime.isValid()) {
-          return res.status(400).json({ message: 'Invalid date or time format' });
-        }
-
-        const createdRoom = await RoomId.create({
-          roomUuid: newUuid,
-          roomId,
-          gameName,
-          gameType,
-          mapType,
-          password,
-          mapImg: secure_url,
-          version,
-          createdBy: userId,
-          dateAndTime,
-          entryFee,
-          lastServival,
-          highestKill,
-          secondWin,
-          thirdWin
-        });
-
-        return res.status(200).json({
-          message: "Room created successfully",
-          uuid: newUuid,
-          _id: createdRoom._id
-        });
-      } catch (error) {
-        console.error(error);
-        return res.status(401).json({ message: "Invalid token" });
+      if (!parsedDateAndTime.isValid()) {
+        return res.status(400).json({ message: 'Invalid date or time format' });
       }
-    // }
+
+      const createdRoom = await RoomId.create({
+        roomUuid: newUuid,
+        roomId,
+        gameName,
+        gameType,
+        mapType,
+        password,
+        mapImg: secure_url,
+        version,
+        createdBy: userId,
+        dateAndTime,
+        entryFee,
+        lastServival,
+        highestKill,
+        secondWin,
+        thirdWin
+      });
+
+      return res.status(200).json({
+        message: "Room created successfully",
+        uuid: newUuid,
+        _id: createdRoom._id
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(401).json({ message: "Invalid token" });
+    }
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -162,27 +144,6 @@ export const getAllRooms = async (req: Request, res: Response) => {
 };
 
 
-interface CustomRoom {
-  _id: unknown;
-  dateAndTime: string;
-  roomUuid: string;
-  roomId: string;
-  password: string;
-  gameName: string;
-  gameType: string;
-  mapType: string;
-  mapImg: string;
-  version: string;
-  entryFee: string;
-  lastServival: string;
-  highestKill: string;
-  secondWin: string;
-  thirdWin: string;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 // Get a single room by ID
 export const getRoomById = async (req: Request, res: Response) => {
   try {
@@ -197,37 +158,7 @@ export const getRoomById = async (req: Request, res: Response) => {
     if (!userInfo) {
       return res.status(500).json({ error: "User not found" });
     }
-
-
-
-    // Create a custom room object including all details and the "date" and "time" fields
-    const customRoom: CustomRoom = {
-      _id: room._id, 
-      dateAndTime: room.dateAndTime,
-      roomUuid: room.roomUuid,
-      roomId: room.roomId,
-      password: room.password,
-      gameName: room.gameName,
-      gameType: room.gameType,
-      mapType: room.mapType,
-      mapImg: room.mapImg,
-      version: room.version,
-      entryFee: room.enteryFee,
-      lastServival: room.lastServival,
-      highestKill: room.highestKill,
-      secondWin: room.secondWin,
-      thirdWin: room.thirdWin,
-      createdBy: room.createdBy,
-      createdAt: room.createdAt,
-      updatedAt: room.updatedAt
-    };
-
-    return res.status(200).json({
-      room: {
-        ...customRoom,
-      },
-      fullName: userInfo.fullName,
-    });
+    return res.status(200).json({ room, fullName: userInfo.fullName });
   } catch (error) {
     return res.status(500).json({ error: "Failed to fetch room" });
   }
