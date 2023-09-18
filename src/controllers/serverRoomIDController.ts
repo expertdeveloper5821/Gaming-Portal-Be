@@ -6,6 +6,7 @@ import { environmentConfig } from "../config/environmentConfig";
 import { user } from "../models/passportModels";
 import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
 import moment from 'moment-timezone';
+import { Transaction } from "../models/qrCodeModel";
 
 
 // Configuration
@@ -27,85 +28,67 @@ export const createRoom = async (req: Request, res: Response) => {
       password,
       version,
       dateAndTime,
-      enteryFee,
+      entryFee,
       lastServival,
       highestKill,
       secondWin,
       thirdWin
     } = req.body;
     const file = req.file;
+    const token = req.header("Authorization")?.replace("Bearer ", "");
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const secretKey = environmentConfig.JWT_SECRET;
 
-    if (
-      !roomId ||
-      !gameName ||
-      !gameType ||
-      !mapType ||
-      !password ||
-      !version ||
-      !dateAndTime ||
-      !enteryFee ||
-      !lastServival ||
-      !highestKill ||
-      !secondWin ||
-      !thirdWin
-    ) {
-      return res.status(400).json({ message: "All fields required" });
-    } else {
-      const token = req.header("Authorization")?.replace("Bearer ", "");
-      if (!token) {
-        return res.status(401).json({ message: "Unauthorized" });
+    const tempPath = file?.path;
+
+    try {
+      const decoded: any = jwt.verify(token, secretKey);
+      const userId = decoded.userId;
+      const newUuid = uuidv4();
+
+      let secure_url: string | null = null;
+      if (tempPath) {
+        const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(
+          tempPath
+        );
+        secure_url = uploadResponse.secure_url;
       }
-      const secretKey = environmentConfig.JWT_SECRET;
 
-      const tempPath = file?.path;
+      // Parse date and time into Date objects
+      const parsedDateAndTime = moment(req.body.dateAndTime).tz('Asia/Kolkata');
 
-      try {
-        const decoded: any = jwt.verify(token, secretKey);
-        const userId = decoded.userId;
-        const newUuid = uuidv4();
-
-        let secure_url: string | null = null;
-        if (tempPath) {
-          const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(
-            tempPath
-          );
-          secure_url = uploadResponse.secure_url;
-        }
-
-        // Parse date and time into Date objects
-        const parsedDateAndTime = moment(req.body.dateAndTime).tz('Asia/Kolkata');
-
-        if (!parsedDateAndTime.isValid()) {
-          return res.status(400).json({ message: 'Invalid date or time format' });
-        }
-
-        const createdRoom = await RoomId.create({
-          roomUuid: newUuid,
-          roomId,
-          gameName,
-          gameType,
-          mapType,
-          password,
-          mapImg: secure_url,
-          version,
-          createdBy: userId,
-          dateAndTime: new Date(),
-          enteryFee,
-          lastServival,
-          highestKill,
-          secondWin,
-          thirdWin
-        });
-
-        return res.status(200).json({
-          message: "Room created successfully",
-          uuid: newUuid,
-          _id: createdRoom._id
-        });
-      } catch (error) {
-        console.error(error);
-        return res.status(401).json({ message: "Invalid token" });
+      if (!parsedDateAndTime.isValid()) {
+        return res.status(400).json({ message: 'Invalid date or time format' });
       }
+
+      const createdRoom = await RoomId.create({
+        roomUuid: newUuid,
+        roomId,
+        gameName,
+        gameType,
+        mapType,
+        password,
+        mapImg: secure_url,
+        version,
+        createdBy: userId,
+        dateAndTime,
+        entryFee,
+        lastServival,
+        highestKill,
+        secondWin,
+        thirdWin
+      });
+
+      return res.status(200).json({
+        message: "Room created successfully",
+        uuid: newUuid,
+        _id: createdRoom._id
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(401).json({ message: "Invalid token" });
     }
   } catch (error) {
     console.error(error);
@@ -117,10 +100,79 @@ export const createRoom = async (req: Request, res: Response) => {
 };
 
 // Get all rooms
+// export const getAllRooms = async (req: Request, res: Response) => {
+//   try {
+//     const { search } = req.query;
+
+//     let roomsQuery = {};
+
+//     if (search) {
+//       roomsQuery = {
+//         $or: [
+//           { gameName: { $regex: search, $options: 'i' } },
+//           { gameType: { $regex: search, $options: 'i' } },
+//           { mapType: { $regex: search, $options: 'i' } },
+//           { version: { $regex: search, $options: 'i' } },
+//           { enteryFee: { $regex: search, $options: 'i' } },
+//           { lastSurvival: { $regex: search, $options: 'i' } },
+//           { highestKill: { $regex: search, $options: 'i' } },
+//           { secondWin: { $regex: search, $options: 'i' } },
+//           { thirdWin: { $regex: search, $options: 'i' } },
+//         ],
+//       };
+//     }
+
+//     const rooms = await RoomId.find(roomsQuery);
+
+//     if (rooms.length === 0) {
+//       return res.status(404).json({ message: search ? 'No rooms found with the provided query' : 'No rooms found' });
+//     }
+
+//     const roomsWithUserDetails = await Promise.all(
+//       rooms.map(async (room) => {
+//         const userInfo = await user.findOne({ _id: room.createdBy });
+//         return {
+//           ...room.toObject(),
+//           createdBy: userInfo ? userInfo.fullName : 'Unknown',
+//         };
+//       })
+//     );
+
+//     return res.status(200).json(roomsWithUserDetails);
+//   } catch (error) {
+//     return res.status(500).json({ error: 'Failed to fetch rooms' });
+//   }
+// };
+
 export const getAllRooms = async (req: Request, res: Response) => {
   try {
     const { search } = req.query;
+    const token = req.header("Authorization")?.replace("Bearer ", "");
 
+    // Define a variable to store the user's registered room IDs
+    let userRegisteredRooms: string[] = [];
+
+    if (token) {
+      // If the token is present, decode it to get the user's ID
+      const secretKey = environmentConfig.JWT_SECRET;
+      try {
+        const decoded: any = jwt.verify(token, secretKey);
+        const userId = decoded.userId;
+
+        // Retrieve the list of rooms the user has registered for
+        const userTransactions = await Transaction.find({
+          paymentBy: userId,
+        });
+
+        // Extract the room IDs from the user's transactions
+        userRegisteredRooms = userTransactions.map((transaction) => transaction.roomId);
+      } catch (error) {
+        console.error(error);
+        return res.status(401).json({ error: "Invalid token" });
+      }
+    }
+
+    // Construct the query to fetch rooms
     let roomsQuery = {};
 
     if (search) {
@@ -139,51 +191,35 @@ export const getAllRooms = async (req: Request, res: Response) => {
       };
     }
 
+    // Fetch all rooms based on the query
     const rooms = await RoomId.find(roomsQuery);
 
-    if (rooms.length === 0) {
-      return res.status(404).json({ message: search ? 'No rooms found with the provided query' : 'No rooms found' });
+    // Filter the rooms to exclude those the user has already registered for
+    const filteredRooms = rooms.filter((room) => !userRegisteredRooms.includes(room.roomUuid));
+
+    if (filteredRooms.length === 0) {
+      return res.status(404).json({
+        message: search ? "No rooms found with the provided query" : "No rooms found",
+      });
     }
 
+    // Add user details to the filtered rooms
     const roomsWithUserDetails = await Promise.all(
-      rooms.map(async (room) => {
+      filteredRooms.map(async (room) => {
         const userInfo = await user.findOne({ _id: room.createdBy });
         return {
           ...room.toObject(),
-          createdBy: userInfo ? userInfo.fullName : 'Unknown',
+          createdBy: userInfo ? userInfo.fullName : "Unknown",
         };
       })
     );
 
     return res.status(200).json(roomsWithUserDetails);
   } catch (error) {
-    return res.status(500).json({ error: 'Failed to fetch rooms' });
+    return res.status(500).json({ error: "Failed to fetch rooms" });
   }
 };
 
-
-interface CustomRoom {
-  _id: unknown;
-  dateAndTime: string;
-  roomUuid: string;
-  roomId: string;
-  password: string;
-  gameName: string;
-  gameType: string;
-  mapType: string;
-  mapImg: string;
-  version: string;
-  enteryFee: string;
-  lastServival: string;
-  highestKill: string;
-  secondWin: string;
-  thirdWin: string;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Get a single room by ID
 export const getRoomById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -197,43 +233,7 @@ export const getRoomById = async (req: Request, res: Response) => {
     if (!userInfo) {
       return res.status(500).json({ error: "User not found" });
     }
-
-    // Convert the ISO timestamp to IST (UTC+5:30)
-    const isoTimestamp = moment(room.dateAndTime);
-    const istTimestamp = isoTimestamp.tz('Asia/Kolkata'); // Use tz method to set timezone
-
-    // Format the date and time in the desired format
-    const formattedDateTime = istTimestamp.format('DD/MM/YYYY h:mm A'); // Format as "15/09/2023 9:51 PM"
-
-    // Create a custom room object including all details and the "date" and "time" fields
-    const customRoom: CustomRoom = {
-      _id: room._id, 
-      dateAndTime: room.dateAndTime,
-      roomUuid: room.roomUuid,
-      roomId: room.roomId,
-      password: room.password,
-      gameName: room.gameName,
-      gameType: room.gameType,
-      mapType: room.mapType,
-      mapImg: room.mapImg,
-      version: room.version,
-      enteryFee: room.enteryFee,
-      lastServival: room.lastServival,
-      highestKill: room.highestKill,
-      secondWin: room.secondWin,
-      thirdWin: room.thirdWin,
-      createdBy: room.createdBy,
-      createdAt: room.createdAt,
-      updatedAt: room.updatedAt
-    };
-
-    return res.status(200).json({
-      room: {
-        ...customRoom,
-        formattedDateTime, // Add the formatted date and time to the response
-      },
-      fullName: userInfo.fullName,
-    });
+    return res.status(200).json({ room, fullName: userInfo.fullName });
   } catch (error) {
     return res.status(500).json({ error: "Failed to fetch room" });
   }

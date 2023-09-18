@@ -95,6 +95,26 @@ export const userSignup = async (req: Request, res: Response) => {
         await invitedUserTeam.save();
       }
 
+      // Send the registration email
+      const mailOptions = {
+        from: environmentConfig.EMAIL_USER,
+        to: email,
+        subject: "Registration Successful",
+        html: `Thank you for registering on pattseheadshot.com!<br><br>
+              Your login credentials:<br>
+              Email: ${email}<br>
+              Password: ${password}<br><br>
+              <a href="${clickHere}">Click here</a> to log in.<br><br>
+              Please do not share your credentials with anyone.`,
+      };
+
+      transporter.sendMail(mailOptions, (err) => {
+        if (err) {
+          console.error("Failed to send registration email:", err);
+        }
+      });
+
+
       return res.status(200).json({
         message: "Registered successfully",
         userUuid: newUuid,
@@ -112,6 +132,25 @@ export const userSignup = async (req: Request, res: Response) => {
       });
 
       await newUser.save();
+
+      // Send the registration email
+      const mailOptions = {
+        from: environmentConfig.EMAIL_USER,
+        to: email,
+        subject: "Registration Successful",
+        html: `Thank you for registering on pattseheadshot.com!<br><br>
+              Your login credentials:<br>
+              Email: ${email}<br>
+              Password: ${password}<br><br>
+              <a href="${clickHere}">Click here</a> to log in.<br><br>
+              Please do not share your credentials with anyone.`,
+      };
+
+      transporter.sendMail(mailOptions, (err) => {
+        if (err) {
+          console.error("Failed to send registration email:", err);
+        }
+      });
 
       return res.status(200).json({
         message: "Registered successfully",
@@ -476,7 +515,7 @@ export const sendInviteMail = async (req: Request, res: Response) => {
     if (!token) {
       return res.status(401).json({ error: "Authentication token missing" });
     }
-    
+
     const decodedToken = jwt.verify(token, jwtSecret) as { userId: string };
     const userId = decodedToken.userId;
 
@@ -566,7 +605,7 @@ export const sendEmailToUser = async (req: Request, res: Response) => {
       const mailOptions = {
         ...commonMailOptions,
         to: currentUser.email,
-        html:` <p>Room ID : 4368418 </p><br/>
+        html: ` <p>Room ID : 4368418 </p><br/>
         <p>Password : No Password </p><br/>
         <p>Time : 7:00 PM </p><br/>
         <p>Date : 15-09-2023 </p><br/>
