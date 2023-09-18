@@ -245,8 +245,7 @@ interface Room {
   gameName: string;
   gameType: string;
   mapType: string;
-  time: string;
-  date: string;
+  dateAndTime: string;
   roomId: string;
   password: string;
   version: string;
@@ -285,8 +284,7 @@ export const getUserRegisteredRooms = async (req: Request, res: Response) => {
           gameName: roomIdData.gameName,
           gameType: roomIdData.gameType,
           mapType: roomIdData.mapType,
-          time: roomIdData.time,
-          date: roomIdData.date,
+          dateAndTime: roomIdData.dateAndTime,
           roomId: roomIdData.roomId,
           password: roomIdData.password,
           version: roomIdData.version,

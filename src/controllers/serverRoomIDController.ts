@@ -7,6 +7,7 @@ import { user } from "../models/passportModels";
 import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
 import moment from 'moment-timezone';
 import { Transaction } from "../models/qrCodeModel";
+import { userType } from '../middlewares/authMiddleware';
 
 
 // Configuration
@@ -29,67 +30,72 @@ export const createRoom = async (req: Request, res: Response) => {
       version,
       dateAndTime,
       entryFee,
-      lastServival,
+      lastSurvival,
       highestKill,
       secondWin,
       thirdWin
     } = req.body;
+
+    // Check for required fields
+    const requiredFields = ['roomId', 'gameName', 'gameType', 'mapType', 'password', 'version', 'dateAndTime', 'entryFee', 'lastSurvival', 'highestKill', 'secondWin', 'thirdWin'];
+    const missingFields = requiredFields.filter(field => !req.body[field]);
+
+    if (missingFields.length > 0) {
+      const missingFieldsMessage = missingFields.join(', ');
+      return res.status(400).json({ message: `${missingFieldsMessage} field is required` });
+    }
+
     const file = req.file;
-    const token = req.header("Authorization")?.replace("Bearer ", "");
-    if (!token) {
-      return res.status(401).json({ message: "Unauthorized" });
+
+    // Define req.user before accessing its properties
+    const user = req.user as userType; // Type assertion to userType
+
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
     }
-    const secretKey = environmentConfig.JWT_SECRET;
 
-    const tempPath = file?.path;
+    const userId = user.userId;
 
-    try {
-      const decoded: any = jwt.verify(token, secretKey);
-      const userId = decoded.userId;
-      const newUuid = uuidv4();
+    const newUuid = uuidv4();
 
-      let secure_url: string | null = null;
-      if (tempPath) {
-        const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(
-          tempPath
-        );
-        secure_url = uploadResponse.secure_url;
-      }
-
-      // Parse date and time into Date objects
-      const parsedDateAndTime = moment(req.body.dateAndTime).tz('Asia/Kolkata');
-
-      if (!parsedDateAndTime.isValid()) {
-        return res.status(400).json({ message: 'Invalid date or time format' });
-      }
-
-      const createdRoom = await RoomId.create({
-        roomUuid: newUuid,
-        roomId,
-        gameName,
-        gameType,
-        mapType,
-        password,
-        mapImg: secure_url,
-        version,
-        createdBy: userId,
-        dateAndTime,
-        entryFee,
-        lastServival,
-        highestKill,
-        secondWin,
-        thirdWin
-      });
-
-      return res.status(200).json({
-        message: "Room created successfully",
-        uuid: newUuid,
-        _id: createdRoom._id
-      });
-    } catch (error) {
-      console.error(error);
-      return res.status(401).json({ message: "Invalid token" });
+    let secure_url: string | null = null;
+    if (file) {
+      const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(
+        file.path
+      );
+      secure_url = uploadResponse.secure_url;
     }
+
+    // Parse date and time into Date objects
+    const parsedDateAndTime = moment(dateAndTime).tz('Asia/Kolkata');
+
+    if (!parsedDateAndTime.isValid()) {
+      return res.status(400).json({ message: 'Invalid date or time format' });
+    }
+
+    const createdRoom = await RoomId.create({
+      roomUuid: newUuid,
+      roomId,
+      gameName,
+      gameType,
+      mapType,
+      password,
+      mapImg: secure_url,
+      version,
+      createdBy: userId,
+      dateAndTime,
+      entryFee,
+      lastSurvival,
+      highestKill,
+      secondWin,
+      thirdWin
+    });
+
+    return res.status(200).json({
+      message: "Room created successfully",
+      uuid: newUuid,
+      _id: createdRoom._id
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -100,50 +106,6 @@ export const createRoom = async (req: Request, res: Response) => {
 };
 
 // Get all rooms
-// export const getAllRooms = async (req: Request, res: Response) => {
-//   try {
-//     const { search } = req.query;
-
-//     let roomsQuery = {};
-
-//     if (search) {
-//       roomsQuery = {
-//         $or: [
-//           { gameName: { $regex: search, $options: 'i' } },
-//           { gameType: { $regex: search, $options: 'i' } },
-//           { mapType: { $regex: search, $options: 'i' } },
-//           { version: { $regex: search, $options: 'i' } },
-//           { enteryFee: { $regex: search, $options: 'i' } },
-//           { lastSurvival: { $regex: search, $options: 'i' } },
-//           { highestKill: { $regex: search, $options: 'i' } },
-//           { secondWin: { $regex: search, $options: 'i' } },
-//           { thirdWin: { $regex: search, $options: 'i' } },
-//         ],
-//       };
-//     }
-
-//     const rooms = await RoomId.find(roomsQuery);
-
-//     if (rooms.length === 0) {
-//       return res.status(404).json({ message: search ? 'No rooms found with the provided query' : 'No rooms found' });
-//     }
-
-//     const roomsWithUserDetails = await Promise.all(
-//       rooms.map(async (room) => {
-//         const userInfo = await user.findOne({ _id: room.createdBy });
-//         return {
-//           ...room.toObject(),
-//           createdBy: userInfo ? userInfo.fullName : 'Unknown',
-//         };
-//       })
-//     );
-
-//     return res.status(200).json(roomsWithUserDetails);
-//   } catch (error) {
-//     return res.status(500).json({ error: 'Failed to fetch rooms' });
-//   }
-// };
-
 export const getAllRooms = async (req: Request, res: Response) => {
   try {
     const { search } = req.query;

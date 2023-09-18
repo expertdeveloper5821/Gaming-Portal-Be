@@ -9,6 +9,7 @@ import { environmentConfig } from "../config/environmentConfig";
 import { Role } from "../models/roleModel";
 import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
 import { Team } from "../models/teamModel";
+import { userType } from '../middlewares/authMiddleware';
 
 
 // Configuration
@@ -507,73 +508,68 @@ export const userDelete = async (req: Request, res: Response) => {
 
 // send invite mail to teammates
 export const sendInviteMail = async (req: Request, res: Response) => {
-  try {
+try {
     const { teamName, emails } = req.body;
 
-    // Verify the JWT token from the request headers to get the user's _id
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ error: "Authentication token missing" });
+    // Define req.user before accessing its properties
+    const user = req.user as userType; // Type assertion to userType
+
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
     }
 
-    const decodedToken = jwt.verify(token, jwtSecret) as { userId: string };
-    const userId = decodedToken.userId;
+    const userId = user.userId;
+    let team: any;
 
-    // Check if the team name already exists in the Team table
-    const existingTeam = await Team.findOne({ teamName });
+    // Check if the user sending the invitations already has a team
+    const userTeam = await Team.findOne({ leadPlayerId: userId });
 
-    if (existingTeam) {
-      return res.status(400).json({ error: "Team name already exists" });
+    if (!userTeam) {
+      // If the user doesn't have a team, create one and save the team name
+      // Check if the team name already exists in the Team table
+      const existingTeam = await Team.findOne({ teamName });
+
+      if (existingTeam) {
+        return res.status(400).json({ error: "Team name already exists" });
+      }
+
+      // Save the teamName in the Team table
+      const team = new Team({ teamName });
+      await team.save();
+
+      // Add the user's _id to the leadPlayerId array in the Team table
+      await Team.updateOne({ _id: team._id }, { $addToSet: { leadPlayerId: userId } });
     }
-
-    // Save the teamName in the Team table
-    const team = new Team({ teamName });
-    await team.save();
-
-    // Add the user's _id to the leadPlayerId array in the Team table
-    await Team.updateOne({ _id: team._id }, { $addToSet: { leadPlayerId: userId } });
 
     // Configure the registration URL (replace with your actual registration URL)
     const registrationUrl = environmentConfig.CLIENT_URL;
 
     const sentInvitations: string[] = [];
-    const alreadyRegistered: string[] = [];
 
     // Send invitation emails to the provided email addresses
     for (const email of emails) {
-      const existingUser = await user.findOne({ email });
+      const invitationToken = jwt.sign(
+        { teamId: userTeam ? userTeam._id : team._id, teamName, userId },
+        jwtSecret,
+        { expiresIn: '1h' } // Set an expiration time for the token
+      );
 
-      if (existingUser) {
-        // User with this email is already registered
-        alreadyRegistered.push(email);
-      } else {
-        const invitationToken = jwt.sign(
-          { teamId: team._id, teamName, userId },
-          jwtSecret,
-          { expiresIn: '1h' } // Set an expiration time for the token
-        );
+      const invitationLink = `${registrationUrl}?invitationToken=${invitationToken}`;
 
-        const invitationLink = `${registrationUrl}?invitationToken=${invitationToken}`;
+      await transporter.sendMail({
+        from: 'your-email@example.com',
+        to: email,
+        subject: 'Invitation to Join the Team',
+        html: `You have been invited to join the team ${teamName}. Click <a href="${invitationLink}">here</a> to register and join the team.`,
+      });
 
-        await transporter.sendMail({
-          from: 'your-email@example.com',
-          to: email,
-          subject: 'Invitation to Join the Team',
-          html: `You have been invited to join the team ${teamName}. Click <a href="${invitationLink}">here</a> to register and join the team.`,
-        });
-
-        sentInvitations.push(email);
-      }
+      sentInvitations.push(email);
     }
 
     let message = '';
 
     if (sentInvitations.length > 0) {
       message += `Invitations sent to: ${sentInvitations.join(', ')}. `;
-    }
-
-    if (alreadyRegistered.length > 0) {
-      message += `Already registered: ${alreadyRegistered.join(', ')}. `;
     }
 
     if (message === '') {
@@ -586,6 +582,7 @@ export const sendInviteMail = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
 
 
 export const sendEmailToUser = async (req: Request, res: Response) => {
