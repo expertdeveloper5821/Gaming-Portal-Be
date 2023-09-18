@@ -5,6 +5,8 @@ import jwt from "jsonwebtoken";
 import { environmentConfig } from "../config/environmentConfig";
 import { user } from "../models/passportModels";
 import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
+import moment from 'moment-timezone';
+import { userType } from '../middlewares/authMiddleware';
 
 
 // Configuration
@@ -26,83 +28,73 @@ export const createRoom = async (req: Request, res: Response) => {
       password,
       version,
       dateAndTime,
-      lastServival,
+      entryFee,
+      lastSurvival,
       highestKill,
       secondWin,
       thirdWin
     } = req.body;
+
+    // Check for required fields
+    const requiredFields = ['roomId', 'gameName', 'gameType', 'mapType', 'password', 'version', 'dateAndTime', 'entryFee', 'lastSurvival', 'highestKill', 'secondWin', 'thirdWin'];
+    const missingFields = requiredFields.filter(field => !req.body[field]);
+
+    if (missingFields.length > 0) {
+      const missingFieldsMessage = missingFields.join(', ');
+      return res.status(400).json({ message: `${missingFieldsMessage} field is required` });
+    }
+
     const file = req.file;
 
-    if (
-      !roomId ||
-      !gameName ||
-      !gameType ||
-      !mapType ||
-      !password ||
-      !version ||
-      !dateAndTime ||
-      !lastServival ||
-      !highestKill ||
-      !secondWin ||
-      !thirdWin
-    ) {
-      return res.status(400).json({ message: "All fields required" });
-    } else {
-      const token = req.header("Authorization")?.replace("Bearer ", "");
-      if (!token) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-      const secretKey = environmentConfig.JWT_SECRET;
+    // Define req.user before accessing its properties
+    const user = req.user as userType; // Type assertion to userType
 
-      const tempPath = file?.path; 
-
-      try {
-        const decoded: any = jwt.verify(token, secretKey);
-        const userId = decoded.userId;
-        const newUuid = uuidv4();
-
-        let secure_url: string | null = null;
-        if (tempPath) {
-          const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(
-            tempPath
-          );
-          secure_url = uploadResponse.secure_url;
-        }
-
-        // Parse date and time into Date objects
-        const parsedDateAndTime = new Date(dateAndTime);
-
-        if (isNaN(parsedDateAndTime.getTime())) {
-          return res.status(400).json({ message: "Invalid date or time format" });
-        }
-
-        const createdRoom = await RoomId.create({
-          roomUuid: newUuid,
-          roomId,
-          gameName,
-          gameType,
-          mapType,
-          password,
-          mapImg: secure_url,
-          version,
-          createdBy: userId,
-          dateAndTime: parsedDateAndTime,
-          lastServival,
-          highestKill,
-          secondWin,
-          thirdWin
-        });
-
-        return res.status(200).json({
-          message: "Room created successfully",
-          uuid: newUuid,
-          _id: createdRoom._id
-        });
-      } catch (error) {
-        console.error(error);
-        return res.status(401).json({ message: "Invalid token" });
-      }
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
     }
+
+    const userId = user.userId;
+
+    const newUuid = uuidv4();
+
+    let secure_url: string | null = null;
+    if (file) {
+      const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(
+        file.path
+      );
+      secure_url = uploadResponse.secure_url;
+    }
+
+    // Parse date and time into Date objects
+    const parsedDateAndTime = moment(dateAndTime).tz('Asia/Kolkata');
+
+    if (!parsedDateAndTime.isValid()) {
+      return res.status(400).json({ message: 'Invalid date or time format' });
+    }
+
+    const createdRoom = await RoomId.create({
+      roomUuid: newUuid,
+      roomId,
+      gameName,
+      gameType,
+      mapType,
+      password,
+      mapImg: secure_url,
+      version,
+      createdBy: userId,
+      dateAndTime,
+      entryFee,
+      lastSurvival,
+      highestKill,
+      secondWin,
+      thirdWin
+    });
+
+    return res.status(200).json({
+      message: "Room created successfully",
+      uuid: newUuid,
+      _id: createdRoom._id
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -126,8 +118,7 @@ export const getAllRooms = async (req: Request, res: Response) => {
           { gameType: { $regex: search, $options: 'i' } },
           { mapType: { $regex: search, $options: 'i' } },
           { version: { $regex: search, $options: 'i' } },
-          { time: { $regex: search, $options: 'i' } },
-          { date: { $regex: search, $options: 'i' } },
+          { entryFee: { $regex: search, $options: 'i' } },
           { lastSurvival: { $regex: search, $options: 'i' } },
           { highestKill: { $regex: search, $options: 'i' } },
           { secondWin: { $regex: search, $options: 'i' } },
@@ -168,16 +159,25 @@ export const getRoomById = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Room not found" });
     }
 
-    const userInfo = await user.findOne({ _id: room.createdBy })
+    const userInfo = await user.findOne({ _id: room.createdBy });
 
     if (!userInfo) {
       return res.status(500).json({ error: "User not found" });
     }
-    return res.status(200).json({ room, fullName: userInfo.fullName });
+
+    // Replacing the createdBy field with the user's fullName
+    const roomWithFullName = {
+      ...room.toObject(), // Convert room to a plain JavaScript object
+      createdBy: userInfo.fullName,
+    };
+
+    return res.status(200).json({ room: roomWithFullName });
   } catch (error) {
     return res.status(500).json({ error: "Failed to fetch room" });
   }
 };
+
+
 
 // Update a room by ID
 export const updateRoomById = async (req: Request, res: Response) => {
@@ -253,4 +253,3 @@ export const getUserRooms = async (req: Request, res: Response) => {
     });
   }
 };
-
