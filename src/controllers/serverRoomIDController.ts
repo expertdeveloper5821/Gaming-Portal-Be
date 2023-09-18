@@ -164,6 +164,7 @@ export const getRoomById = async (req: Request, res: Response) => {
   }
 };
 
+
 // Update a room by ID
 export const updateRoomById = async (req: Request, res: Response) => {
   try {
