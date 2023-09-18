@@ -4,27 +4,27 @@ const roomIdSchema: Schema = new Schema(
   {
     roomUuid: {
       type: String,
-      required: true,
+      required: false,
     },
     roomId: {
       type: String,
-      required: true,
+      required: false,
     },
     password: {
       type: String,
-      required: true,
+      required: false,
     },
     gameName: {
       type: String,
-      required: true,
+      required: false,
     },
     gameType: {
       type: String,
-      required: true,
+      required: false,
     },
     mapType: {
       type: String,
-      required: true,
+      required: false,
     },
     mapImg: {
       type: String,
@@ -32,34 +32,34 @@ const roomIdSchema: Schema = new Schema(
     },
     version: {
       type: String,
-      required: true,
+      required: false,
     },
     dateAndTime: {
       type: Date,
-      required: true,
+      required: false,
     },
     entryFee: {
       type: String,
-      required: true,
+      required: false,
     },
-    lastServival: {
+    lastSurvival: {
       type: String,
-      required: true,
+      required: false,
     },
     highestKill: {
       type: String,
-      required: true,
+      required: false,
     },
     secondWin: {
       type: String,
-      required: true,
+      required: false,
     },
     thirdWin: {
       type: String,
-      required: true,
+      required: false,
     },
     createdBy: {
-      type: String, // Assuming the user ID is a string
+      type: String, 
       required: true,
     },
   },

@@ -1,6 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import { environmentConfig } from '../config/environmentConfig';
+
+// Define the User interface
+export interface userType {
+  userId: string;
+  role: {
+    role: string[]; // Define the structure of the 'role' property
+  };
+}
 
 const verifyToken = (allowedRoles: string[]) => (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
@@ -22,14 +30,23 @@ const verifyToken = (allowedRoles: string[]) => (req: Request, res: Response, ne
   }
 
   try {
-    const decodedToken = jwt.verify(token, environmentConfig.JWT_SECRET) as { [key: string]: any };
-    req.user = decodedToken;
+    const decodedToken = jwt.verify(token, environmentConfig.JWT_SECRET);
 
-    // Check if the user has the required role (e.g., 'admin', 'spectator' or 'user') to access the route
-    const hasAllowedRole = allowedRoles.some(role => decodedToken.role && decodedToken.role.role.indexOf(role) !== -1); 
-        if (!hasAllowedRole) {      
-           // If the user does not have any of the allowed roles, return 'Unauthorized' message     
-     return res.status(401).json({ message: 'Unauthorized.', success: false });     }
+    if (typeof decodedToken !== 'object' || decodedToken === null) {
+      return res.status(401).json({
+        message: 'Invalid token!',
+        success: false,
+      });
+    }
+
+    req.user = decodedToken as userType; //'userType' is in interface
+
+    // Check if the user has the required role to access the route
+    const hasAllowedRole = allowedRoles.some(role => decodedToken.role && decodedToken.role.role.indexOf(role) !== -1);
+
+    if (!hasAllowedRole) {
+      return res.status(401).json({ message: 'Unauthorized.', success: false });
+    }
 
     next();
   } catch (error) {
