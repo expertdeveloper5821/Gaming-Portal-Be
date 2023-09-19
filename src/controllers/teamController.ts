@@ -7,6 +7,7 @@ import { validId } from "../utils/pattern";
 import RoomId from "../models/serverRoomIDModels";
 import jwt from "jsonwebtoken";
 import { Transaction } from "../models/qrCodeModel";
+import { userType } from "../middlewares/authMiddleware";
 
 // add players
 // export const addTeammates = async (req: Request, res: Response) => {
@@ -469,24 +470,26 @@ export const getInvitedUser =async (req: Request, res: Response) => {
 // user register room details
 export const getUserRegisteredRooms = async (req: Request, res: Response) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
+        const user = req.user as userType; // Type assertion to userType
 
-    const secretKey = environmentConfig.JWT_SECRET;
-    const decoded: any = jwt.verify(token, secretKey);
-    const userId = decoded.userId;
+        if (!user) {
+          return res.status(401).json({ message: 'You are not authenticated!', success: false });
+        }
+    
+        const userId = user.userId;
 
-    const rooms = await Transaction.find({ paymentBy: userId });
+    const transactions = await Transaction.find({ paymentBy: userId });
 
     const detailedRooms = await Promise.all(
-      rooms.map(async (room) => {
-        const roomIdData = await RoomId.findOne({ roomUuid: room.roomId });
+      transactions.map(async (transaction) => {
+        const roomUuid = transaction.roomId; // Assuming roomId in Transaction corresponds to roomUuid in RoomId
+
+        const roomIdData = await RoomId.findOne({ roomUuid });
 
         if (!roomIdData) {
           return null; // Handle the case when roomIdData is not found
         }
+
         return {
           uuid: roomIdData.uuid,
           _id: roomIdData._id,
@@ -494,30 +497,29 @@ export const getUserRegisteredRooms = async (req: Request, res: Response) => {
           gameName: roomIdData.gameName,
           gameType: roomIdData.gameType,
           mapType: roomIdData.mapType,
-          time: roomIdData.time,
-          date: roomIdData.date,
+          dateAndTime: roomIdData.dateAndTime,
           roomId: roomIdData.roomId,
           password: roomIdData.password,
           version: roomIdData.version,
-          mapImg: roomIdData.mapImg
-
+          mapImg: roomIdData.mapImg,
+          paymentDetails: {
+            id: transaction._id,
+            upiId: transaction.upiId,
+            matchAmount: transaction.matchAmount,
+            name: transaction.name,
+          },
         };
       })
     );
 
-    const paymentDetailsArray = rooms.map((room) => ({
-      id: room._id,
-      upiId: room.upiId,
-      matchAmount: room.matchAmount,
-      name: room.name,
-    }));
+    // Filter out null entries from detailedRooms
+    const filteredRooms = detailedRooms.filter(room => room !== null);
 
     res.status(200).json({
       code: 200,
       message: 'Rooms details retrieved successfully',
-      numberOfRooms: detailedRooms.length,
-      rooms: detailedRooms,
-      paymentDetails: paymentDetailsArray,
+      numberOfRooms: filteredRooms.length,
+      rooms: filteredRooms,
     });
   } catch (error) {
     console.error(error);

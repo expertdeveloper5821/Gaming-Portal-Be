@@ -62,6 +62,13 @@ const roomIdSchema: Schema = new Schema(
       type: String, 
       required: true,
     },
+    registerTeams: [
+      {
+        teamName: String,
+        leaderEmail: String,
+        emails: [String],
+      },
+    ],
   },
   { timestamps: true }
 );
