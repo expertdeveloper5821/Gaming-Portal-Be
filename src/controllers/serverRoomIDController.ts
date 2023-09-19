@@ -249,24 +249,19 @@ export const deleteRoomById = async (req: Request, res: Response) => {
 // get all room that created by only that perticular role user
 export const getUserRooms = async (req: Request, res: Response) => {
   try {
-    const token = req.header("Authorization")?.replace("Bearer ", "");
-    if (!token) {
-      return res.status(401).json({ message: "Unauthorized" });
+    // Define req.user before accessing its properties
+    const user = req.user as userType; // Type assertion to userType
+
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
     }
 
-    const secretKey = environmentConfig.JWT_SECRET;
-    try {
-      const decoded: any = jwt.verify(token, secretKey);
-      const userId = decoded.userId;
+    const userId = user.userId;
 
-      // Fetch rooms associated with the specific user
-      const userRooms = await RoomId.find({ createdBy: userId });
+    // Fetch rooms associated with the specific user
+    const userRooms = await RoomId.find({ createdBy: userId });
 
-      return res.status(200).json(userRooms);
-    } catch (error) {
-      console.error(error);
-      return res.status(401).json({ message: "Invalid token" });
-    }
+    return res.status(200).json(userRooms);
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -275,4 +270,3 @@ export const getUserRooms = async (req: Request, res: Response) => {
     });
   }
 };
-

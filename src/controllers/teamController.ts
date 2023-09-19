@@ -1,65 +1,66 @@
 import { user } from "../models/passportModels";
 import { Request, Response } from "express";
 import { environmentConfig } from "../config/environmentConfig";
-import { transporter } from "../middlewares/email";
 import { Team } from "../models/teamModel";
 import { validId } from "../utils/pattern";
 import RoomId from "../models/serverRoomIDModels";
 import jwt from "jsonwebtoken";
 import { Transaction } from "../models/qrCodeModel";
+// import { userType } from '../middlewares/authMiddleware';
 
 
-export const addTeammates = async (req: Request, res: Response) => {
+// get Team by ID
+export const getTeamById = async (req: Request, res: Response) => {
   try {
-    const {
-      emails,
-      roomid,
-      leadPlayer,
-    }: { emails: string[]; leadPlayer: string; roomid: string } = req.body;
-
-    if (!emails || !Array.isArray(emails)) {
-      return res.status(400).json({ error: "Invalid input format" });
+    const TeamId = req.params.id;
+    if (!validId.test(TeamId)) {
+      return res.status(404).json({ error: "Invalid team ID" });
     }
 
-    const teamData = await RoomId.findOne({ roomUuid: roomid });
+    const foundTeam = await Team.findById(TeamId);
 
-    if (teamData) {
-      const token = req.header("Authorization")?.replace("Bearer ", "");
-      if (!token) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-      const secretKey = environmentConfig.JWT_SECRET;
-      const decoded: any = jwt.verify(token, secretKey);
-      const userId = decoded.userId;
-
-      const leadPlayerUser = await user.findOne({ email: leadPlayer });
-      if (!leadPlayerUser) {
-        return res
-          .status(400)
-          .json({ code: 400, message: "Lead player not found" });
-      }
-
-      const newTeam = new Team({
-        leadPlayer: leadPlayer,
-        roomUuid: teamData?.roomUuid,
-        teammates: emails,
-        leadPlayerId: userId
+    if (!foundTeam) {
+      return res.status(404).json({
+        code: 404,
+        message: "Team not found",
       });
-      await newTeam.save();
-      res.status(200).json({
-        code: 200,
-        message: `Match registration success`,
-        _id: newTeam._id,
-        leadPlayerId: userId,
-        roomUuid: teamData?.roomUuid
-      });
-    } else {
-      res.status(400).json({ code: 400, message: "Team not found" });
     }
+
+    // Fetch details for each teammate using their email addresses
+    const teammatesDetails = await Promise.all(
+      foundTeam.teamMates.map(async (teammateId) => {
+        const teammate = await user.findById(teammateId); // Assuming user model has fullName, email, profilePic fields
+        if (teammate) {
+          return {
+            _id: teammate._id,
+            fullName: teammate.fullName,
+            email: teammate.email,
+            profilePic: teammate.profilePic,
+          };
+        }
+        return null;
+      })
+    );
+
+    // If the user is found, return the team data with teammate details as the response
+    return res.status(200).json({
+      code: 200,
+      data: {
+        Team: {
+          ...foundTeam.toObject(),
+          teamMates: teammatesDetails, // Replace teamMates with teammate details
+        },
+      },
+    });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ code: 500, message: `Internal Server Error ` });
+    return res.status(500).json({ code: 500, error: "Internal server error" });
   }
+};
+
+
+export const addTeammatesIntoMatch = async (req: Request, res: Response) => {
+
 };
 
 
@@ -108,7 +109,7 @@ export const getAllTeams = async (req: Request, res: Response) => {
         return {
           _id: team._id,
           uuid: team.roomUuid,
-          leadPlayer: team.squadLeader,
+          leadPlayer: team.leadPlayerId,
           teammates: teammateDetails.filter((detail) => detail !== null),
         };
       })
@@ -124,59 +125,6 @@ export const getAllTeams = async (req: Request, res: Response) => {
   }
 };
 
-// get Team by ID
-export const getTeamById = async (req: Request, res: Response) => {
-  try {
-    const TeamId = req.params.id;
-    if (!validId.test(TeamId)) {
-      return res.status(404).json({ error: "Invalid user ID" });
-    }
-
-    const foundTeam = await Team.findById(TeamId);
-    const gameInfo = await RoomId.findOne({ uuid: foundTeam?.roomUuid });
-
-    if (!foundTeam) {
-      return res.status(404).json({
-        code: 404,
-        message: "Team not found",
-      });
-    }
-
-    // Fetch details for each teammate using their email addresses
-    const teammatesDetails = await Promise.all(
-      foundTeam.teamMates.map(async (teammateEmail) => {
-        const teammate = await user.findOne({ email: teammateEmail });
-        if (teammate) {
-          return {
-            email: teammate.email,
-            fullname: teammate.fullName,
-            username: teammate.userName,
-          };
-        }
-        return null;
-      })
-    );
-
-    // If the user is found, return the team data with teammate details as the response
-    return res.status(200).json({
-      code: 200,
-      data: {
-        Team: {
-          ...foundTeam.toObject(),
-          teammates: teammatesDetails,
-        },
-        registeredGame: {
-          gameName: gameInfo?.gameName,
-          gameType: gameInfo?.gameType,
-          mapType: gameInfo?.mapType,
-        },
-      },
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({ code: 500, error: "Internal server error" });
-  }
-};
 
 // update user by id
 export const updateTeamById = async (req: Request, res: Response) => {
@@ -209,6 +157,7 @@ export const updateTeamById = async (req: Request, res: Response) => {
     return res.status(500).json({ code: 500, error: "Internal server error" });
   }
 };
+
 
 // delete by id
 export const deleteTeamById = async (req: Request, res: Response) => {
@@ -347,7 +296,7 @@ export const getUserRegisteredRoomsWithTeamMates = async (req: Request, res: Res
 
       return {
         roomUuid: team.roomUuid,
-        leadPlayer: team.squadLeader,
+        leadPlayer: team.leadPlayerId,
         teammates: teammatesWithDetails,
       };
     }));
@@ -393,7 +342,7 @@ export const getUsersAndTeammatesInRoom = async (req: Request, res: Response) =>
 
         return {
           roomUuid: team.roomUuid,
-          leadPlayer: team.squadLeader,
+          leadPlayer: team.leadPlayerId,
           teammates: teammatesWithDetails,
         };
       })

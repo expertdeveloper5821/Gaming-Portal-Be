@@ -3,13 +3,13 @@ import express from "express";
 const route = express.Router();
 import { verifyToken } from "../middlewares/authMiddleware";
 import {
-  addTeammates, deleteTeamById, getAllTeams, getTeamById, updateTeamById,
+  addTeammatesIntoMatch, deleteTeamById, getAllTeams, getTeamById, updateTeamById,
    getUserRegisteredRooms, getUserRegisteredRoomsWithTeamMates, getUsersAndTeammatesInRoom
 } from "../controllers/teamController";
 
 
 // add up  on new teammates
-route.post("/addteam", verifyToken(["user"]), addTeammates);
+route.post("/addteam", verifyToken(["user"]), addTeammatesIntoMatch);
 
 // get all teams
 route.get("/getallteam", verifyToken(['admin']), getAllTeams);

@@ -17,10 +17,10 @@ export const transferData =  async (req:Request, res:Response) => {
     const sourceDb: Db = sourceClient.db();
     const destinationDb: Db = destinationClient.db();
 
-    const sourceCollection = sourceDb.collection('users');
+    const sourceCollection = sourceDb.collection('qrcodeimgs');
     const documents = await sourceCollection.find({}).toArray();
 
-    const destinationCollection = destinationDb.collection('users');
+    const destinationCollection = destinationDb.collection('qrcodeimgs');
     await destinationCollection.insertMany(documents);
 
     // Sending a response to the client
