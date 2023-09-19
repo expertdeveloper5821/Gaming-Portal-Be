@@ -144,7 +144,7 @@ export const getAllRooms = async (req: Request, res: Response) => {
           { gameType: { $regex: search, $options: 'i' } },
           { mapType: { $regex: search, $options: 'i' } },
           { version: { $regex: search, $options: 'i' } },
-          { enteryFee: { $regex: search, $options: 'i' } },
+          { entryFee: { $regex: search, $options: 'i' } },
           { lastSurvival: { $regex: search, $options: 'i' } },
           { highestKill: { $regex: search, $options: 'i' } },
           { secondWin: { $regex: search, $options: 'i' } },
