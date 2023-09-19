@@ -6,7 +6,7 @@ import { validId } from "../utils/pattern";
 import RoomId from "../models/serverRoomIDModels";
 import jwt from "jsonwebtoken";
 import { Transaction } from "../models/qrCodeModel";
-// import { userType } from '../middlewares/authMiddleware';
+import { userType } from '../middlewares/authMiddleware';
 
 
 // get Team by ID
@@ -60,7 +60,51 @@ export const getTeamById = async (req: Request, res: Response) => {
 
 
 export const addTeammatesIntoMatch = async (req: Request, res: Response) => {
+  try {
+    const { emails, leaderEmail, roomid } = req.body; // Use "roomid" instead of "roomId"
 
+    // Find the room by roomUuid
+    const room = await RoomId.findOne({ roomUuid: roomid }); // Use "roomUuid" instead of "roomId"
+
+    if (!room) {
+      return res.status(404).json({ message: 'Room not found' });
+    }
+
+    const user = req.user as userType; // Type assertion to userType
+
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
+    }
+
+    const userId = user.userId; 
+
+    // Find the team name associated with the user
+    const userTeam = await Team.findOne({ leadPlayerId: userId });
+
+    if (!userTeam) {
+      return res.status(404).json({ message: 'User does not belong to a team' });
+    }
+
+    // Add the teammates to the room's registerTeams array with the user's team name
+    const newTeam = {
+      teamName: userTeam.teamName, // Use the team name associated with the user
+      leaderEmail,
+      emails,
+    };
+
+    room.registerTeams.push(newTeam);
+
+    // Save the updated room data
+    await room.save();
+
+    return res.status(200).json({ message: 'Teammates added successfully', room });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      error: 'Failed to add teammates to the room',
+      success: false,
+    });
+  }
 };
 
 
