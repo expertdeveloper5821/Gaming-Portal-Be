@@ -142,9 +142,6 @@ export const createPayment = async (req: Request, res: Response) => {
   }
   };
 
-
-
-
 // Get a single payment details by ID
 export const getpaymentdeatilsById = async (req: Request, res: Response) => {
   try {
