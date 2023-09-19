@@ -6,6 +6,7 @@ import { environmentConfig } from "../config/environmentConfig";
 import { user } from "../models/passportModels";
 import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
 import moment from 'moment-timezone';
+import { Transaction } from "../models/qrCodeModel";
 import { userType } from '../middlewares/authMiddleware';
 
 
@@ -108,7 +109,32 @@ export const createRoom = async (req: Request, res: Response) => {
 export const getAllRooms = async (req: Request, res: Response) => {
   try {
     const { search } = req.query;
+    const token = req.header("Authorization")?.replace("Bearer ", "");
 
+    // Define a variable to store the user's registered room IDs
+    let userRegisteredRooms: string[] = [];
+
+    if (token) {
+      // If the token is present, decode it to get the user's ID
+      const secretKey = environmentConfig.JWT_SECRET;
+      try {
+        const decoded: any = jwt.verify(token, secretKey);
+        const userId = decoded.userId;
+
+        // Retrieve the list of rooms the user has registered for
+        const userTransactions = await Transaction.find({
+          paymentBy: userId,
+        });
+
+        // Extract the room IDs from the user's transactions
+        userRegisteredRooms = userTransactions.map((transaction) => transaction.roomId);
+      } catch (error) {
+        console.error(error);
+        return res.status(401).json({ error: "Invalid token" });
+      }
+    }
+
+    // Construct the query to fetch rooms
     let roomsQuery = {};
 
     if (search) {
@@ -118,7 +144,7 @@ export const getAllRooms = async (req: Request, res: Response) => {
           { gameType: { $regex: search, $options: 'i' } },
           { mapType: { $regex: search, $options: 'i' } },
           { version: { $regex: search, $options: 'i' } },
-          { entryFee: { $regex: search, $options: 'i' } },
+          { enteryFee: { $regex: search, $options: 'i' } },
           { lastSurvival: { $regex: search, $options: 'i' } },
           { highestKill: { $regex: search, $options: 'i' } },
           { secondWin: { $regex: search, $options: 'i' } },
@@ -127,30 +153,35 @@ export const getAllRooms = async (req: Request, res: Response) => {
       };
     }
 
+    // Fetch all rooms based on the query
     const rooms = await RoomId.find(roomsQuery);
 
-    if (rooms.length === 0) {
-      return res.status(404).json({ message: search ? 'No rooms found with the provided query' : 'No rooms found' });
+    // Filter the rooms to exclude those the user has already registered for
+    const filteredRooms = rooms.filter((room) => !userRegisteredRooms.includes(room.roomUuid));
+
+    if (filteredRooms.length === 0) {
+      return res.status(404).json({
+        message: search ? "No rooms found with the provided query" : "No rooms found",
+      });
     }
 
+    // Add user details to the filtered rooms
     const roomsWithUserDetails = await Promise.all(
-      rooms.map(async (room) => {
+      filteredRooms.map(async (room) => {
         const userInfo = await user.findOne({ _id: room.createdBy });
         return {
           ...room.toObject(),
-          createdBy: userInfo ? userInfo.fullName : 'Unknown',
+          createdBy: userInfo ? userInfo.fullName : "Unknown",
         };
       })
     );
 
     return res.status(200).json(roomsWithUserDetails);
   } catch (error) {
-    return res.status(500).json({ error: 'Failed to fetch rooms' });
+    return res.status(500).json({ error: "Failed to fetch rooms" });
   }
 };
 
-
-// Get a single room by ID
 export const getRoomById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -159,25 +190,16 @@ export const getRoomById = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Room not found" });
     }
 
-    const userInfo = await user.findOne({ _id: room.createdBy });
+    const userInfo = await user.findOne({ _id: room.createdBy })
 
     if (!userInfo) {
       return res.status(500).json({ error: "User not found" });
     }
-
-    // Replacing the createdBy field with the user's fullName
-    const roomWithFullName = {
-      ...room.toObject(), // Convert room to a plain JavaScript object
-      createdBy: userInfo.fullName,
-    };
-
-    return res.status(200).json({ room: roomWithFullName });
+    return res.status(200).json({ room, fullName: userInfo.fullName });
   } catch (error) {
     return res.status(500).json({ error: "Failed to fetch room" });
   }
 };
-
-
 
 // Update a room by ID
 export const updateRoomById = async (req: Request, res: Response) => {
@@ -227,24 +249,19 @@ export const deleteRoomById = async (req: Request, res: Response) => {
 // get all room that created by only that perticular role user
 export const getUserRooms = async (req: Request, res: Response) => {
   try {
-    const token = req.header("Authorization")?.replace("Bearer ", "");
-    if (!token) {
-      return res.status(401).json({ message: "Unauthorized" });
+    // Define req.user before accessing its properties
+    const user = req.user as userType; // Type assertion to userType
+
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
     }
 
-    const secretKey = environmentConfig.JWT_SECRET;
-    try {
-      const decoded: any = jwt.verify(token, secretKey);
-      const userId = decoded.userId;
+    const userId = user.userId;
 
-      // Fetch rooms associated with the specific user
-      const userRooms = await RoomId.find({ createdBy: userId });
+    // Fetch rooms associated with the specific user
+    const userRooms = await RoomId.find({ createdBy: userId });
 
-      return res.status(200).json(userRooms);
-    } catch (error) {
-      console.error(error);
-      return res.status(401).json({ message: "Invalid token" });
-    }
+    return res.status(200).json(userRooms);
   } catch (error) {
     console.error(error);
     return res.status(500).json({
