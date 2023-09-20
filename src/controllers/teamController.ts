@@ -20,7 +20,6 @@ export const getTeamById = async (req: Request, res: Response) => {
 
     if (!foundTeam) {
       return res.status(404).json({
-        code: 404,
         message: "Team not found",
       });
     }
@@ -43,7 +42,6 @@ export const getTeamById = async (req: Request, res: Response) => {
 
     // If the user is found, return the team data with teammate details as the response
     return res.status(200).json({
-      code: 200,
       data: {
         Team: {
           ...foundTeam.toObject(),
@@ -53,7 +51,7 @@ export const getTeamById = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -69,22 +67,20 @@ export const getUserTeam = async (req: Request, res: Response) => {
 
     const userId = user.userId;
 
-    // Find the user's team based on their user ID
-    const foundTeam = await Team.findOne({
-      $or: [
-        { teamMates: userId }, // Check if the user is a team member
-        { leadPlayerId: userId }, // Check if the user is the team leader
-      ],
-    });
+    // Find the user's own team where user is a leader
+    const ownTeam = await Team.findOne({ leadPlayerId: userId });
+
+    // Find the teams where the user is a member
+    const memberTeams = await Team.find({ teamMates: userId });
 
     // Initialize the response data
-    let responseData: Record<string, any> = {};
+    const responseData: Record<string, any> = {};
 
-    if (foundTeam) {
-      // Fetch details for each teammate using their email addresses
+    if (ownTeam) {
+      // Fetch details for each teammate in the user's own team
       const teammatesDetails = await Promise.all(
-        foundTeam.teamMates.map(async (teammateId) => {
-          const teammate = await User.findById(teammateId); // Assuming user model has fullName, email, profilePic fields
+        ownTeam.teamMates.map(async (teammateId) => {
+          const teammate = await User.findById(teammateId);
           if (teammate) {
             return {
               _id: teammate._id,
@@ -97,24 +93,62 @@ export const getUserTeam = async (req: Request, res: Response) => {
         })
       );
 
-      // Prepare the response with team details
-      responseData = {
-        ...foundTeam.toObject(),
+      // Fetch leadPlayerId details
+      const leadPlayer = await User.findById(ownTeam.leadPlayerId);
+
+      // response for the user's own team
+      responseData.yourTeam = {
+        ...ownTeam.toObject(),
         teamMates: teammatesDetails,
+        leadPlayer: {
+          fullName: leadPlayer?.fullName || '',
+          email: leadPlayer?.email || '',
+          profilePic: leadPlayer?.profilePic || '',
+        },
       };
-    } else {
-      // User is not in any team or hasn't created a team
-      responseData = [];
     }
 
-    // Return the response
+    if (memberTeams.length > 0) {
+      // response for teams where the user is a member
+      responseData.youAreInTeams = await Promise.all(
+        memberTeams.map(async (team) => {
+          const teammatesDetails = await Promise.all(
+            team.teamMates.map(async (teammateId) => {
+              const teammate = await User.findById(teammateId);
+              if (teammate) {
+                return {
+                  _id: teammate._id,
+                  fullName: teammate.fullName,
+                  email: teammate.email,
+                  profilePic: teammate.profilePic,
+                };
+              }
+              return null;
+            })
+          );
+
+          // Fetch leadPlayerId details for each team
+          const leadPlayer = await User.findById(team.leadPlayerId);
+
+          return {
+            ...team.toObject(),
+            teamMates: teammatesDetails,
+            leadPlayer: {
+              fullName: leadPlayer?.fullName || '',
+              email: leadPlayer?.email || '',
+              profilePic: leadPlayer?.profilePic || '',
+            },
+          };
+        })
+      );
+    }
+
     return res.status(200).json({
-      code: 200,
       data: responseData,
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -213,7 +247,6 @@ export const getAllTeams = async (req: Request, res: Response) => {
 
     if (allTeams.length === 0) {
       return res.status(404).json({
-        code: 404,
         message: "No Teams found",
       });
     }
@@ -245,12 +278,11 @@ export const getAllTeams = async (req: Request, res: Response) => {
     );
 
     return res.status(200).json({
-      code: 200,
       data: responseData,
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({  error: "Internal server error" });
   }
 };
 
@@ -271,19 +303,17 @@ export const updateTeamById = async (req: Request, res: Response) => {
 
     if (!updatedTeam) {
       return res.status(404).json({
-        code: 404,
         message: "Team not found",
       });
     }
 
     // If the user is updated successfully, return the updated user data as the response
     return res.status(200).json({
-      code: 200,
       data: updatedTeam,
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({  error: "Internal server error" });
   }
 };
 
@@ -301,19 +331,17 @@ export const deleteTeamById = async (req: Request, res: Response) => {
 
     if (deletionResult.deletedCount === 0) {
       return res.status(404).json({
-        code: 404,
         message: "Team not found",
       });
     }
 
     // If the user is deleted successfully, return the deletion result as the response
     return res.status(200).json({
-      code: 200,
       message: "deleted successfully",
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -386,14 +414,13 @@ export const getUserRegisteredRooms = async (req: Request, res: Response) => {
     const filteredRooms = detailedRooms.filter(room => room !== null);
 
     res.status(200).json({
-      code: 200,
       message: 'Rooms details retrieved successfully',
       numberOfRooms: filteredRooms.length,
       rooms: filteredRooms,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ code: 500, message: 'Internal Server Error' });
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 
 };
@@ -567,7 +594,7 @@ export const getUsersAndTeammatesInRoom = async (req: Request, res: Response) =>
     res.status(200).json({ numberOfTeams: teamsInRoom.length, roomUuid, data: userAndTeams });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ code: 500, message: "Internal Server Error" });
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 

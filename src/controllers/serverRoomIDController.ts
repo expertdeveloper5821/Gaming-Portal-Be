@@ -133,7 +133,6 @@ export const getAllRooms = async (req: Request, res: Response) => {
         return res.status(401).json({ error: "Invalid token" });
       }
     }
-
     // Construct the query to fetch rooms
     let roomsQuery = {};
 
@@ -160,7 +159,7 @@ export const getAllRooms = async (req: Request, res: Response) => {
     const filteredRooms = rooms.filter((room) => !userRegisteredRooms.includes(room.roomUuid));
 
     if (filteredRooms.length === 0) {
-      return res.status(404).json({
+      return res.status(202).json({
         message: search ? "No rooms found with the provided query" : "No rooms found",
       });
     }

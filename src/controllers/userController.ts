@@ -343,7 +343,7 @@ export const getUserDetails = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
