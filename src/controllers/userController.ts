@@ -1,4 +1,4 @@
-import { user } from "../models/passportModels";
+import { user as User } from "../models/passportModels";
 import { Request, Response, response } from "express";
 import bcrypt from "bcrypt";
 import jwt, { JwtPayload, Secret } from "jsonwebtoken";
@@ -49,7 +49,7 @@ export const userSignup = async (req: Request, res: Response) => {
       });
     }
 
-    const existingUser = await user.findOne({ email });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
         message: `User with email ${email} already exists`,
@@ -79,7 +79,7 @@ export const userSignup = async (req: Request, res: Response) => {
       const invitedUserId = decodedToken.userId;
 
       const newUuid = uuidv4();
-      const newUser = new user({
+      const newUser = new User({
         fullName,
         email,
         password: hashedPassword,
@@ -124,7 +124,7 @@ export const userSignup = async (req: Request, res: Response) => {
     } else {
       // Handle registration without an invitation token
       const newUuid = uuidv4();
-      const newUser = new user({
+      const newUser = new User({
         fullName,
         email,
         password: hashedPassword,
@@ -170,13 +170,13 @@ export const userSignup = async (req: Request, res: Response) => {
 export const userLogin = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-    const User = await user.findOne({ email }).populate("role", "role");
-    if (!User) {
+    const user = await User.findOne({ email }).populate("role", "role");
+    if (!user) {
       return res.status(400).json({
         message: `Invalid Email address or Password`,
       });
     }
-    const isPasswordValid = await bcrypt.compare(password, User.password);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
       return res
@@ -184,20 +184,20 @@ export const userLogin = async (req: Request, res: Response) => {
         .json({ message: "Invalid Email address or Password" });
     }
     const token = jwt.sign(
-      { userId: User._id, role: User.role },
+      { userId: user._id, role: user.role },
       environmentConfig.JWT_SECRET,
       {
         expiresIn: "1h",
       }
     );
     let userData = {
-      userUuid: User.userUuid,
-      fullName: User.fullName,
-      email: User.email,
-      phoneNumber: User.phoneNumber,
-      upiId: User.upiId,
-      userName: User.userName,
-      profilePic: User.profilePic,
+      userUuid: user.userUuid,
+      fullName: user.fullName,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      upiId: user.upiId,
+      userName: user.userName,
+      profilePic: user.profilePic,
       token: token,
     };
 
@@ -216,8 +216,8 @@ export const forgetPassword = async (req: Request, res: Response) => {
   const { email } = req.body;
   try {
     // Check if email exists in the database
-    const User = await user.findOne({ email });
-    if (!User) {
+    const user = await User.findOne({ email });
+    if (!user) {
       return res.status(400).json({
         message: `Account with email ${email} not found`,
       });
@@ -271,7 +271,7 @@ export const resetPassword = async (req: Request, res: Response) => {
     const { email } = decodedToken as JwtPayload;
 
     // Check if email exists in the database
-    const existingUser = await user.findOne({ email });
+    const existingUser = await User.findOne({ email });
     if (!existingUser) {
       return res.status(400).json({ message: "User not found" });
     }
@@ -303,41 +303,21 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 };
 
-// role based controller
-export const adminController = async (req: Request, res: Response) => {
-  const User: any = user.findById(req.body._id);
-  User.populate("role").exec((error: any, user: typeof User | null) => {
-    if (error) {
-      // Handle error
-      return res.status(500).json({ error: "Internal server error" });
-    }
-    if (!User) {
-      // User not found
-      return res.status(404).json({ error: "User not found" });
-    }
-    // Access the actual role document
-    const userRole = User.role;
-    return res.status(200).json({ message: "welcome admin" });
-  });
-};
 
 // get user by ID
 export const getUserDetails = async (req: Request, res: Response) => {
   try {
-    // Extract the authentication token from the request headers
-    const token = req.headers.authorization?.split(' ')[1];
+    // Define req.user before accessing its properties
+    const user = req.user as userType; // Type assertion to userType
 
-    if (!token) {
-      return res.status(401).json({ error: "Authentication token missing" });
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
     }
 
-    // Verify and decode the token to get the user's ID
-    const decodedToken = jwt.verify(token, jwtSecret) as { userId: string };
-
-    const userId = decodedToken.userId;
+    const userId = user.userId;
 
     // Use the findById method to find the user by their ID in the database
-    const foundUser = await user.findById(userId).populate('role', 'role');
+    const foundUser = await User.findById(userId).populate('role', 'role');
 
     if (!foundUser) {
       return res.status(404).json({
@@ -386,7 +366,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
       };
     }
 
-    const allUsers = await user
+    const allUsers = await User
       .find(usersQuery)
       .populate('role', 'role');
 
@@ -419,15 +399,14 @@ export const getAllUsers = async (req: Request, res: Response) => {
 // update user by id
 export const userUpdate = async (req: Request, res: Response) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    // Define req.user before accessing its properties
+    const user = req.user as userType; // Type assertion to userType
 
-    if (!token) {
-      return res.status(401).json({ error: "Authentication token missing" });
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
     }
 
-    const decodedToken = jwt.verify(token, jwtSecret) as { userId: string };
-
-    const userId = decodedToken.userId;
+    const userId = user.userId;
 
     const updatedUserData = req.body;
 
@@ -446,7 +425,7 @@ export const userUpdate = async (req: Request, res: Response) => {
       updatedUserData.profilePic = secure_url; // Update profilePic field in updatedUserData
     }
 
-    const updatedUser = await user.findByIdAndUpdate(userId, updatedUserData, {
+    const updatedUser = await User.findByIdAndUpdate(userId, updatedUserData, {
       new: true,
     }).populate('role', 'role');
 
@@ -474,20 +453,17 @@ export const userUpdate = async (req: Request, res: Response) => {
 // delete by id
 export const userDelete = async (req: Request, res: Response) => {
   try {
-    // Extract the authentication token from the request headers
-    const token = req.headers.authorization?.split(' ')[1];
+    // Define req.user before accessing its properties
+    const user = req.user as userType; // Type assertion to userType
 
-    if (!token) {
-      return res.status(401).json({ error: "Authentication token missing" });
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
     }
 
-    // Verify and decode the token to get the user's ID
-    const decodedToken = jwt.verify(token, jwtSecret) as { userId: string };
-
-    const userId = decodedToken.userId;
+    const userId = user.userId;
 
     // Use the deleteOne method to delete the user by their ID from the database
-    const deletionResult = await user.deleteOne({ _id: userId });
+    const deletionResult = await User.deleteOne({ _id: userId });
 
     if (deletionResult.deletedCount === 0) {
       return res.status(404).json({
@@ -587,7 +563,7 @@ try {
 
 export const sendEmailToUser = async (req: Request, res: Response) => {
   try {
-    const users = await user.find({}, 'email');
+    const users = await User.find({}, 'email');
 
     if (!users || users.length === 0) {
       return res.status(404).json({ message: 'No users found in the database.' });

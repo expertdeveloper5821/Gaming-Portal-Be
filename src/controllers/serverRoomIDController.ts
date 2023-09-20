@@ -144,7 +144,7 @@ export const getAllRooms = async (req: Request, res: Response) => {
           { gameType: { $regex: search, $options: 'i' } },
           { mapType: { $regex: search, $options: 'i' } },
           { version: { $regex: search, $options: 'i' } },
-          { enteryFee: { $regex: search, $options: 'i' } },
+          { entryFee: { $regex: search, $options: 'i' } },
           { lastSurvival: { $regex: search, $options: 'i' } },
           { highestKill: { $regex: search, $options: 'i' } },
           { secondWin: { $regex: search, $options: 'i' } },
@@ -187,7 +187,7 @@ export const getRoomById = async (req: Request, res: Response) => {
     const { id } = req.params;
     const room = await RoomId.findById(id);
     if (!room) {
-      return res.status(404).json({ error: "Room not found" });
+      return res.status(202).json({ error: "Room not found" });
     }
 
     const userInfo = await user.findOne({ _id: room.createdBy })
@@ -214,7 +214,7 @@ export const updateRoomById = async (req: Request, res: Response) => {
     const existingRoom = await RoomId.findById(roomId);
 
     if (!existingRoom) {
-      return res.status(404).json({ message: "Room not found" });
+      return res.status(202).json({ message: "Room not found" });
     }
 
     // Update the room data
@@ -237,7 +237,7 @@ export const deleteRoomById = async (req: Request, res: Response) => {
     const { id } = req.params;
     const deletedRoom = await RoomId.findByIdAndDelete(id);
     if (!deletedRoom) {
-      return res.status(404).json({ error: "Room not found" });
+      return res.status(202).json({ error: "Room not found" });
     }
     res.status(200).json({ message: "Room deleted successfully" });
   } catch (error) {

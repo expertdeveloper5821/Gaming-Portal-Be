@@ -65,8 +65,16 @@ const roomIdSchema: Schema = new Schema(
     registerTeams: [
       {
         teamName: String,
-        leaderEmail: String,
-        emails: [String],
+        leaderId: {
+          type: Schema.Types.ObjectId,
+          ref: "user", // Reference the user model
+        },
+        teamMateIds: [
+          {
+            type: Schema.Types.ObjectId,
+            ref: "user", // Reference the user model
+          },
+        ],
       },
     ],
   },

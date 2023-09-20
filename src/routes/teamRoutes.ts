@@ -4,7 +4,8 @@ const route = express.Router();
 import { verifyToken } from "../middlewares/authMiddleware";
 import {
   addTeammatesIntoMatch, deleteTeamById, getAllTeams, getTeamById, updateTeamById,
-   getUserRegisteredRooms, getUserRegisteredRoomsWithTeamMates, getUsersAndTeammatesInRoom
+   getUserRegisteredRooms, getUserRegisteredRoomsWithTeamMates, getUsersAndTeammatesInRoom,
+   getUserTeam, getAllUserRegisterRoomWithTeam
 } from "../controllers/teamController";
 
 
@@ -26,11 +27,17 @@ route.delete("/deleteteam/:id", verifyToken(["user"]), deleteTeamById);
 // get team by their Id
 route.get("/register-room", verifyToken(["user"]), getUserRegisteredRooms);
 
-// get room details wiht teams
-route.get("/register-room-mates", verifyToken(["user"]), getUserRegisteredRoomsWithTeamMates);
+// get room details with teams
+route.get("/register-room-mates/:roomUuid", verifyToken(["user"]), getUserRegisteredRoomsWithTeamMates);
 
 // get users and teammates in a specific room
-route.get("/register-matches/:roomUuid", verifyToken(["user","spectator",'admin']), getUsersAndTeammatesInRoom);
+route.get("/register-matches/:roomUuid", verifyToken(["spectator",'admin']), getUsersAndTeammatesInRoom);
+
+// get user all team details 
+route.get("/user-teams", verifyToken(["user"]), getUserTeam);
+
+// get allroom details with teams
+route.get("/all-register-room", verifyToken(["user"]), getAllUserRegisterRoomWithTeam);
 
 
 export default route;
