@@ -9,7 +9,8 @@ import {
   getUserDetails,
   getAllUsers,
   sendInviteMail,
-  sendEmailToUser
+  sendEmailToUser,
+  acceptInvitation
 } from "../controllers/userController";
 const route = express.Router();
 import { verifyToken } from "../middlewares/authMiddleware";
@@ -48,7 +49,6 @@ route.post("/reset-password", resetPassword);
 // get single user 
 route.get("/getuser", getUserDetails);
 
-
 // get Alluser
 route.get("/getalluser", verifyToken(["admin", 'spectator']), getAllUsers);
 
@@ -60,6 +60,9 @@ route.delete("/deleteuser", verifyToken(["admin", 'user']), userDelete);
 
 // post send invite mail
 route.post("/send-invite", verifyToken(["user"]), sendInviteMail)
+
+// post accept invite mail
+route.post("/accept-invite", verifyToken(["user"]), acceptInvitation)
 
 
 export default route;

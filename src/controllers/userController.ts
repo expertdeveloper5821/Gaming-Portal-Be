@@ -1,5 +1,5 @@
 import { user as User } from "../models/passportModels";
-import { Request, Response, response } from "express";
+import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 import { transporter } from "../middlewares/email";
@@ -484,7 +484,7 @@ export const userDelete = async (req: Request, res: Response) => {
 
 // send invite mail to teammates
 export const sendInviteMail = async (req: Request, res: Response) => {
-try {
+  try {
     const { teamName, emails } = req.body;
 
     // Define req.user before accessing its properties
@@ -542,11 +542,15 @@ try {
       sentInvitations.push(email);
     }
 
+    
     let message = '';
-
+    
     if (sentInvitations.length > 0) {
       message += `Invitations sent to: ${sentInvitations.join(', ')}. `;
     }
+    
+    const socketIo = req.app.locals.io;
+    socketIo.emit('invitation-sent', { teamId: userTeam ? userTeam._id : team._id });
 
     if (message === '') {
       message = 'No invitations sent.';
@@ -560,7 +564,81 @@ try {
 };
 
 
+// accept invitaion to join the team
+export const acceptInvitation = async (req: Request, res: Response) => {
+  try {
+     // Define req.user before accessing its properties
+     const user = req.user as userType; // Type assertion to userType
 
+     if (!user) {
+       return res.status(401).json({ message: 'You are not authenticated!', success: false });
+     }
+ 
+     const userId = user.userId;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Invalid authentication token', success: false });
+    }
+
+    const { invitationToken } = req.query as { invitationToken: string };
+
+    if (!invitationToken) {
+      return res.status(400).json({ message: 'Invitation token is missing', success: false });
+    }
+
+    // Verify the invitation token
+    const decodedInvitationToken = jwt.verify(invitationToken, jwtSecret);
+    if (
+      typeof decodedInvitationToken !== 'object' ||
+      !('teamId' in decodedInvitationToken) ||
+      !('teamName' in decodedInvitationToken) ||
+      !('userId' in decodedInvitationToken)
+    ) {
+      return res.status(401).json({ message: 'Invalid invitation token', success: false });
+    }
+
+    // Retrieve the user's information from the invitation token
+    const { teamId } = decodedInvitationToken as {
+      teamId: string;
+      teamName: string;
+      userId: string;
+    };
+
+    // Add the user to the team
+    const team = await Team.findById(teamId);
+    if (!team) {
+      return res.status(404).json({ message: 'Team not found', success: false });
+    }
+
+    // Check if the user is already part of the team
+    if (team.teamMates.includes(userId)) {
+      return res.status(400).json({ message: 'User is already part of the team', success: false });
+    }
+
+    // Add the user to the team
+    team.teamMates.push(userId);
+    await team.save();
+
+    // Emit a WebSocket event to notify the sender
+    const socketIo = req.app.locals.io;
+    socketIo.emit('invitation-accepted', { teamId: team._id, userId });
+
+    return res.status(200).json({ message: 'Invitation accepted successfully', success: true });
+
+  } catch (error) {
+    console.error('Error:', error);
+
+    // Provide a more detailed error message
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ message: 'Invalid token', success: false });
+    } else {
+      return res.status(500).json({ message: 'Internal Server Error', success: false });
+    }
+  }
+};
+
+
+// sending manual match info to users email
 export const sendEmailToUser = async (req: Request, res: Response) => {
   try {
     const users = await User.find({}, 'email');
@@ -596,4 +674,3 @@ export const sendEmailToUser = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Internal server error.' });
   }
 }
-

@@ -5,7 +5,7 @@ import { verifyToken } from "../middlewares/authMiddleware";
 import {
   addTeammatesIntoMatch, deleteTeamById, getAllTeams, getTeamById, updateTeamById,
    getUserRegisteredRooms, getUserRegisteredRoomsWithTeamMates, getUsersAndTeammatesInRoom,
-   getUserTeam, getAllUserRegisterRoomWithTeam
+   getUserTeam, getAllUserRegisterRoomWithTeam, removeUserInTeam
 } from "../controllers/teamController";
 
 
@@ -13,7 +13,7 @@ import {
 route.post("/addteam", verifyToken(["user"]), addTeammatesIntoMatch);
 
 // get all teams
-route.get("/getallteam", verifyToken(['admin']), getAllTeams);
+route.get("/getallteam", verifyToken(['admin', 'spectator']), getAllTeams);
 
 // get team by their Id
 route.get("/getteambyid/:id", verifyToken(["spectator",'admin']), getTeamById);
@@ -38,6 +38,9 @@ route.get("/user-teams", verifyToken(["user"]), getUserTeam);
 
 // get allroom details with teams
 route.get("/all-register-room", verifyToken(["user"]), getAllUserRegisterRoomWithTeam);
+
+// remove team mate in teams
+route.delete("/remove-team-mate", verifyToken(["user"]), removeUserInTeam);
 
 
 export default route;

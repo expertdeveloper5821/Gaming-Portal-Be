@@ -27,7 +27,7 @@ export const getTeamById = async (req: Request, res: Response) => {
     // Fetch details for each teammate using their email addresses
     const teammatesDetails = await Promise.all(
       foundTeam.teamMates.map(async (teammateId) => {
-        const teammate = await User.findById(teammateId); // Assuming user model has fullName, email, profilePic fields
+        const teammate = await User.findById(teammateId); 
         if (teammate) {
           return {
             _id: teammate._id,
@@ -40,12 +40,20 @@ export const getTeamById = async (req: Request, res: Response) => {
       })
     );
 
+     // Fetch details for the lead player
+     const leadPlayer = await User.findById(foundTeam.leadPlayerId);
+     
     // If the user is found, return the team data with teammate details as the response
     return res.status(200).json({
       data: {
         Team: {
           ...foundTeam.toObject(),
           teamMates: teammatesDetails, // Replace teamMates with teammate details
+          leadPlayer: leadPlayer ? {
+            fullName: leadPlayer.fullName,
+            email: leadPlayer.email,
+            profilePic: leadPlayer.profilePic,
+          } : null,
         },
       },
     });
@@ -230,59 +238,54 @@ export const addTeammatesIntoMatch = async (req: Request, res: Response) => {
 // get all Teams
 export const getAllTeams = async (req: Request, res: Response) => {
   try {
-    // Retrieve all teams from the database
-    const allTeams = await Team.find();
-    const uuids = allTeams.map((team) => team.roomUuid);
+    // Fetch all teams
+    const teams = await Team.find();
 
-    // Retrieve gameInfo for each team using the uuids
-    const gameInfoMap: { [uuid: string]: any } = {}; // Map to store game info for each team
-    const gameInfo = await RoomId.find({ uuid: { $in: uuids } });
-    gameInfo.forEach((info) => {
-      gameInfoMap[info.uuid] = {
-        gameType: info.gameType,
-        gameName: info.gameName,
-        mapType: info.mapType,
-      };
-    });
-
-    if (allTeams.length === 0) {
-      return res.status(404).json({
-        message: "No Teams found",
-      });
-    }
-
-    // Retrieve details for each teammate of each team
-    const responseData = await Promise.all(
-      allTeams.map(async (team) => {
-        const teammateDetails = await Promise.all(
-          team.teamMates.map(async (teammateEmail) => {
-            const teammate = await User.findOne({ email: teammateEmail });
+    // Fetch details for each team, including teammate and lead player details
+    const teamDetails = await Promise.all(
+      teams.map(async (team) => {
+        // Fetch details for each teammate using their email addresses
+        const teammatesDetails = await Promise.all(
+          team.teamMates.map(async (teammateId) => {
+            const teammate = await User.findById(teammateId); 
             if (teammate) {
               return {
+                _id: teammate._id,
+                fullName: teammate.fullName,
                 email: teammate.email,
-                fullname: teammate.fullName,
-                username: teammate.userName,
+                profilePic: teammate.profilePic,
               };
             }
             return null;
           })
         );
 
+        // Fetch details for the lead player
+        const leadPlayer = await User.findById(team.leadPlayerId);
+
         return {
           _id: team._id,
-          uuid: team.roomUuid,
-          leadPlayer: team.leadPlayerId,
-          teammates: teammateDetails.filter((detail) => detail !== null),
+          teamName: team.teamName,
+          teamMates: teammatesDetails, // Replace teamMates with teammate details
+          leadPlayer: leadPlayer ? {
+            _id: leadPlayer._id,
+            fullName: leadPlayer.fullName,
+            email: leadPlayer.email,
+            profilePic: leadPlayer.profilePic,
+          } : null,
         };
       })
     );
 
+    // Return the list of team details
     return res.status(200).json({
-      data: responseData,
+      data: {
+        teams: teamDetails,
+      },
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({  error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -599,6 +602,49 @@ export const getUsersAndTeammatesInRoom = async (req: Request, res: Response) =>
 };
 
 
+// remove user in team
+export const removeUserInTeam =async (req:Request, res: Response) => {
+  try {
+    const user = req.user as userType; // Type assertion to userType
 
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
+    }
 
+    const userId = user.userId;
+    
+    // Parse the email from the request body
+    const { teammateEmail } = req.body;
+
+    if (!teammateEmail) {
+      return res.status(400).json({ message: 'Teammate email is required.', success: false });
+    }
+
+    // Find the user by email to get their ID
+    const teammate = await User.findOne({ email: teammateEmail });
+
+    if (!teammate) {
+      return res.status(404).json({ message: 'Teammate not found.', success: false });
+    }
+
+    // Find your team using your user ID as leadPlayerId
+    const yourTeam = await Team.findOne({ leadPlayerId: userId });
+
+    if (!yourTeam) {
+      return res.status(404).json({ message: 'Your team not found.', success: false });
+    }
+
+    // Remove the teammate's ID from your team's teamMates array
+    yourTeam.teamMates = yourTeam.teamMates.filter(teammateId => teammateId.toString() !== teammate._id.toString());
+
+    // Save the updated team document
+    await yourTeam.save();
+
+    return res.status(200).json({ message: 'Teammate removed successfully.', success: true });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+  
+}
 
