@@ -510,7 +510,7 @@ export const sendInviteMail = async (req: Request, res: Response) => {
       }
 
       // Save the teamName in the Team table
-      const team = new Team({ teamName });
+      team = new Team({ teamName });
       await team.save();
 
       // Add the user's _id to the leadPlayerId array in the Team table
