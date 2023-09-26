@@ -499,53 +499,58 @@ export const getAllUserRegisterRoomWithTeam = async (req: Request, res: Response
       return res.status(401).json({ message: 'You are not authenticated!', success: false });
     }
 
-    const userId = user.userId; // Get the userId from the decoded token
+    const userId = user.userId;
 
-    // find all games with the specified leaderId (userId)
-    const games = await RoomId.find({ 'registerTeams.leaderId': userId });
+    // Find all teams where the user is either the lead player or a teammate
+    const userTeams = await Team.find({ $or: [{ leadPlayerId: userId }, { teamMates: userId }] });
 
-    // Serialize the data to return to the client
-    const serializedGames = [];
+    // Initialize an array to store all user's registered games with room details and teammates
+    const userRegisteredGames = [];
 
-    for (const game of games) {
-      // Fetch room details from the Room collection
-      const roomDetails = await RoomId.findOne({ roomId: game.roomId });
-
-      // Extract teammate information and fetch teammate details from the User collection
-      const teammates = await Promise.all(game.registerTeams.map(async (team: { teamMateIds: any[]; teamName: any; }) => {
-        const teammateDetails = await Promise.all(team.teamMateIds.map(async (teammateId: string) => {
-          const teammate = await User.findById(teammateId);
-          return {
-            fullName: teammate?.fullName || '',
-            email: teammate?.email || '',
-            profilePic: teammate?.profilePic || '',
-          };
-        }));
-
-        return {
-          teamName: team.teamName,
-          teammateDetails,
-        };
-      }));
+    // Iterate through user's teams to fetch game details and teammates for each team
+    for (const userTeam of userTeams) {
+      const roomDetails = await RoomId.find({ roomUuid: userTeam.roomUuid });
+      // console.log("tis is room",roomDetails);
 
       if (roomDetails) {
-        serializedGames.push({
-          roomUuid: game.roomUuid,
-          gameType: roomDetails.gameType || '',
-          gameName: roomDetails.gameName || '',
-          mapType: roomDetails.mapType || '',
-          dateAndTime: roomDetails.dateAndTime || null,
-          teammates,
-        });
+        const teamLeader = await User.findById(userTeam.leadPlayerId);
+        const teamMembers = await User.find({ _id: { $in: userTeam.teamMates } });
+
+        const userRegisteredGame = {
+          teamName: userTeam.teamName,
+          leader: {
+            id: teamLeader?._id || '',
+            fullName: teamLeader?.fullName || '',
+            email: teamLeader?.email || '',
+            profilePic: teamLeader?.profilePic || '',
+          },
+          gameDetails: roomDetails.map((detail) => {
+            return {
+              roomUuid: detail.roomUuid,
+              gameType: detail.gameType || '',
+              gameName: detail.gameName || '',
+              mapType: detail.mapType || '',
+              teammates: teamMembers.map((teammate) => ({
+                id: teammate._id,
+                fullName: teammate.fullName || '',
+                email: teammate.email || '',
+                profilePic: teammate.profilePic || '',
+              })),
+            };
+          }),
+        };
+
+        userRegisteredGames.push(userRegisteredGame);
       }
     }
 
-    res.status(200).json({ data: serializedGames });
+    res.status(200).json({ data: userRegisteredGames });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 
 // get users and teammates in a specific room
 export const getUsersAndTeammatesInRoom = async (req: Request, res: Response) => {
