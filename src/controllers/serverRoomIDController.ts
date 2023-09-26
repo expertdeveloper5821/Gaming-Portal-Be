@@ -133,7 +133,6 @@ export const getAllRooms = async (req: Request, res: Response) => {
         return res.status(401).json({ error: "Invalid token" });
       }
     }
-
     // Construct the query to fetch rooms
     let roomsQuery = {};
 
@@ -160,7 +159,7 @@ export const getAllRooms = async (req: Request, res: Response) => {
     const filteredRooms = rooms.filter((room) => !userRegisteredRooms.includes(room.roomUuid));
 
     if (filteredRooms.length === 0) {
-      return res.status(204).json({
+      return res.status(202).json({
         message: search ? "No rooms found with the provided query" : "No rooms found",
       });
     }
@@ -187,7 +186,7 @@ export const getRoomById = async (req: Request, res: Response) => {
     const { id } = req.params;
     const room = await RoomId.findById(id);
     if (!room) {
-      return res.status(204).json({ error: "Room not found" });
+      return res.status(202).json({ error: "Room not found" });
     }
 
     const userInfo = await user.findOne({ _id: room.createdBy })
@@ -214,7 +213,7 @@ export const updateRoomById = async (req: Request, res: Response) => {
     const existingRoom = await RoomId.findById(roomId);
 
     if (!existingRoom) {
-      return res.status(204).json({ message: "Room not found" });
+      return res.status(202).json({ message: "Room not found" });
     }
 
     // Update the room data
@@ -237,7 +236,7 @@ export const deleteRoomById = async (req: Request, res: Response) => {
     const { id } = req.params;
     const deletedRoom = await RoomId.findByIdAndDelete(id);
     if (!deletedRoom) {
-      return res.status(204).json({ error: "Room not found" });
+      return res.status(202).json({ error: "Room not found" });
     }
     res.status(200).json({ message: "Room deleted successfully" });
   } catch (error) {

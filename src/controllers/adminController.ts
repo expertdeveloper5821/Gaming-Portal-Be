@@ -16,7 +16,6 @@ export const adminSignup = async (req: Request, res: Response) => {
     const existingUser = await user.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
-        code: 400,
         message: `user with email ${email} already exists`,
       });
     }
@@ -41,7 +40,6 @@ export const adminSignup = async (req: Request, res: Response) => {
     return res.status(200).json({
       newUser,
       token,
-      code: 200,
       message: "user registered successfully",
       userUuid: newUuid,
       _id: newUser._id
@@ -49,7 +47,7 @@ export const adminSignup = async (req: Request, res: Response) => {
   } catch (error) {
     console.log(error);
 
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -60,7 +58,6 @@ export const spectator = async (req: Request, res: Response) => {
     const existingUser = await user.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
-        code: 400,
         message: `user with email ${email} already exists`,
       });
     }
@@ -92,13 +89,11 @@ export const spectator = async (req: Request, res: Response) => {
     transporter.sendMail(mailOptions, (err) => {
       if (err) {
         res.status(500).json({
-          code: 500,
           message: "Failed to send the credential email",
         });
       } else {
         res.json({
           newUser,
-          code: 200,
           tokne: token,
           message:
             "Your login crendentials has been sent ot your email please check and continue",
@@ -108,7 +103,7 @@ export const spectator = async (req: Request, res: Response) => {
   } catch (error) {
     console.log(error);
 
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({  error: "Internal server error" });
   }
 };
 
@@ -119,7 +114,6 @@ export const role = async (req: Request, res: Response) => {
     const existingRole = await Role.findOne({ role });
     if (existingRole) {
       return res.status(400).json({
-        code: 400,
         message: `This ${role} role already exists please try with a new Role`,
       });
     }
@@ -140,7 +134,7 @@ export const role = async (req: Request, res: Response) => {
   } catch (error) {
     console.log(error);
 
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -152,19 +146,17 @@ export const getAllRole = async (req: Request, res: Response) => {
 
     if (allRoles.length === 0) {
       return res.status(404).json({
-        code: 404,
         message: "No Role found",
       });
     }
 
     // If users are found, return the user data as the response
     return res.status(200).json({
-      code: 200,
       data: allRoles,
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -201,7 +193,7 @@ export const updateRole = async (req: Request, res: Response) => {
     return res.status(200).json({ message: "User updated successfully", user: updatedUser });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({  error: "Internal server error" });
   }
 };
 
@@ -216,7 +208,7 @@ export const deleteRole = async (req: Request, res: Response) => {
     return res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({  error: "Internal server error" });
   }
 };
 
@@ -230,7 +222,6 @@ export const video = async (req: Request, res: Response) => {
     const existingVideo = await Video.findOne({ videoLink });
     if (existingVideo) {
       return res.status(400).json({
-        code: 400,
         message: `same video already exists`,
       });
     }
@@ -239,10 +230,10 @@ export const video = async (req: Request, res: Response) => {
     await newVideo.save();
     res
       .status(200)
-      .json({ code: 200, message: "Video link saved successfully" });
+      .json({ message: "Video link saved successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ code: 500, error: "Internal server error" });
+    res.status(500).json({  error: "Internal server error" });
   }
 };
 
@@ -253,18 +244,16 @@ export const getAllVideoLink = async (req: Request, res: Response) => {
     const allVideos = await Video.find();
     if (allVideos.length === 0) {
       return res.status(404).json({
-        code: 404,
         message: "No video link ",
       });
     }
     // If video links are found, return the data as the response
     return res.status(200).json({
-      code: 200,
       data: allVideos,
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({  error: "Internal server error" });
   }
 };
 // get video by ID
@@ -276,12 +265,12 @@ export const getVideoById = async (req: Request, res: Response) => {
     }
     const video = await Video.findById(id);
     if (!video) {
-      return res.status(404).json({ code: 404, message: 'Video not found' });
+      return res.status(404).json({  message: 'Video not found' });
     }
-    res.status(200).json({ code: 200, video });
+    res.status(200).json({  video });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ code: 500, error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -295,12 +284,12 @@ export const updateVideoById = async (req: Request, res: Response) => {
     const { videoLink, date, time } = req.body;
     const updatedVideo = await Video.findByIdAndUpdate(id, { videoLink, date, time }, { new: true });
     if (!updatedVideo) {
-      return res.status(404).json({ code: 404, message: 'Video not found' });
+      return res.status(404).json({  message: 'Video not found' });
     }
-    res.status(200).json({ code: 200, message: 'Video updated successfully', video: updatedVideo });
+    res.status(200).json({ message: 'Video updated successfully', video: updatedVideo });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ code: 500, error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -313,11 +302,11 @@ export const deleteVideoById = async (req: Request, res: Response) => {
     }
     const deletedVideo = await Video.findByIdAndDelete(id);
     if (!deletedVideo) {
-      return res.status(404).json({ code: 404, message: 'Video not found' });
+      return res.status(404).json({  message: 'Video not found' });
     }
-    res.status(200).json({ code: 200, message: 'Video deleted successfully' });
+    res.status(200).json({  message: 'Video deleted successfully' });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ code: 500, error: 'Internal server error' });
+    res.status(500).json({  error: 'Internal server error' });
   }
 };

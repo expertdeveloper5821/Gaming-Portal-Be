@@ -1,176 +1,228 @@
-import { user } from "../models/passportModels";
+import { user as User } from "../models/passportModels";
 import { Request, Response } from "express";
-import { environmentConfig } from "../config/environmentConfig";
-import { transporter } from "../middlewares/email";
 import { Team } from "../models/teamModel";
 import { validId } from "../utils/pattern";
 import RoomId from "../models/serverRoomIDModels";
-import jwt from "jsonwebtoken";
 import { Transaction } from "../models/qrCodeModel";
-import { userType } from "../middlewares/authMiddleware";
+import { userType } from '../middlewares/authMiddleware';
+import { Types } from "mongoose";
 
-// add players
-// export const addTeammates = async (req: Request, res: Response) => {
-//   try {
-//     const {
-//       emails,
-//       roomid,
-//       leadPlayer,
-//     }: { emails: string[]; leadPlayer: string; roomid: string } = req.body;
-//     if (!emails || !Array.isArray(emails)) {
-//       return res.status(400).json({ error: "Invalid input format" });
-//     }
-//     const teamData = await RoomId.findOne({ roomUuid: roomid });
 
-//      // Check if the user is already registered in the room
-//      const isUserRegistered = await Team.findOne({
-//       roomUuid: roomid,
-//       teammates: { $in: emails },
-//     });
-
-//     if (isUserRegistered) {
-//       return res.status(409).json({ code: 409, message: "You have already registered in this room" });
-//     }
-
-//     // Fetch registered emails from the database
-//     const allUsers = await user.find();
-//     const allEmails = allUsers.map((obj) => {
-//       return obj.email;
-//     });
-
-//     // Filter unregistered email addresses
-//     const unregisteredEmails = emails.filter(
-//       (email: any) => !allEmails.includes(email)
-//     );
-//     const registeredEmails = emails.filter((email: any) =>
-//       allEmails.includes(email)
-//     );
-//     // frontend registrration URL
-//     const registrationUrl = `${environmentConfig.CLIENT_URL}signup`;
-//     // Send emails to unregistered email addresses
-//     for (const email of unregisteredEmails) {
-//       await transporter.sendMail({
-//         from: environmentConfig.EMAIL_USER,
-//         to: email,
-//         subject: "Registration Link",
-//         html: `Welcome to our website! Thank you for joining us. <a href=${registrationUrl}>Click Here</a>`,
-//       });
-//     }
-//     if (unregisteredEmails.length === 0) {
-//       if (teamData) {
-//         const token = req.header('Authorization')?.replace("Bearer ", "");
-//         if (!token) {
-//           return res.status(401).json({ message: "Unauthorized" });
-//         }
-//         const secretKey = environmentConfig.JWT_SECRET;
-//         const decoded: any = jwt.verify(token, secretKey);
-//         const userId = decoded.userId;
-//         const newTem = new Team({
-//           leadPlayer: leadPlayer,
-//           roomUuid: teamData?.roomUuid,
-//           teammates: emails,
-//           leadPlayerId: userId
-//         });
-//         await newTem.save();
-//         res.status(200).json({
-//           code: 200,
-//           message: `Match registeration success`,
-//           registeredEmails,
-//           leadPlayerId: userId,
-//           roomUuid: teamData?.roomUuid,
-//         });
-//       } else {
-//         res.status(400).json({ code: 400, message: "Team not found" });
-//       }
-//     } else {
-//       res.status(422).json({
-//         code: 422,
-//         message: `All your Teammates are not registered with us. Registration emails sent successfully to unregistered teammates please register first and continue`,
-//         unregisteredEmails,
-//         registeredEmails,
-//       });
-//     }
-//   } catch (error) {
-//     console.log(error);
-
-//     res.status(500).json({ code: 500, message: `Internal Server Error ` });
-//   }
-// };
-
-export const addTeammates = async (req: Request, res: Response) => {
+// get Team by ID
+export const getTeamById = async (req: Request, res: Response) => {
   try {
-    const {
-      emails,
-      roomid,
-      leadPlayer,
-    }: { emails: string[]; leadPlayer: string; roomid: string } = req.body;
-    if (!emails || !Array.isArray(emails)) {
-      return res.status(400).json({ error: "Invalid input format" });
+    const TeamId = req.params.id;
+    if (!validId.test(TeamId)) {
+      return res.status(404).json({ error: "Invalid team ID" });
     }
-    const teamData = await RoomId.findOne({ roomUuid: roomid });
 
-    // Fetch registered emails from the database
-    const allUsers = await user.find();
-    const allEmails = allUsers.map((obj) => {
-      return obj.email;
-    });
+    const foundTeam = await Team.findById(TeamId);
 
-    // Filter unregistered email addresses
-    const unregisteredEmails = emails.filter(
-      (email: any) => !allEmails.includes(email)
-    );
-    const registeredEmails = emails.filter((email: any) =>
-      allEmails.includes(email)
-    );
-    // frontend registrration URL
-    const registrationUrl = `${environmentConfig.CLIENT_URL}signup`;
-    // Send emails to unregistered email addresses
-    for (const email of unregisteredEmails) {
-      await transporter.sendMail({
-        from: environmentConfig.EMAIL_USER,
-        to: email,
-        subject: "Registration Link",
-        html: `Welcome to our website! Thank you for joining us. <a href=${registrationUrl}>Click Here</a>`,
+    if (!foundTeam) {
+      return res.status(404).json({
+        message: "Team not found",
       });
     }
-    if (unregisteredEmails.length === 0) {
-      if (teamData) {
-        const token = req.header('Authorization')?.replace("Bearer ", "");
-        if (!token) {
-          return res.status(401).json({ message: "Unauthorized" });
+
+    // Fetch details for each teammate using their email addresses
+    const teammatesDetails = await Promise.all(
+      foundTeam.teamMates.map(async (teammateId) => {
+        const teammate = await User.findById(teammateId); // Assuming user model has fullName, email, profilePic fields
+        if (teammate) {
+          return {
+            _id: teammate._id,
+            fullName: teammate.fullName,
+            email: teammate.email,
+            profilePic: teammate.profilePic,
+          };
         }
-        const secretKey = environmentConfig.JWT_SECRET;
-        const decoded: any = jwt.verify(token, secretKey);
-        const userId = decoded.userId;
-        const newTem = new Team({
-          leadPlayer: leadPlayer,
-          roomUuid: teamData?.roomUuid,
-          teammates: emails,
-          leadPlayerId: userId
-        });
-        await newTem.save();
-        res.status(200).json({
-          code: 200,
-          message: `Match registeration success`,
-          registeredEmails,
-          leadPlayerId: userId,
-          roomUuid: teamData?.roomUuid,
-        });
-      } else {
-        res.status(400).json({ code: 400, message: "Team not found" });
-      }
-    } else {
-      res.status(422).json({
-        code: 422,
-        message: `All your Teammates are not registered with us. Registration emails sent successfully to unregistered teammates please register first and continue`,
-        unregisteredEmails,
-        registeredEmails,
-      });
-    }
+        return null;
+      })
+    );
+
+    // If the user is found, return the team data with teammate details as the response
+    return res.status(200).json({
+      data: {
+        Team: {
+          ...foundTeam.toObject(),
+          teamMates: teammatesDetails, // Replace teamMates with teammate details
+        },
+      },
+    });
   } catch (error) {
     console.log(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
 
-    res.status(500).json({ code: 500, message: `Internal Server Error ` });
+
+export const getUserTeam = async (req: Request, res: Response) => {
+  try {
+    // Extract the user ID from the request
+    const user = req.user as userType; // Type assertion to userType
+
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
+    }
+
+    const userId = user.userId;
+
+    // Find the user's own team where user is a leader
+    const ownTeam = await Team.findOne({ leadPlayerId: userId });
+
+    // Find the teams where the user is a member
+    const memberTeams = await Team.find({ teamMates: userId });
+
+    // Initialize the response data
+    const responseData: Record<string, any> = {};
+
+    if (ownTeam) {
+      // Fetch details for each teammate in the user's own team
+      const teammatesDetails = await Promise.all(
+        ownTeam.teamMates.map(async (teammateId) => {
+          const teammate = await User.findById(teammateId);
+          if (teammate) {
+            return {
+              _id: teammate._id,
+              fullName: teammate.fullName,
+              email: teammate.email,
+              profilePic: teammate.profilePic,
+            };
+          }
+          return null;
+        })
+      );
+
+      // Fetch leadPlayerId details
+      const leadPlayer = await User.findById(ownTeam.leadPlayerId);
+
+      // response for the user's own team
+      responseData.yourTeam = {
+        ...ownTeam.toObject(),
+        teamMates: teammatesDetails,
+        leadPlayer: {
+          fullName: leadPlayer?.fullName || '',
+          email: leadPlayer?.email || '',
+          profilePic: leadPlayer?.profilePic || '',
+        },
+      };
+    }
+
+    if (memberTeams.length > 0) {
+      // response for teams where the user is a member
+      responseData.youAreInTeams = await Promise.all(
+        memberTeams.map(async (team) => {
+          const teammatesDetails = await Promise.all(
+            team.teamMates.map(async (teammateId) => {
+              const teammate = await User.findById(teammateId);
+              if (teammate) {
+                return {
+                  _id: teammate._id,
+                  fullName: teammate.fullName,
+                  email: teammate.email,
+                  profilePic: teammate.profilePic,
+                };
+              }
+              return null;
+            })
+          );
+
+          // Fetch leadPlayerId details for each team
+          const leadPlayer = await User.findById(team.leadPlayerId);
+
+          return {
+            ...team.toObject(),
+            teamMates: teammatesDetails,
+            leadPlayer: {
+              fullName: leadPlayer?.fullName || '',
+              email: leadPlayer?.email || '',
+              profilePic: leadPlayer?.profilePic || '',
+            },
+          };
+        })
+      );
+    }
+
+    return res.status(200).json({
+      data: responseData,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+export const addTeammatesIntoMatch = async (req: Request, res: Response) => {
+  try {
+    const { emails, leaderEmail, roomid } = req.body; // Use "roomid" instead of "roomId"
+
+    // Find the room by roomUuid
+    const room = await RoomId.findOne({ roomUuid: roomid }); // Use "roomUuid" instead of "roomId"
+
+    if (!room) {
+      return res.status(404).json({ message: 'Room not found' });
+    }
+
+    const user = req.user as userType; // Type assertion to userType
+
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
+    }
+
+    const userId = user.userId;
+
+    // Find the team name associated with the user
+    const userTeam = await Team.findOne({ leadPlayerId: userId });
+
+    if (!userTeam) {
+      return res.status(404).json({ message: 'User does not belong to a team' });
+    }
+
+    // Find the leader's user document by email and get their ObjectId
+    const leaderUser = await User.findOne({ email: leaderEmail });
+    if (!leaderUser) {
+      return res.status(404).json({ message: 'Leader not found' });
+    }
+
+    // Find the teammates' user documents by emails and get their ObjectIds
+    const teamMateUsers = await User.find({ email: { $in: emails } });
+    if (teamMateUsers.length !== emails.length) {
+      return res.status(404).json({ message: 'One or more teammates not found' });
+    }
+
+    // Check if a similar team configuration already exists in the room
+    const isTeamAlreadyRegistered = room.registerTeams.some((team: { teamName: string; leaderId: { equals: (arg0: Types.ObjectId) => any; }; teamMateIds: any[]; }) => {
+      return (
+        team.teamName === userTeam.teamName &&
+        team.leaderId.equals(leaderUser._id) &&
+        team.teamMateIds.every((teammateId: any) => teamMateUsers.some((teammate: { _id: { equals: (arg0: any) => any; }; }) => teammate._id.equals(teammateId)))
+      );
+    });
+
+    if (isTeamAlreadyRegistered) {
+      return res.status(400).json({ message: 'You have already registered with these teammates in this room' });
+    }
+
+    // Add the teammates to the room's registerTeams array with the user's team name and ObjectIds
+    const newTeam = {
+      teamName: userTeam.teamName, // Using the team name associated with the user
+      leaderId: leaderUser._id, // Storing the leader's ObjectId
+      teamMateIds: teamMateUsers.map((teammate) => teammate._id), // Storing an array of teammate ObjectIds
+    };
+
+    room.registerTeams.push(newTeam);
+
+    // Save the updated room data
+    await room.save();
+
+    return res.status(200).json({ message: 'Teammates added successfully', room });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      error: 'Failed to add teammates to the room',
+      success: false,
+    });
   }
 };
 
@@ -195,7 +247,6 @@ export const getAllTeams = async (req: Request, res: Response) => {
 
     if (allTeams.length === 0) {
       return res.status(404).json({
-        code: 404,
         message: "No Teams found",
       });
     }
@@ -204,8 +255,8 @@ export const getAllTeams = async (req: Request, res: Response) => {
     const responseData = await Promise.all(
       allTeams.map(async (team) => {
         const teammateDetails = await Promise.all(
-          team.teammates.map(async (teammateEmail) => {
-            const teammate = await user.findOne({ email: teammateEmail });
+          team.teamMates.map(async (teammateEmail) => {
+            const teammate = await User.findOne({ email: teammateEmail });
             if (teammate) {
               return {
                 email: teammate.email,
@@ -218,77 +269,23 @@ export const getAllTeams = async (req: Request, res: Response) => {
         );
 
         return {
+          _id: team._id,
           uuid: team.roomUuid,
-          leadPlayer: team.leadPlayer,
+          leadPlayer: team.leadPlayerId,
           teammates: teammateDetails.filter((detail) => detail !== null),
-          registeredGame: gameInfoMap[team.roomUuid], // Retrieve game info using the map
         };
       })
     );
 
     return res.status(200).json({
-      code: 200,
       data: responseData,
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({  error: "Internal server error" });
   }
 };
 
-// get Team by ID
-export const getTeamById = async (req: Request, res: Response) => {
-  try {
-    const TeamId = req.params.id;
-    if (!validId.test(TeamId)) {
-      return res.status(404).json({ error: "Invalid user ID" });
-    }
-
-    const foundTeam = await Team.findById(TeamId);
-    const gameInfo = await RoomId.findOne({ uuid: foundTeam?.roomUuid });
-
-    if (!foundTeam) {
-      return res.status(404).json({
-        code: 404,
-        message: "Team not found",
-      });
-    }
-
-    // Fetch details for each teammate using their email addresses
-    const teammatesDetails = await Promise.all(
-      foundTeam.teammates.map(async (teammateEmail) => {
-        const teammate = await user.findOne({ email: teammateEmail });
-        if (teammate) {
-          return {
-            email: teammate.email,
-            fullname: teammate.fullName,
-            username: teammate.userName,
-          };
-        }
-        return null;
-      })
-    );
-
-    // If the user is found, return the team data with teammate details as the response
-    return res.status(200).json({
-      code: 200,
-      data: {
-        Team: {
-          ...foundTeam.toObject(),
-          teammates: teammatesDetails,
-        },
-        registeredGame: {
-          gameName: gameInfo?.gameName,
-          gameType: gameInfo?.gameType,
-          mapType: gameInfo?.mapType,
-        },
-      },
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({ code: 500, error: "Internal server error" });
-  }
-};
 
 // update user by id
 export const updateTeamById = async (req: Request, res: Response) => {
@@ -306,21 +303,20 @@ export const updateTeamById = async (req: Request, res: Response) => {
 
     if (!updatedTeam) {
       return res.status(404).json({
-        code: 404,
         message: "Team not found",
       });
     }
 
     // If the user is updated successfully, return the updated user data as the response
     return res.status(200).json({
-      code: 200,
       data: updatedTeam,
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({  error: "Internal server error" });
   }
 };
+
 
 // delete by id
 export const deleteTeamById = async (req: Request, res: Response) => {
@@ -335,83 +331,19 @@ export const deleteTeamById = async (req: Request, res: Response) => {
 
     if (deletionResult.deletedCount === 0) {
       return res.status(404).json({
-        code: 404,
         message: "Team not found",
       });
     }
 
     // If the user is deleted successfully, return the deletion result as the response
     return res.status(200).json({
-      code: 200,
       message: "deleted successfully",
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ code: 500, error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
-
-
-
-// send invite mail to teammates
-export const sendInviteMail = async (req: Request, res: Response) => {
-  try {
-    const { emails } = req.body;
-
-    // Fetch user details for each teammate
-    const existingUsers = await user.find({ email: { $in: emails } });
-    const existingEmails = existingUsers.map(existingUser => existingUser.email);
-    const nonExistingEmails: string[] = [];
-    for (const email of emails) {
-      if (!existingEmails.includes(email)) {
-        nonExistingEmails.push(email);
-      }
-    }
-
-    const registrationUrl = `${environmentConfig.CLIENT_URL}signup`;
-
-    const sentInvitations: string[] = [];
-    const alreadyRegistered: string[] = [];
-
-    // Send emails to teammates
-    for (const email of nonExistingEmails) {
-      await transporter.sendMail({
-        from: environmentConfig.EMAIL_USER,
-        to: email,
-        subject: 'Invitation to Join Team',
-        html: `You have been invited to join the team! Click <a href=${registrationUrl}>here</a> to register and join the team.`,
-      });
-      sentInvitations.push(email);
-    }
-
-    const responseMessage: { sentInvitations?: string[], alreadyRegistered?: string[] } = {};
-
-    if (sentInvitations.length > 0) {
-      responseMessage.sentInvitations = sentInvitations;
-    }
-
-    if (existingEmails.length > 0) {
-      responseMessage.alreadyRegistered = existingEmails;
-    }
-
-    let message = '';
-    if (sentInvitations.length > 0) {
-      message += `Invitations sent to: ${sentInvitations.join(', ')}. `;
-    }
-    if (existingEmails.length > 0) {
-      message += `Already registered: ${existingEmails.join(', ')}. `;
-    }
-
-    if (message === '') {
-      message = 'No invitations sent.';
-    }
-
-    res.status(200).json({ message: message });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
-  }
-}
 
 
 interface Room {
@@ -419,8 +351,7 @@ interface Room {
   gameName: string;
   gameType: string;
   mapType: string;
-  time: string;
-  date: string;
+  dateAndTime: string;
   roomId: string;
   password: string;
   version: string;
@@ -430,53 +361,17 @@ interface Room {
   teammates: Array<{ fullName: string; email: string }>;
 }
 
-// get teammates invited by user
-export const getInvitedUser =async (req: Request, res: Response) => {
-  try {
-    // Get the user's ID from the decoded token
-    const token = req.header("Authorization")?.replace("Bearer ", "");
-    if (!token) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    
-    const secretKey = environmentConfig.JWT_SECRET;
-    const decoded: any = jwt.verify(token, secretKey);
-    const userId = decoded.userId;
-
-    // Find teams where the user is the leadPlayer
-    const invitedTeams = await Team.find({ leadPlayerId: userId });
-
-    // Extract and flatten the invited teammates' email addresses
-    const invitedTeammatesEmails = invitedTeams.map((team) => team.teammates).flat();
-
-    // Find user details for the invited teammates
-    const invitedTeammatesDetails = await user.find({ email: { $in: invitedTeammatesEmails } });
-
-    // Create a response object with the invited teammates' details
-    const response = invitedTeammatesDetails.map((teammate) => ({
-      email: teammate.email,
-      fullName: teammate.fullName,
-      userName: teammate.userName,
-    }));
-
-    res.status(200).json(response);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-}
-
 
 // user register room details
 export const getUserRegisteredRooms = async (req: Request, res: Response) => {
   try {
-        const user = req.user as userType; // Type assertion to userType
+    const user = req.user as userType; // Type assertion to userType
 
-        if (!user) {
-          return res.status(401).json({ message: 'You are not authenticated!', success: false });
-        }
-    
-        const userId = user.userId;
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
+    }
+
+    const userId = user.userId;
 
     const transactions = await Transaction.find({ paymentBy: userId });
 
@@ -487,8 +382,10 @@ export const getUserRegisteredRooms = async (req: Request, res: Response) => {
         const roomIdData = await RoomId.findOne({ roomUuid });
 
         if (!roomIdData) {
-          return null; // Handle the case when roomIdData is not found
+          return null;
         }
+        // Fetch the user's email from the user table using the paymentBy field
+        const user = await User.findById(transaction.paymentBy);
 
         return {
           uuid: roomIdData.uuid,
@@ -507,6 +404,7 @@ export const getUserRegisteredRooms = async (req: Request, res: Response) => {
             upiId: transaction.upiId,
             matchAmount: transaction.matchAmount,
             name: transaction.name,
+            paymentBy: user ? user.email : null
           },
         };
       })
@@ -516,62 +414,138 @@ export const getUserRegisteredRooms = async (req: Request, res: Response) => {
     const filteredRooms = detailedRooms.filter(room => room !== null);
 
     res.status(200).json({
-      code: 200,
       message: 'Rooms details retrieved successfully',
       numberOfRooms: filteredRooms.length,
       rooms: filteredRooms,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ code: 500, message: 'Internal Server Error' });
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 
 };
- 
+
 
 // get user regiseter game with teammates
 export const getUserRegisteredRoomsWithTeamMates = async (req: Request, res: Response) => {
   try {
-    const token = req.header('Authorization')?.replace("Bearer ", "");
-    if (!token) {
-      return res.status(401).json({ message: "Unauthorized" });
+    const { roomUuid } = req.params;
+
+    // Find the room details based on roomUuid
+    const roomDetails = await RoomId.findOne({ roomUuid });
+
+    if (!roomDetails) {
+      return res.status(404).json({ message: 'Room not found' });
     }
 
-    const secretKey = environmentConfig.JWT_SECRET;
-    const decoded: any = jwt.verify(token, secretKey);
-    const userId = decoded.userId;
+    // Find teams that have registered for this room
+    const registeredTeams = await Team.find({ roomUuid });
 
-    // Find all teams where the user is the leadPlayer
-    const userTeams = await Team.find({ leadPlayerId: userId });
+    // Prepare the response data with user details
+    const registeredGames = await Promise.all(registeredTeams.map(async (team) => {
+      const teamLeader = await User.findById(team.leadPlayerId);
 
-    if (userTeams.length === 0) {
-      return res.status(404).json({ code: 404, message: "No registered rooms found for the user and their teammates" });
-    }
-
-    const registeredRooms = await Promise.all(userTeams.map(async (team) => {
-      const teammateEmails = team.teammates;
-      const teammateDetails = await user.find({ email: { $in: teammateEmails } });
-
-      const teammatesWithDetails = teammateDetails.map(teammate => ({
-        _id: teammate._id,
-        fullName: teammate.fullName, 
-        email: teammate.email,
-      }));
+      const teamMembers = await User.find({ _id: { $in: team.teamMates } });
 
       return {
-        roomUuid: team.roomUuid,
-        leadPlayer: team.leadPlayer,
-        teammates: teammatesWithDetails,
+        teamName: team.teamName,
+        leader: teamLeader
+          ? {
+            id: teamLeader._id,
+            fullName: teamLeader.fullName,
+            email: teamLeader.email,
+            profilePic: teamLeader.profilePic,
+          }
+          : null, // Check if teamLeader is not null
+        teammates: teamMembers.map((teammate) => ({
+          id: teammate._id,
+          fullName: teammate.fullName,
+          email: teammate.email,
+          profilePic: teammate.profilePic,
+        })),
+        gameDetails: {
+          roomUuid: roomDetails.roomUuid,
+          gameType: roomDetails.gameType,
+          gameName: roomDetails.gameName,
+          mapType: roomDetails.mapType
+        },
       };
     }));
 
-    res.status(200).json({ code: 200, message: "Successfully retrieved registered rooms with teammates", registeredRooms });
-  }  catch (error) {
-    console.log(error);
-    res.status(500).json({ code: 500, message: "Internal Server Error" });
+    res.status(200).json({ data: registeredGames });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
+
+
+export const getAllUserRegisterRoomWithTeam = async (req: Request, res: Response) => {
+  try {
+    const user = req.user as userType; // Type assertion to userType
+
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
+    }
+
+    const userId = user.userId; // Get the userId from the decoded token
+
+    // find all games with the specified leaderId (userId)
+    const games = await RoomId.find({ 'registerTeams.leaderId': userId });
+
+    // Serialize the data to return to the client
+    const serializedGames = [];
+
+    for (const game of games) {
+      // Fetch room details from the Room collection
+      const roomDetails = await RoomId.findOne({ roomId: game.roomId });
+
+      // Extract teammate information and fetch teammate details from the User collection
+      const teammates = await Promise.all(game.registerTeams.map(async (team: { teamMateIds: any[]; teamName: any; }) => {
+        const teammateId = team.teamMateIds[0];
+        const teammateDetails = await User.findById(teammateId); // Assuming one teammate per team for simplicity
+
+        if (teammateDetails) {
+          return {
+            teamName: team.teamName,
+            teammateDetails: {
+              fullName: teammateDetails.fullName || '',
+              email: teammateDetails.email || '',
+              profilePic: teammateDetails.profilePic || '',
+            },
+          };
+        } else {
+          // Handle the case where teammateDetails is null (teammate not found)
+          return {
+            teamName: team.teamName,
+            teammateDetails: {
+              fullName: '',
+              email: '',
+              profilePic: '',
+            },
+          };
+        }
+      }));
+
+      if (roomDetails) {
+        serializedGames.push({
+          roomUuid: game.roomUuid,
+          gameType: roomDetails.gameType || '',
+          gameName: roomDetails.gameName || '',
+          mapType: roomDetails.mapType || '',
+          dateAndTime: roomDetails.dateAndTime || null,
+          teammates,
+        });
+      }
+    }
+
+    res.status(200).json({ data: serializedGames });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
 
 // get users and teammates in a specific room
 export const getUsersAndTeammatesInRoom = async (req: Request, res: Response) => {
@@ -594,28 +568,33 @@ export const getUsersAndTeammatesInRoom = async (req: Request, res: Response) =>
       return res.status(404).json({ message: "No teams found in this room" });
     }
 
-    const userAndTeammates = await Promise.all(
-      teamsInRoom.map(async (team) => {
-        const teammateDetails = await user.find({ email: { $in: team.teammates } });
+    const userAndTeams = await Promise.all(teamsInRoom.map(async (team) => {
 
-        const teammatesWithDetails = teammateDetails.map(teammate => ({
-          _id: teammate._id,
-          fullName: teammate.fullName, 
-          email: teammate.email,
-        }));
+      const teammateDetails = await User.find({ _id: { $in: team.teamMates } });
 
-        return {
-          roomUuid: team.roomUuid,
-          leadPlayer: team.leadPlayer,
-          teammates: teammatesWithDetails,
-        };
-      })
-    );
+      const teammatesWithDetails = teammateDetails.map((teammate) => ({
+        fullName: teammate.fullName,
+        email: teammate.email,
+        profilePic: teammate.profilePic
+      }));
 
-    res.status(200).json({ code: 200, data: userAndTeammates });
+      const leaderDetails = await User.findById(team.leadPlayerId);
+
+      return {
+        teamName: team.teamName,
+        leadPlayer: {
+          fullName: leaderDetails ? leaderDetails.fullName : '',
+          email: leaderDetails ? leaderDetails.email : '',
+          profilePic: leaderDetails ? leaderDetails.profilePic : '',
+        },
+        teammates: teammatesWithDetails,
+      };
+    }));
+
+    res.status(200).json({ numberOfTeams: teamsInRoom.length, roomUuid, data: userAndTeams });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ code: 500, message: "Internal Server Error" });
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
