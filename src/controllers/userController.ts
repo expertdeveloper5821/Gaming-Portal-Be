@@ -674,3 +674,17 @@ export const sendEmailToUser = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Internal server error.' });
   }
 }
+
+
+// export const findEmail = async (req: Request,res:Response) => {
+//   try {
+//     const emails = await User.find({}, 'email')
+//     if (!emails || emails.length === 0) {
+//       return res.status(404).json({message: 'user email not found'})
+//     }
+//     const emailFound = emails.map((user) => user.email)
+//       return res.status(200).json({message: 'Successfully get user emal', emailFound})
+//   } catch (error) {
+//     return res.status(500).json({message: 'internal server erroe'})
+//   }
+// }

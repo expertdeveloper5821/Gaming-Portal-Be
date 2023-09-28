@@ -4,23 +4,31 @@ const winnerPlayersSchema: Schema = new Schema(
   {
     winnerUuid: {
       type: String,
-      required: true,
+      required: false,
     },
-    winnerName: {
+    teamData: [
+      {
+        teamName: {
+          type: String,
+          required: true,
+        },
+        highestKill: {
+          type: Number,
+          required: false,
+        },
+        chickenDinner: {
+          type: Number,
+          required: false,
+        },
+      },
+    ],
+    roomId: {
       type: String,
-      required: true,
-    },
-    winningPosition: {
-      type: String,
-      required: true,
-    },
-    uuid: {
-      type: String,
-      required: true,
+      required: false,
     },
     createdBy: {
-      type: String, // Assuming the user ID is a string
-      required: true,
+      type: String,
+      required: false,
     },
   },
   { timestamps: true }

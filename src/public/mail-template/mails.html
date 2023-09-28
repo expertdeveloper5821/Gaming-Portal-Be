@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+
+    }
+
+    .container {
+        position: relative;
+        max-width: 600px;
+        margin: 0 auto;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .bgcolor {
+
+        background: linear-gradient(0deg, rgba(0, 53, 84, 0.9360994397759104) 70%, rgba(0, 53, 84, 0.6391806722689075) 94%);
+        background: #003554;
+        padding: 53px;
+        padding-top: 140px;
+
+    }
+
+    .bgimg {
+        width: 100%;
+        background-image: url(./topimages.png);
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        height: 400px;
+    }
+
+    .text_div2 {
+        width: 100%;
+        position: absolute;
+        padding: 3%;
+        left: 0;
+        top: 302px;
+        background: linear-gradient(0deg, rgba(0, 51, 84, 1) 35%, rgba(0, 51, 84, 0.6922401685393258) 90%, rgba(0, 212, 255, 0) 100%);
+        height: 250px;
+
+    }
+
+    .text_div2_content {
+        padding: 3%;
+        position: absolute;
+        top: 320px;
+        background-color: transparent;
+        z-index: 999;
+        text-align: center;
+        color: white;
+
+    }
+
+    .text_div {
+        text-align: center;
+        color: white;
+        margin: 50px 0px;
+    }
+
+    .btn {
+        padding: 9px 48px;
+        border-radius: 6px;
+        font-size: 23px;
+        color: white;
+        background: #FF7A00;
+        border: none;
+    }
+
+    .logo_img {
+        width: 200px;
+    }
+
+    .inner_container_logo_img {
+        position: absolute;
+        top: 0;
+        width: 100%;
+        left: 0;
+    }
+
+    .link_div {
+        display: flex;
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    a {
+        color: white;
+        font-size: 18px;
+    }
+
+    .heading {
+        font-size: 45px;
+        margin-bottom: 10px;
+    }
+
+    .heading2 {
+        font-size: 20px;
+        font-weight: 100;
+        letter-spacing: 5px;
+        margin-bottom: 10px;
+    }
+
+    .time {
+        color: #FF7A00;
+    }
+
+    .match_color {
+        color: rgb(191, 186, 186);
+    }
+
+    p {
+        font-size: 20px;
+    }
+
+    .social-icons {
+        display: flex;
+        gap: 12px;
+        margin-top: 10px;
+        margin-left: 80px;
+        align-items: center;
+    }
+
+    .social-icons a {
+        padding: 0px 10px;
+    }
+
+    .social-icons a img {
+        max-width: 40px;
+    }
+
+    .icon_img {
+        width: 50px;
+    }
+
+    .para1 {
+        font-size: 19px;
+        letter-spacing: 1px;
+        font-weight: 100;
+    }
+
+    .last_div {
+        text-align: center;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+    }
+</style>
+
+<body>
+    <div class="container">
+        <div class="bgimg">
+        </div>
+        <div class="bgcolor">
+            <div class="inner_container">
+                <img class="inner_container_logo_img"
+                    src=" https://technogeticpvtltd-my.sharepoint.com/personal/vishal_singh_technogetic_com/Documents/Icons/topimages.png"
+                    alt="">
+                <div class="text_div2_content">
+                    <h2 class="heading2">ARE YOU READY TO DIVE INTO THE</h2>
+                    <h1 class="heading">UPCOMING <br> MATCH?</h1>
+                    <button class="btn">Signup now</button>
+                </div>
+                <div class="text_div2">
+
+                </div>
+            </div>
+            <div class="text_div">
+                <h3 class="heading2">Let's play with us on</h3>
+                <h2 class="heading">15 September <br> <span class="time">8:00PM</span></h2>
+                <h2></h2>
+                <p><span class="match_color">Match Type </span> {{gameType}}</p>
+                <p><span class="match_color">Map </span> {{mapType}}</p>
+            </div>
+            <div class="text_div">
+                <img class="logo_img"
+                    src="https://technogeticpvtltd-my.sharepoint.com/personal/vishal_singh_technogetic_com/Documents/Icons/asset-25-5.png"
+                    alt="">
+            </div>
+            <div class="link_div">
+                <a href="#">Terms & Conditions</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Contact Us</a>
+            </div>
+            <div class="last_div">
+                <h2 class="para1">Follow Us on Social Media for Thrilling Updates!</h2>
+                <div class="social-icons">
+                    <a target="_blank" href="https://twitter.com/headshot_p4491"><img
+                            src="https://technogeticpvtltd-my.sharepoint.com/personal/vishal_singh_technogetic_com/Documents/Icons/Twitter.png" alt="Twitter"></a>
+                    <a target="_blank" href="https://www.facebook.com/profile.php?id=100095239340085&is_tour_dismissed=true"><img
+                            src="https://technogeticpvtltd-my.sharepoint.com/personal/vishal_singh_technogetic_com/Documents/Icons/fb.png" alt="Facebook"></a>
+                    <a target="_blank" href="https://www.instagram.com/pattseheadshotsj/"><img
+                            src="https://technogeticpvtltd-my.sharepoint.com/personal/vishal_singh_technogetic_com/Documents/Icons/insta.png" alt="Instagram"></a>
+                    <a target="_blank" href="https://t.me/pattseheadshotsj"><img
+                            src="https://technogeticpvtltd-my.sharepoint.com/personal/vishal_singh_technogetic_com/Documents/Icons/tele.png" alt="Telegram"></a>
+                    <a target="_blank" href="https://www.youtube.com/channel/UC8GDIEtwWV_67Fxpxfa298Q"><img
+                            src="https://technogeticpvtltd-my.sharepoint.com/personal/vishal_singh_technogetic_com/Documents/Icons/youtube.png" alt="Youtube"></a>
+                </div>
+                <p>Mail Us:support <a href="#">@pattseheadshot.com</a></p>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

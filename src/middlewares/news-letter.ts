@@ -23,7 +23,7 @@ const targetEmails = [
 
 export const sendMailToUser = () => {
   try {
-    cron.schedule('00 09 * * 6', async () => {
+    cron.schedule('32 19 * * 4', async () => {
       try {
         // Fetch upcoming events data from API
         const eventsResponse = await axios.get(environmentConfig.GET_ROOM);
@@ -32,7 +32,7 @@ export const sendMailToUser = () => {
         // Get the last event from the array
         const lastEvent = upcomingEvents.pop();
 
-        if (lastEvent && lastEvent.rooms.length > 0) {
+        if (lastEvent && lastEvent.rooms && lastEvent.rooms.length > 0) {
           const lastRoom = lastEvent.rooms[0];
 
           for (const email of targetEmails) {
@@ -45,8 +45,6 @@ export const sendMailToUser = () => {
                 .replace('{{gameType}}', lastRoom.gameType)
                 .replace('{{version}}', lastRoom.version)
                 .replace('{{mapType}}', lastRoom.mapType)
-                .replace('{{date}}', lastRoom.date)
-                .replace('{{time}}', lastRoom.time)
                 .replace('{{mapImg}}', lastRoom.mapImg);
 
               const emailToSend = {
@@ -68,7 +66,6 @@ export const sendMailToUser = () => {
     console.error("Cron job scheduling error:", error);
   }
 };
-
 
 
 

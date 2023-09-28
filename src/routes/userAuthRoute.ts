@@ -10,7 +10,8 @@ import {
   getAllUsers,
   sendInviteMail,
   sendEmailToUser,
-  acceptInvitation
+  acceptInvitation,
+  // findEmail
 } from "../controllers/userController";
 const route = express.Router();
 import { verifyToken } from "../middlewares/authMiddleware";
@@ -34,6 +35,7 @@ const upload = multer({ storage: storage });
 
 route.post("/send-email", sendEmailToUser);
 
+// route.get("/emails", findEmail);
 // signup route
 route.post("/signup", userSignup);
 
