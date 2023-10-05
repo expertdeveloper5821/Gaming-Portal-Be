@@ -202,14 +202,8 @@ export const getRoomById = async (req: Request, res: Response) => {
     if (!userInfo) {
       return res.status(500).json({ error: "User not found" });
     }
-        // Calculate the number of slots left
-        const maxSlots = 25; // Change this to the maximum number of slots
-        const registeredUsers = await Transaction.find({
-          roomId: room.roomUuid,
-        });
-        const slotsLeft = maxSlots - registeredUsers.length;
-
-    return res.status(200).json({ room, fullName: userInfo.fullName, slotsLeft, allSlotsAvailable: slotsLeft > 0 });
+    
+    return res.status(200).json({ room, fullName: userInfo.fullName });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
