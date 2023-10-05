@@ -8,6 +8,9 @@ import { Role } from "../models/roleModel";
 import { validId } from "../utils/pattern";
 import Video from "../models/ytVideo";
 import { v4 as uuidv4 } from "uuid";
+import moment from 'moment-timezone';
+import { userType } from '../middlewares/authMiddleware';
+import RoomId from "../models/serverRoomIDModels";
 
 // for admin signup
 export const adminSignup = async (req: Request, res: Response) => {
@@ -103,7 +106,7 @@ export const spectator = async (req: Request, res: Response) => {
   } catch (error) {
     console.log(error);
 
-    return res.status(500).json({  error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -180,8 +183,8 @@ export const getRoleById = async (req: Request, res: Response) => {
 // Update role by ID
 export const updateRole = async (req: Request, res: Response) => {
   try {
-    const { userUuid } = req.params; 
-    const updatedData = req.body; 
+    const { userUuid } = req.params;
+    const updatedData = req.body;
 
     // Find the user by UUID and update their information
     const updatedUser = await user.findOneAndUpdate({ userUuid }, updatedData, { new: true });
@@ -193,81 +196,147 @@ export const updateRole = async (req: Request, res: Response) => {
     return res.status(200).json({ message: "User updated successfully", user: updatedUser });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({  error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
 // Delete role by ID
 export const deleteRole = async (req: Request, res: Response) => {
   try {
-    const { userUuid } = req.params; 
-    const deletedUser = await user.findOneAndDelete({ userUuid }); 
+    const { userUuid } = req.params;
+    const deletedUser = await user.findOneAndDelete({ userUuid });
     if (!deletedUser) {
       return res.status(404).json({ error: "User not found" });
     }
     return res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({  error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 // youtube video link
 export const video = async (req: Request, res: Response) => {
   try {
-    const { videoLink, date, time } = req.body;
-    if (!videoLink || !date || !time ) {
-      return res.status(400).json({ message: "All fields required" });
+    // Extract the user ID from the request
+    const user = req.user as userType; // Type assertion to userType
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
     }
+    const userId = user.userId;
+
+    const { title, videoLink, dateAndTime } = req.body;
+    const { roomId } = req.params
+    // Check for required fields
+    const requiredFields = ['title', 'videoLink', 'dateAndTime'];
+    const missingFields = requiredFields.filter(field => !req.body[field]);
+
+    if (missingFields.length > 0) {
+      const missingFieldsMessage = missingFields.join(', ');
+      return res.status(400).json({ message: `${missingFieldsMessage} field is required` });
+    }
+
     const existingVideo = await Video.findOne({ videoLink });
     if (existingVideo) {
       return res.status(400).json({
         message: `same video already exists`,
       });
     }
+
+    const checkRoomUuid = await RoomId.findOne({ roomUuid: roomId })
+    if (checkRoomUuid) {
+      // Parse date and time into Date objects
+    const parsedDateAndTime = moment(dateAndTime).tz('Asia/Kolkata');
+
+    if (!parsedDateAndTime.isValid()) {
+      return res.status(400).json({ message: 'Invalid date or time format' });
+    }
     // Create a new video document and save it to the database
-    const newVideo = new Video({ videoLink, date, time });
+    const newVideo = new Video({ roomId: checkRoomUuid.roomUuid, title, videoLink, dateAndTime, createdBy: userId });
     await newVideo.save();
-    res
-      .status(200)
-      .json({ message: "Video link saved successfully" });
+    return res.status(200).json({ message: "Video link saved successfully",  newVideo });
+    }else{
+      return res.status(202).json({ message: 'Room not found' });
+    }
   } catch (error) {
     console.error(error);
-    res.status(500).json({  error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
 // get all video links
 export const getAllVideoLink = async (req: Request, res: Response) => {
   try {
-    // Use the find method without any conditions to retrieve all users from the database
+    // Use the find method without any conditions to retrieve all videos from the database
     const allVideos = await Video.find();
+
     if (allVideos.length === 0) {
       return res.status(404).json({
-        message: "No video link ",
+        message: "No video found",
       });
     }
+
+    // Create an array to store modified video data with createdBy fullName
+    const videosWithCreatedByFullName = [];
+
+    // Loop through each video and fetch createdBy user's fullName
+    for (const video of allVideos) {
+      const createdByUser = await user.findById(video.createdBy);
+      if (createdByUser) {
+        videosWithCreatedByFullName.push({
+          _id: video._id,
+          roomId: video.roomId,
+          createdBy: {
+            fullName: createdByUser.fullName,
+          },
+          title: video.title,
+          videoLink: video.videoLink,
+          dateAndTime: video.dateAndTime,
+        });
+      }
+    }
+
     // If video links are found, return the data as the response
     return res.status(200).json({
-      data: allVideos,
+      data: videosWithCreatedByFullName,
     });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({  error: "Internal server error" });
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
+
 // get video by ID
 export const getVideoById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    if (!validId.test(id)) {
-      return res.status(404).json({ error: "Invalid ID" });
-    }
     const video = await Video.findById(id);
+
     if (!video) {
-      return res.status(404).json({  message: 'Video not found' });
+      return res.status(404).json({ message: 'Video not found' });
     }
-    res.status(200).json({  video });
+
+    // Fetch the user information based on createdBy ID
+    const createdByUser = await user.findById(video.createdBy);
+
+    if (!createdByUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Include the user's fullName in the response
+    const response = {
+      _id: video._id,
+      roomId: video.roomId,
+      createdBy: {
+        fullName: createdByUser.fullName,
+      },
+      title: video.title,
+      videoLink: video.videoLink,
+      dateAndTime: video.dateAndTime,
+    };
+
+    res.status(200).json({ video: response });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
@@ -281,10 +350,11 @@ export const updateVideoById = async (req: Request, res: Response) => {
     if (!validId.test(id)) {
       return res.status(404).json({ error: "Invalid ID" });
     }
-    const { videoLink, date, time } = req.body;
-    const updatedVideo = await Video.findByIdAndUpdate(id, { videoLink, date, time }, { new: true });
+    const updatedVideoData = req.body;
+    
+    const updatedVideo = await Video.findByIdAndUpdate(id, updatedVideoData, { new: true });
     if (!updatedVideo) {
-      return res.status(404).json({  message: 'Video not found' });
+      return res.status(404).json({ message: 'Video not found' });
     }
     res.status(200).json({ message: 'Video updated successfully', video: updatedVideo });
   } catch (error) {
@@ -302,11 +372,11 @@ export const deleteVideoById = async (req: Request, res: Response) => {
     }
     const deletedVideo = await Video.findByIdAndDelete(id);
     if (!deletedVideo) {
-      return res.status(404).json({  message: 'Video not found' });
+      return res.status(404).json({ message: 'Video not found' });
     }
-    res.status(200).json({  message: 'Video deleted successfully' });
+    res.status(200).json({ message: 'Video deleted successfully' });
   } catch (error) {
     console.error(error);
-    res.status(500).json({  error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };

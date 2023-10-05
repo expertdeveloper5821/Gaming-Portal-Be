@@ -40,13 +40,13 @@ route.put("/updaterole/:userUuid", verifyToken(["admin"]), updateRole);
 route.delete("/deleterole/:userUuid", verifyToken(["admin"]), deleteRole);
 
 // to post the video link and information
-route.post("/videolink", verifyToken(["admin",'spectator']), video);
+route.post("/videolink/:roomId", verifyToken(["admin",'spectator']), video);
 
 // to get all video link and information
-route.get("/allvideolink", verifyToken(["admin",'spectator']), getAllVideoLink);
+route.get("/allvideolink", verifyToken(["admin",'spectator','user']), getAllVideoLink);
 
 // get video by ID
-route.get("/getvideo/:id", verifyToken(["admin",'spectator']), getVideoById);
+route.get("/getvideo/:id", verifyToken(["admin",'spectator','user']), getVideoById);
 
 // updatevideo by id
 route.put("/updatevideo/:id", verifyToken(["admin",'spectator']), updateVideoById);

@@ -11,6 +11,7 @@ let userRegisterSchema = new mongoose.Schema({
   upiId: { type: String, required: false },
   phoneNumber: { type: String, required: false },
   profilePic: { type: String, required: false },
+  bgmiId: { type: String, required: false },
 });
 
 export const user = mongoose.model("user", userRegisterSchema);

@@ -36,6 +36,7 @@ const upload = multer({ storage: storage });
 route.post("/send-email", sendEmailToUser);
 
 // route.get("/emails", findEmail);
+
 // signup route
 route.post("/signup", userSignup);
 

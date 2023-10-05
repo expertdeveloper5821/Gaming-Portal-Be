@@ -118,7 +118,7 @@ export const createPayment = async (req: Request, res: Response) => {
         });
 
         // Update the Team model with the roomId for the user's team
-        const userTeam = await Team.findOne({ leadPlayerId: userId }); 
+        const userTeam = await Team.findOne({ leadPlayerId: userId });
         if (userTeam) {
           // Check if the roomId is not already in the array
           if (!userTeam.roomUuid.includes(roomdata?.roomUuid)) {

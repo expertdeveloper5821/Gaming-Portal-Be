@@ -157,6 +157,9 @@ export const getAllRooms = async (req: Request, res: Response) => {
 
     // Filter the rooms to exclude those the user has already registered for
     const filteredRooms = rooms.filter((room) => !userRegisteredRooms.includes(room.roomUuid));
+    
+    // Sort the rooms by createdAt in descending order
+    filteredRooms.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     if (filteredRooms.length === 0) {
       return res.status(202).json({
@@ -177,10 +180,15 @@ export const getAllRooms = async (req: Request, res: Response) => {
 
     return res.status(200).json(roomsWithUserDetails);
   } catch (error) {
-    return res.status(500).json({ error: "Failed to fetch rooms" });
+    console.error(error);
+    return res.status(500).json({
+      error: "Failed to fetch rooms",
+      success: false,
+    });
   }
 };
 
+// get room by id 
 export const getRoomById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -194,9 +202,20 @@ export const getRoomById = async (req: Request, res: Response) => {
     if (!userInfo) {
       return res.status(500).json({ error: "User not found" });
     }
-    return res.status(200).json({ room, fullName: userInfo.fullName });
+        // Calculate the number of slots left
+        const maxSlots = 25; // Change this to the maximum number of slots
+        const registeredUsers = await Transaction.find({
+          roomId: room.roomUuid,
+        });
+        const slotsLeft = maxSlots - registeredUsers.length;
+
+    return res.status(200).json({ room, fullName: userInfo.fullName, slotsLeft, allSlotsAvailable: slotsLeft > 0 });
   } catch (error) {
-    return res.status(500).json({ error: "Failed to fetch room" });
+    console.error(error);
+    return res.status(500).json({
+      error: "Failed to fetch room",
+      success: false,
+    });
   }
 };
 
@@ -217,7 +236,7 @@ export const updateRoomById = async (req: Request, res: Response) => {
     }
 
     // Update the room data
-    await RoomId.findByIdAndUpdate(roomId, updatedRoomData);
+    await RoomId.findByIdAndUpdate(roomId, updatedRoomData, { new: true });
 
     return res.status(200).json({ message: "Room updated successfully" });
 

@@ -5,7 +5,7 @@ import { verifyToken } from "../middlewares/authMiddleware";
 import {
   addTeammatesIntoMatch, deleteTeamById, getAllTeams, getTeamById, updateTeamById,
    getUserRegisteredRooms, getUserRegisteredRoomsWithTeamMates, getUsersAndTeammatesInRoom,
-   getUserTeam, getAllUserRegisterRoomWithTeam, removeUserInTeam
+   getUserTeam, getAllUserRegisterRoomWithTeam, removeUserInTeam, getUserFriendsList
 } from "../controllers/teamController";
 
 
@@ -34,7 +34,10 @@ route.get("/register-room-mates/:roomUuid", verifyToken(["user"]), getUserRegist
 route.get("/register-matches/:roomUuid", verifyToken(["spectator",'admin']), getUsersAndTeammatesInRoom);
 
 // get user all team details 
-route.get("/user-teams", verifyToken(["user"]), getUserTeam);
+route.get("/user-all-teams", verifyToken(["user"]), getUserTeam);
+
+// get user team details 
+route.get("/user-teams", verifyToken(["user"]), getUserFriendsList);
 
 // get allroom details with teams
 route.get("/all-register-room", verifyToken(["user"]), getAllUserRegisterRoomWithTeam);

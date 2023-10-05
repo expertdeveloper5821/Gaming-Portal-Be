@@ -2,23 +2,33 @@
 import mongoose, { Document, Model, Schema } from 'mongoose';
 
 interface IVideo extends Document {
+  roomId: string;
+  title: string;
+  createdBy: string
   videoLink: string;
-  time : string;
-  date : string;
+  dateAndTime: Date;
 }
 
 const videoSchema: Schema<IVideo> = new mongoose.Schema({
+  roomId: {
+    type: String,
+    required: false,
+  },
+  createdBy: {
+    type: String,
+    required: false,
+  },
+  title: {
+    type: String,
+    required: false,
+  },
   videoLink: {
     type: String,
-    required: true,
+    required: false,
   },
-  time: {
-    type: String,
-    required: true,
-  },
-  date: {
-    type: String,
-    required: true,
+  dateAndTime: {
+    type: Date,
+    required: false,
   },
 });
 

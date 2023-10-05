@@ -32,6 +32,7 @@ export const getTeamById = async (req: Request, res: Response) => {
           return {
             _id: teammate._id,
             fullName: teammate.fullName,
+            userName: teammate.userName,
             email: teammate.email,
             profilePic: teammate.profilePic,
           };
@@ -51,6 +52,7 @@ export const getTeamById = async (req: Request, res: Response) => {
           teamMates: teammatesDetails, // Replace teamMates with teammate details
           leadPlayer: leadPlayer ? {
             fullName: leadPlayer.fullName,
+            userName: leadPlayer.userName,
             email: leadPlayer.email,
             profilePic: leadPlayer.profilePic,
           } : null,
@@ -64,6 +66,7 @@ export const getTeamById = async (req: Request, res: Response) => {
 };
 
 
+// get user team details weather he is in a team or he is a member in a team
 export const getUserTeam = async (req: Request, res: Response) => {
   try {
     // Extract the user ID from the request
@@ -93,6 +96,7 @@ export const getUserTeam = async (req: Request, res: Response) => {
             return {
               _id: teammate._id,
               fullName: teammate.fullName,
+              userName: teammate.userName,
               email: teammate.email,
               profilePic: teammate.profilePic,
             };
@@ -110,6 +114,7 @@ export const getUserTeam = async (req: Request, res: Response) => {
         teamMates: teammatesDetails,
         leadPlayer: {
           fullName: leadPlayer?.fullName || '',
+          userName: leadPlayer?.userName || '',
           email: leadPlayer?.email || '',
           profilePic: leadPlayer?.profilePic || '',
         },
@@ -127,6 +132,7 @@ export const getUserTeam = async (req: Request, res: Response) => {
                 return {
                   _id: teammate._id,
                   fullName: teammate.fullName,
+                  userName: teammate.userName,
                   email: teammate.email,
                   profilePic: teammate.profilePic,
                 };
@@ -143,6 +149,7 @@ export const getUserTeam = async (req: Request, res: Response) => {
             teamMates: teammatesDetails,
             leadPlayer: {
               fullName: leadPlayer?.fullName || '',
+              userName: leadPlayer?.userName || '',
               email: leadPlayer?.email || '',
               profilePic: leadPlayer?.profilePic || '',
             },
@@ -161,6 +168,104 @@ export const getUserTeam = async (req: Request, res: Response) => {
 };
 
 
+// get user friends list
+export const getUserFriendsList = async (req: Request, res: Response) => {
+  try {
+    // Extract the user ID from the request
+    const user = req.user as userType; // Type assertion to userType
+
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
+    }
+
+    const userId = user.userId;
+    const { search } = req.query;
+
+    // Find the user's own team where user is a leader
+    const ownTeam = await Team.findOne({ leadPlayerId: userId });
+
+    // Initialize the response data
+    const responseData: Record<string, any> = {};
+
+    if (ownTeam) {
+      // Fetch leadPlayerId details
+      const leadPlayer = await User.findById(ownTeam.leadPlayerId);
+
+      if (search) {
+        // Fetch details for each teammate in the user's own team
+        const teammatesDetails = await Promise.all(
+          ownTeam.teamMates.map(async (teammateId) => {
+            const teammate = await User.findById(teammateId);
+            if (teammate) {
+              return {
+                _id: teammate._id,
+                fullName: teammate.fullName,
+                userName: teammate.userName,
+                email: teammate.email,
+                profilePic: teammate.profilePic,
+              };
+            }
+            return null;
+          })
+        );
+
+        // Filter teammates based on the search query
+        const filteredTeammates = teammatesDetails.filter((teammate) => {
+          return (
+            (teammate?.fullName && teammate.fullName.toLowerCase().includes(search.toString().toLowerCase())) ||
+            (teammate?.userName && teammate.userName.toLowerCase().includes(search.toString().toLowerCase())) ||
+            (teammate?.email && teammate.email.toLowerCase().includes(search.toString().toLowerCase()))
+          );
+        });
+
+        // response for the searched teammates
+        responseData.teamMates = filteredTeammates;
+      } else {
+        // No search query, include team details
+        responseData.yourTeam = {
+          teamName: ownTeam.teamName,
+          leadPlayer: {
+            fullName: leadPlayer?.fullName || '',
+            userName: leadPlayer?.userName || '',
+            email: leadPlayer?.email || '',
+            profilePic: leadPlayer?.profilePic || '',
+          },
+        };
+
+        // Fetch details for each teammate in the user's own team
+        const teammatesDetails = await Promise.all(
+          ownTeam.teamMates.map(async (teammateId) => {
+            const teammate = await User.findById(teammateId);
+            if (teammate) {
+              return {
+                _id: teammate._id,
+                fullName: teammate.fullName,
+                userName: teammate.userName,
+                email: teammate.email,
+                profilePic: teammate.profilePic,
+              };
+            }
+            return null;
+          })
+        );
+
+        responseData.yourTeam.teamMates = teammatesDetails;
+      }
+    } else {
+      // If the user doesn't have their own team, return an error
+      return res.status(403).json({ message: 'You do not have your own team.', success: false });
+    }
+
+    return res.status(200).json({
+      data: responseData,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// add teammates into match 
 export const addTeammatesIntoMatch = async (req: Request, res: Response) => {
   try {
     const { emails, leaderEmail, roomid } = req.body; // Use "roomid" instead of "roomId"
@@ -252,6 +357,7 @@ export const getAllTeams = async (req: Request, res: Response) => {
               return {
                 _id: teammate._id,
                 fullName: teammate.fullName,
+                userName: teammate.userName,
                 email: teammate.email,
                 profilePic: teammate.profilePic,
               };
@@ -270,6 +376,7 @@ export const getAllTeams = async (req: Request, res: Response) => {
           leadPlayer: leadPlayer ? {
             _id: leadPlayer._id,
             fullName: leadPlayer.fullName,
+            userName: leadPlayer.userName,
             email: leadPlayer.email,
             profilePic: leadPlayer.profilePic,
           } : null,
@@ -409,12 +516,16 @@ export const getUserRegisteredRooms = async (req: Request, res: Response) => {
             name: transaction.name,
             paymentBy: user ? user.email : null
           },
+          createdAt: transaction.createdAt,
         };
       })
     );
 
     // Filter out null entries from detailedRooms
     const filteredRooms = detailedRooms.filter(room => room !== null);
+
+    // Sort the filteredRooms by createdAt in descending order
+    filteredRooms.sort((a, b) => (b!.createdAt.getTime() - a!.createdAt.getTime()));
 
     res.status(200).json({
       message: 'Rooms details retrieved successfully',
@@ -465,12 +576,14 @@ export const getUserRegisteredRoomsWithTeamMates = async (req: Request, res: Res
       leader: {
         id: teamLeader?._id || '',
         fullName: teamLeader?.fullName || '',
+        userName: teamLeader?.userName || '',
         email: teamLeader?.email || '',
         profilePic: teamLeader?.profilePic || '',
       },
       teammates: teamMembers.map((teammate) => ({
         id: teammate._id,
         fullName: teammate.fullName || '',
+        userName: teammate.userName || '',
         email: teammate.email || '',
         profilePic: teammate.profilePic || '',
       })),
@@ -490,7 +603,7 @@ export const getUserRegisteredRoomsWithTeamMates = async (req: Request, res: Res
 };
 
 
-
+// get user all register room details with teamMates
 export const getAllUserRegisterRoomWithTeam = async (req: Request, res: Response) => {
   try {
     const user = req.user as userType; // Type assertion to userType
@@ -521,6 +634,7 @@ export const getAllUserRegisterRoomWithTeam = async (req: Request, res: Response
           leader: {
             id: teamLeader?._id || '',
             fullName: teamLeader?.fullName || '',
+            userName: teamLeader?.userName || '',
             email: teamLeader?.email || '',
             profilePic: teamLeader?.profilePic || '',
           },
@@ -533,6 +647,7 @@ export const getAllUserRegisterRoomWithTeam = async (req: Request, res: Response
               teammates: teamMembers.map((teammate) => ({
                 id: teammate._id,
                 fullName: teammate.fullName || '',
+                userName: teammate.userName || '',
                 email: teammate.email || '',
                 profilePic: teammate.profilePic || '',
               })),
@@ -579,6 +694,7 @@ export const getUsersAndTeammatesInRoom = async (req: Request, res: Response) =>
 
       const teammatesWithDetails = teammateDetails.map((teammate) => ({
         fullName: teammate.fullName,
+        userName: teammate.userName,
         email: teammate.email,
         profilePic: teammate.profilePic
       }));
@@ -589,6 +705,7 @@ export const getUsersAndTeammatesInRoom = async (req: Request, res: Response) =>
         teamName: team.teamName,
         leadPlayer: {
           fullName: leaderDetails ? leaderDetails.fullName : '',
+          userName: leaderDetails ? leaderDetails.userName : '',
           email: leaderDetails ? leaderDetails.email : '',
           profilePic: leaderDetails ? leaderDetails.profilePic : '',
         },

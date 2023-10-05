@@ -427,7 +427,7 @@ export const userUpdate = async (req: Request, res: Response) => {
 
     const updatedUser = await User.findByIdAndUpdate(userId, updatedUserData, {
       new: true,
-    }).populate('role', 'role');
+    });
 
     if (!updatedUser) {
       return res.status(404).json({

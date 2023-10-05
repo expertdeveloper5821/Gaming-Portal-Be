@@ -1,29 +1,31 @@
-import express ,{ Request, Response } from 'express';
+import express, { Request, Response } from 'express';
+import { environmentConfig } from '../config/environmentConfig';
 import cron from 'node-cron';
 import { user } from '../models/passportModels';
 import { transporter } from './email';
-import { environmentConfig } from '../config/environmentConfig';
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
+import moment from 'moment-timezone';
 const router = express.Router();
 router.use(express.static('public'));
 
 
+
 // Read the mail template HTML from the file
-const mailTemplatePath = path.join(__dirname, '../public/mail-template/mail.html');
+const mailTemplatePath = path.join(__dirname, '../public/mail-template/mails.html');
 const mailTemplate = fs.readFileSync(mailTemplatePath, 'utf-8');
 
 
 // testing mode targeting only perticuler mail
 const targetEmails = [
-  'vishal.singh@technogetic.com',
+  "vishal.singh@technogetic.com",
 ];
 
 
 export const sendMailToUser = () => {
   try {
-    cron.schedule('32 19 * * 4', async () => {
+    cron.schedule('33 15 * * 3', async () => {
       try {
         // Fetch upcoming events data from API
         const eventsResponse = await axios.get(environmentConfig.GET_ROOM);
@@ -32,20 +34,24 @@ export const sendMailToUser = () => {
         // Get the last event from the array
         const lastEvent = upcomingEvents.pop();
 
-        if (lastEvent && lastEvent.rooms && lastEvent.rooms.length > 0) {
-          const lastRoom = lastEvent.rooms[0];
+        if (lastEvent) {
+          const { gameType, mapType } = lastEvent
+          const formattedDateAndTime = moment(lastEvent.dateAndTime).format("DD-MM-YYYY h:mm A");
 
+          // splite date and time formate
+          const dateTimeFormate = formattedDateAndTime.split(" ");
+          const date = dateTimeFormate[0];
+          const time = dateTimeFormate[1];
+          const dayTime = dateTimeFormate[2];
           for (const email of targetEmails) {
             const userData = await user.findOne({ email });
             if (userData) {
-              // Replace placeholders with actual values
+              // Replacing placeholders with actual values
               const emailContent = mailTemplate
-                .replace('{{fullName}}', userData.fullName)
-                .replace('{{gameName}}', lastRoom.gameName)
-                .replace('{{gameType}}', lastRoom.gameType)
-                .replace('{{version}}', lastRoom.version)
-                .replace('{{mapType}}', lastRoom.mapType)
-                .replace('{{mapImg}}', lastRoom.mapImg);
+                .replace('{{gameType}}', gameType)
+                .replace('{{mapType}}', mapType)
+                .replace('{{date}}', date)
+                .replace('{{time}}', `${time} ${dayTime}`)
 
               const emailToSend = {
                 from: environmentConfig.EMAIL_FROM,
@@ -68,17 +74,48 @@ export const sendMailToUser = () => {
 };
 
 
-
-
+// send mail
 // export const sendMailToUser = () => {
 //   try {
-//     cron.schedule('* * * * *', async () => { 
+//     cron.schedule('23 16 * * 2', async () => {
 //       try {
-//         var userData = await user.find({});
-//         if (userData.length > 0) {
-//           for (const userEntry of userData) {
-//             const email = userEntry.email;
-//             const emailToSend = { ...emailContent, to: email }; 
+//         // Fetch upcoming events data from API
+//         const eventsResponse = await axios.get(environmentConfig.GET_ROOM);
+//         const upcomingEvents = eventsResponse.data;
+
+//         // Get the last event from the array
+//         const lastEvent = upcomingEvents.pop();
+
+//         if (lastEvent) {
+//           const { gameType, mapType } = lastEvent;
+//           const formattedDateAndTime = moment(lastEvent.dateAndTime).format("DD-MM-YYYY h:mm A");
+
+//           // Split date and time format
+//           const dateTimeFormat = formattedDateAndTime.split(" ");
+//           const date = dateTimeFormat[0];
+//           const time = dateTimeFormat[1];
+//           const dayTime =  dateTimeFormat[2];
+
+//           // Fetch all user emails from the database
+//           const allUsers = await user.find({}, { email: 1 }); 
+
+//           for (const userData of allUsers) {
+//             const email = userData.email;
+
+//             // Replacing placeholders with actual values
+//             const emailContent = mailTemplate
+//               .replace('{{gameType}}', gameType)
+//               .replace('{{mapType}}', mapType)
+//               .replace('{{date}}', date)
+//               .replace('{{time}}', `${time} ${dayTime}`)
+
+//             const emailToSend = {
+//               from: environmentConfig.EMAIL_FROM,
+//               subject: 'PattseHeadshot Newsletter: Join Us for a BGMI Match',
+//               to: email,
+//               html: emailContent,
+//             };
+
 //             await transporter.sendMail(emailToSend);
 //           }
 //         }
@@ -89,8 +126,7 @@ export const sendMailToUser = () => {
 //   } catch (error) {
 //     console.error("Cron job scheduling error:", error);
 //   }
-// }
-
+// };
 
 
 
