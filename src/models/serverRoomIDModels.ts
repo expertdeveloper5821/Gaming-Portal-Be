@@ -77,6 +77,10 @@ const roomIdSchema: Schema = new Schema(
         ],
       },
     ],
+    availableSlots: {
+      type: Number,
+      default: 25, // default 25 slots
+    },
   },
   { timestamps: true }
 );

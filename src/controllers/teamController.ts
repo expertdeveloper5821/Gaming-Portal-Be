@@ -270,6 +270,11 @@ export const addTeammatesIntoMatch = async (req: Request, res: Response) => {
   try {
     const { emails, leaderEmail, roomid } = req.body; // Use "roomid" instead of "roomId"
 
+    // validate that no more than 3 email addresses are provided
+    if (emails.length > 3) {
+      return res.status(400).json({ message: 'You cannot add only 3 friends in this room' });
+    }
+
     // Find the room by roomUuid
     const room = await RoomId.findOne({ roomUuid: roomid }); // Use "roomUuid" instead of "roomId"
 

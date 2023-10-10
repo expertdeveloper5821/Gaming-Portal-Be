@@ -94,8 +94,13 @@ export const createPayment = async (req: Request, res: Response) => {
 
       const userId = user.userId;
 
-
       if (qrCodeData && roomdata) {
+        // Check if all slots are full
+        const transactionCount = await Transaction.countDocuments({ roomId: roomdata.roomUuid });
+        if (transactionCount >= roomdata.availableSlots) {
+          return res.status(400).json({ message: "All slots are full in this room" });
+        }
+
         // Check if the user has already made a payment for the specified room
         const existingTransaction = await Transaction.findOne({
           paymentBy: userId,

@@ -88,7 +88,8 @@ export const createRoom = async (req: Request, res: Response) => {
       lastSurvival,
       highestKill,
       secondWin,
-      thirdWin
+      thirdWin,
+      availableSlots: 25, // Fixed number of slots
     });
 
     return res.status(200).json({
@@ -104,6 +105,7 @@ export const createRoom = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 // Get all rooms
 export const getAllRooms = async (req: Request, res: Response) => {
@@ -157,7 +159,7 @@ export const getAllRooms = async (req: Request, res: Response) => {
 
     // Filter the rooms to exclude those the user has already registered for
     const filteredRooms = rooms.filter((room) => !userRegisteredRooms.includes(room.roomUuid));
-    
+
     // Sort the rooms by createdAt in descending order
     filteredRooms.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
@@ -188,6 +190,7 @@ export const getAllRooms = async (req: Request, res: Response) => {
   }
 };
 
+
 // get room by id 
 export const getRoomById = async (req: Request, res: Response) => {
   try {
@@ -202,8 +205,21 @@ export const getRoomById = async (req: Request, res: Response) => {
     if (!userInfo) {
       return res.status(500).json({ error: "User not found" });
     }
-    
-    return res.status(200).json({ room, fullName: userInfo.fullName });
+
+    // Count the number of transactions for this room
+    const transactionCount = await Transaction.countDocuments({ roomId: room.roomUuid });
+
+    // Calculate the number of slots left
+    const slotsLeft = room.availableSlots - transactionCount;
+
+    // Create a new room object with the desired format
+    const formattedRoom = {
+      ...room.toObject(),
+      createdBy: userInfo.fullName,
+      slotsLeft
+    };
+
+    return res.status(200).json({ room: formattedRoom });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -212,6 +228,7 @@ export const getRoomById = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 // Update a room by ID
 export const updateRoomById = async (req: Request, res: Response) => {
