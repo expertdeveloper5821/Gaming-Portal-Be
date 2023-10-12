@@ -40,6 +40,6 @@ router.put("/rooms/:id", upload.single('mapImg'), verifyToken(['spectator','admi
 router.delete("/rooms/:id", verifyToken(['spectator','admin']),deleteRoomById);
 
 // Fetch rooms created by a specific user
-router.get("/user-rooms", verifyToken(['spectator']), getUserRooms);
+router.get("/user-rooms", verifyToken(['admin','spectator']), getUserRooms);
 
 export default router;
