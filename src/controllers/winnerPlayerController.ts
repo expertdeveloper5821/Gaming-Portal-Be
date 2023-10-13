@@ -3,7 +3,8 @@ import WinnerPlayers from "../models/winnerPlayerModel";
 import { v4 as uuidv4 } from "uuid";
 import RoomId from "../models/serverRoomIDModels";
 import { userType } from '../middlewares/authMiddleware';
-import { Team } from "../models/teamModel";
+import { user } from "../models/passportModels";
+
 
 // Create a new winning player
 export const postWinningPlayers = async (req: Request, res: Response) => {
@@ -80,7 +81,7 @@ export const getLeaderboard = async (req: Request, res: Response) => {
 
         // Calculate total points for each team and find mapType
         allWinnerPlayers.forEach((winnerPlayer) => {
-            winnerPlayer.teamData.forEach((teamData: { teamName: string, highestKill: number, chickenDinner: number, firstWinner: number, secondWinner: number }) => {
+            winnerPlayer.teamData.forEach((teamData: any) => {
                 const { teamName, highestKill, chickenDinner, firstWinner, secondWinner } = teamData;
                 const totalPoints = highestKill + chickenDinner + firstWinner + secondWinner;
                 if (!teamTotalPoints[teamName]) {
@@ -110,138 +111,108 @@ export const getLeaderboard = async (req: Request, res: Response) => {
 };
 
 
-// Get all winning players with room information
-// export const getLeaderboard = async (req: Request, res: Response) => {
-//     try {
-//         // Extract the user ID from the request
-//         const user = req.user as userType; // Type assertion to userType
-//         if (!user) {
-//             return res.status(401).json({ message: 'You are not authenticated!', success: false });
-//         }
-//         // Fetch all WinnerPlayers documents
-//         const allWinnerPlayers = await WinnerPlayers.find();
+// Get all winning players by room UUID
+export const getWinnersByRoomUuid = async (req: Request, res: Response) => {
+    try {
+        const { winnerUuid } = req.params;
 
-//         // Created an empty object to store team-wise total highestKill and chickenDinner points
-//         const teamTotalPoints: Record<string, { highestKill: number; chickenDinner: number }> = {};
+        if (!winnerUuid) {
+            return res.status(400).json({ message: "Winner UUID parameter is required" });
+        }
 
-//         // Calculate total highestKill and chickenDinner points for each team
-//         allWinnerPlayers.forEach((winnerPlayer) => {
-//             winnerPlayer.teamData.forEach((teamData: { teamName: string; highestKill: number; chickenDinner: number }) => {
-//                 const { teamName, highestKill, chickenDinner } = teamData;
-//                 if (!teamTotalPoints[teamName]) {
-//                     teamTotalPoints[teamName] = { highestKill: 0, chickenDinner: 0 };
-//                 }
-//                 teamTotalPoints[teamName].highestKill += highestKill;
-//                 teamTotalPoints[teamName].chickenDinner += chickenDinner;
-//             });
-//         });
+        const winnerPlayer = await WinnerPlayers.findOne({ winnerUuid });
 
-//         // Sorting teams first by highestKill points in descending order, and then by chickenDinner points
-//         const sortedTeams = Object.entries(teamTotalPoints).sort((a, b) => {
-//             if (b[1].highestKill !== a[1].highestKill) {
-//                 return b[1].highestKill - a[1].highestKill;
-//             } else {
-//                 return b[1].chickenDinner - a[1].chickenDinner;
-//             }
-//         });
+        if (!winnerPlayer) {
+            return res.status(404).json({ message: "Winner player data not found" });
+        }
 
-//         // Create an array to hold the leaderboard data
-//         const leaderboard = sortedTeams.map(([teamName, { highestKill, chickenDinner }]) => ({
-//             teamName,
-//             totalHighestKill: highestKill,
-//             totalChickenDinner: chickenDinner,
-//         }));
-//         return res.status(200).json({ leaderboard });
-//     } catch (error) {
-//         console.error(error);
-//         return res.status(500).json({
-//             error: 'Failed to fetch leaderboard data',
-//             success: false,
-//         });
-//     }
-// };
+        const roomIdData = await RoomId.findOne({ roomUuid: winnerPlayer.roomId });
 
+        if (!roomIdData) {
+            return res.status(404).json({ message: "Room data not found" });
+        }
 
-// Get winning player by id
-// export const getWinningPlayerById = async (req: Request, res: Response) => {
-//     try {
-//         const { id } = req.params;
+        const teamDetails = await Promise.all(
+            roomIdData.registerTeams.map(async (team: any) => {
+                const leaderData = await user.findOne({ _id: team.leaderId });
 
-//         if (!id) {
-//             return res.status(400).json({ message: "id parameter is required" });
-//         }
+                if (!leaderData) {
+                    throw new Error("Leader data not found");
+                }
 
-//         const winnerPlayer = await WinnerPlayer.findOne({ _id: id });
+                const teamMembersData = await Promise.all(
+                    team.teamMateIds.map(async (memberId: any) => {
+                        const userData = await user.findOne({ _id: memberId });
 
-//         if (!winnerPlayer) {
-//             return res.status(404).json({ message: "Winner player not found" });
-//         }
+                        if (!userData) {
+                            throw new Error("User data not found");
+                        }
 
-//         const roomIdData = await RoomId.findOne({ roomUuid: winnerPlayer.uuid });
+                        return {
+                            fullName: userData.fullName,
+                            profilePic: userData.profilePic,
+                        };
+                    })
+                );
 
-//         if (!roomIdData) {
-//             return res.status(404).json({ message: "Room data not found" });
-//         }
+                return {
+                    teamName: team.teamName,
+                    leader: {
+                        fullName: leaderData.fullName,
+                        profilePic: leaderData.profilePic,
+                    },
+                    teamMembers: teamMembersData,
+                };
+            })
+        );
 
-//         return res.status(200).json({
-//             winnerName: winnerPlayer.winnerName,
-//             winningPosition: winnerPlayer.winningPosition,
-//             winnerUuid: winnerPlayer.winnerUuid,
-//             room: {
-//                 gameName: roomIdData.gameName,
-//                 gameType: roomIdData.gameType,
-//                 mapType: roomIdData.mapType
-//             },
-//         });
-//     } catch (error) {
-//         console.error(error);
-//         return res.status(500).json({
-//             error: "Failed to fetch winner info",
-//             success: false,
-//         });
-//     }
-// };
+        return res.status(200).json({
+            winnerUuid: winnerPlayer.winnerUuid,
+            room: {
+                gameName: roomIdData.gameName,
+                gameType: roomIdData.gameType,
+                mapType: roomIdData.mapType,
+                dateAndTime: roomIdData.dateAndTime,
+            },
+            teams: teamDetails,
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            error: "Failed to fetch data for the winner UUID",
+            success: false,
+        });
+    }
+};
 
 
- // Get all winning players by room UUID
-// export const getWinnersByRoomUuid = async (req: Request, res: Response) => {
-//     try {
-//         const { uuid } = req.params;
+// update winner api
+export const updatePostwinner = async (req: Request, res: Response) => {
+    try {
+        const winnerUuid = req.params._id;
+        const teamDataArray = req.body;
 
-//         if (!uuid) {
-//             return res.status(400).json({ message: "Room UUID parameter is required" });
-//         }
+        if (!winnerUuid) {
+            return res.status(400).json({ message: "winnerId is required" });
+        }
 
-//         const roomIdData = await RoomId.findOne({ roomUuid: uuid });
+        const existingWinnersData = await WinnerPlayers.findById(winnerUuid);
+        if (!existingWinnersData) {
+            return res.status(404).json({ message: "winnerId not found" });
+        }
 
-//         if (!roomIdData) {
-//             return res.status(404).json({ message: "Room data not found" });
-//         }
+        // Update the team data
+        existingWinnersData.teamData = teamDataArray;
 
-//         const winningPlayers = await WinnerPlayer.find({ uuid: roomIdData.roomUuid });
+        // Save the updated data
+        const updatedWinnersData = await existingWinnersData.save();
 
-//         if (!winningPlayers || winningPlayers.length === 0) {
-//             return res.status(404).json({ message: "No winning players found for this room" });
-//         }
-
-//         const winningPlayerData = winningPlayers.map((winnerPlayer) => ({
-//             winnerUuid: winnerPlayer.winnerUuid,
-//             winnerName: winnerPlayer.winnerName,
-//             winningPosition: winnerPlayer.winningPosition,
-//             createdBy: winnerPlayer.createdBy,
-//             room: {
-//                 gameName: roomIdData.gameName,
-//                 gameType: roomIdData.gameType,
-//                 mapType: roomIdData.mapType,
-//             },
-//         }));
-
-//         return res.status(200).json(winningPlayerData);
-//     } catch (error) {
-//         console.error(error);
-//         return res.status(500).json({
-//             error: "Failed to fetch winning players by room UUID",
-//             success: false,
-//         });
-//     }
-// };
+        return res.status(200).json({ message: "Winner data updated successfully", updatedWinnersData });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            error: "Failed to update winners",
+            success: false,
+        });
+    }
+};

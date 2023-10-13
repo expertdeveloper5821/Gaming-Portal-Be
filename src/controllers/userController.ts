@@ -176,6 +176,11 @@ export const userLogin = async (req: Request, res: Response) => {
         message: `Invalid Email address or Password`,
       });
     }
+    if (!user.password) {
+      return res.status(400).json({
+        message: `Password not found for this user`,
+      });
+    }
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
@@ -542,13 +547,13 @@ export const sendInviteMail = async (req: Request, res: Response) => {
       sentInvitations.push(email);
     }
 
-    
+
     let message = '';
-    
+
     if (sentInvitations.length > 0) {
       message += `Invitations sent to: ${sentInvitations.join(', ')}. `;
     }
-    
+
     const socketIo = req.app.locals.io;
     socketIo.emit('invitation-sent', { teamId: userTeam ? userTeam._id : team._id });
 
@@ -567,14 +572,14 @@ export const sendInviteMail = async (req: Request, res: Response) => {
 // accept invitaion to join the team
 export const acceptInvitation = async (req: Request, res: Response) => {
   try {
-     // Define req.user before accessing its properties
-     const user = req.user as userType; // Type assertion to userType
+    // Define req.user before accessing its properties
+    const user = req.user as userType; // Type assertion to userType
 
-     if (!user) {
-       return res.status(401).json({ message: 'You are not authenticated!', success: false });
-     }
- 
-     const userId = user.userId;
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
+    }
+
+    const userId = user.userId;
 
     if (!userId) {
       return res.status(401).json({ message: 'Invalid authentication token', success: false });
