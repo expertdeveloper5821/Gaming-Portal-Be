@@ -41,11 +41,17 @@ export const userSignup = async (req: Request, res: Response) => {
       });
     }
 
+    if (password.length < 6) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters long",
+      });
+    }
+    
     // Password validation check
     if (!passwordRegex.test(password)) {
       return res.status(400).json({
         message:
-          "Password must contain at least one letter, one digit, one special character (!@#$%^&*()_+), and be at least 6 characters long",
+          "Password must contain at least one Upper letter, one digit, one special character (!@#$%^&*()_+)",
       });
     }
 

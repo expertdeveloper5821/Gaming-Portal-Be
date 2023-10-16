@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 import moment from 'moment-timezone';
 import { userType } from '../middlewares/authMiddleware';
 import RoomId from "../models/serverRoomIDModels";
+import { passwordRegex, emailValidate } from "../utils/helper";
 
 // for admin signup
 export const adminSignup = async (req: Request, res: Response) => {
@@ -20,6 +21,26 @@ export const adminSignup = async (req: Request, res: Response) => {
     if (existingUser) {
       return res.status(400).json({
         message: `user with email ${email} already exists`,
+      });
+    }
+    // Email validation check using regex pattern
+    if (!emailValidate(email)) {
+      return res.status(400).json({
+        message: "Invalid email format",
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters long",
+      });
+    }
+    
+    // Password validation check
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message:
+          "Password must contain at least one Upper letter, one digit, one special character (!@#$%^&*()_+)",
       });
     }
     // hashing the password
@@ -62,6 +83,26 @@ export const spectator = async (req: Request, res: Response) => {
     if (existingUser) {
       return res.status(400).json({
         message: `user with email ${email} already exists`,
+      });
+    }
+    // Email validation check using regex pattern
+    if (!emailValidate(email)) {
+      return res.status(400).json({
+        message: "Invalid email format",
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters long",
+      });
+    }
+    
+    // Password validation check
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message:
+          "Password must contain at least one Upper letter, one digit, one special character (!@#$%^&*()_+)",
       });
     }
     // hashing the password
@@ -247,16 +288,16 @@ export const video = async (req: Request, res: Response) => {
     const checkRoomUuid = await RoomId.findOne({ roomUuid: roomId })
     if (checkRoomUuid) {
       // Parse date and time into Date objects
-    const parsedDateAndTime = moment(dateAndTime).tz('Asia/Kolkata');
+      const parsedDateAndTime = moment(dateAndTime).tz('Asia/Kolkata');
 
-    if (!parsedDateAndTime.isValid()) {
-      return res.status(400).json({ message: 'Invalid date or time format' });
-    }
-    // Create a new video document and save it to the database
-    const newVideo = new Video({ roomId: checkRoomUuid.roomUuid, title, videoLink, dateAndTime, createdBy: userId });
-    await newVideo.save();
-    return res.status(200).json({ message: "Video link saved successfully",  newVideo });
-    }else{
+      if (!parsedDateAndTime.isValid()) {
+        return res.status(400).json({ message: 'Invalid date or time format' });
+      }
+      // Create a new video document and save it to the database
+      const newVideo = new Video({ roomId: checkRoomUuid.roomUuid, title, videoLink, dateAndTime, createdBy: userId });
+      await newVideo.save();
+      return res.status(200).json({ message: "Video link saved successfully", newVideo });
+    } else {
       return res.status(202).json({ message: 'Room not found' });
     }
   } catch (error) {
@@ -351,7 +392,7 @@ export const updateVideoById = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Invalid ID" });
     }
     const updatedVideoData = req.body;
-    
+
     const updatedVideo = await Video.findByIdAndUpdate(id, updatedVideoData, { new: true });
     if (!updatedVideo) {
       return res.status(404).json({ message: 'Video not found' });
