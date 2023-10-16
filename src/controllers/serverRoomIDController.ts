@@ -8,6 +8,7 @@ import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
 import moment from 'moment-timezone';
 import { Transaction } from "../models/qrCodeModel";
 import { userType } from '../middlewares/authMiddleware';
+import { Team } from "../models/teamModel";
 
 
 // Configuration
@@ -299,3 +300,25 @@ export const getUserRooms = async (req: Request, res: Response) => {
     });
   }
 };
+
+
+// get all team in a room
+export const getAllTeamDetailsInARoom =async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const room = await RoomId.findById({ _id: id }); 
+
+    if (!room) {
+      return res.status(404).json({ message: 'No teams found for the given roomId.' });
+    }
+
+    const teams = room.registerTeams.map((team: { teamName: any; }) => ({
+      teamName: team.teamName
+    }));
+
+    return res.status(200).json({ teams: teams });
+  } catch (error) {
+    console.error('Error: ', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
