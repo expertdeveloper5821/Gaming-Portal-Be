@@ -53,7 +53,7 @@ route.post("/reset-password", resetPassword);
 route.get("/getuser", getUserDetails);
 
 // get Alluser
-route.get("/getalluser", verifyToken(["admin", 'spectator']), getAllUsers);
+route.get("/getalluser", verifyToken(["admin", 'spectator','user']), getAllUsers);
 
 // update user 
 route.put("/updateuser", upload.single('profilePic'), verifyToken(["admin", 'user']), userUpdate);

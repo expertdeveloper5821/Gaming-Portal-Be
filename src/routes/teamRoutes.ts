@@ -16,7 +16,7 @@ route.post("/addteam", verifyToken(["user"]), addTeammatesIntoMatch);
 route.get("/getallteam", verifyToken(['admin', 'spectator']), getAllTeams);
 
 // get team by their Id
-route.get("/getteambyid/:id", verifyToken(["spectator",'admin']), getTeamById);
+route.get("/getteambyid/:id", verifyToken(["spectator",'admin','user']), getTeamById);
 
 // update team by their Id
 route.put("/updateteam/:id", verifyToken(["user"]), updateTeamById);

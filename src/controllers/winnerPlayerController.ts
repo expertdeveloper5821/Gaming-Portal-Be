@@ -139,6 +139,18 @@ export const getWinnersByRoomUuid = async (req: Request, res: Response) => {
                 if (!leaderData) {
                     throw new Error("Leader data not found");
                 }
+                let arr = winnerPlayer.teamData.filter(i => i.teamName == team.teamName)
+
+                let prizeTitle = '';
+                if ((arr[0]?.highestKill || 0) > 0) {
+                    prizeTitle = 'Highest Kill'
+                } else if ((arr[0]?.chickenDinner || 0) > 0) {
+                    prizeTitle = 'Chicken Dinner'
+                } else if ((arr[0]?.firstWinner || 0) > 0) {
+                    prizeTitle = 'First Winner'
+                } else if ((arr[0]?.secondWinner || 0) > 0) {
+                    prizeTitle = 'Second Winner'
+                }
 
                 const teamMembersData = await Promise.all(
                     team.teamMateIds.map(async (memberId: any) => {
@@ -154,9 +166,9 @@ export const getWinnersByRoomUuid = async (req: Request, res: Response) => {
                         };
                     })
                 );
-
                 return {
                     teamName: team.teamName,
+                    prizeTitle: prizeTitle,
                     leader: {
                         fullName: leaderData.fullName,
                         profilePic: leaderData.profilePic,
