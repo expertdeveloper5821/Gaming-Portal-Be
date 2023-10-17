@@ -1,5 +1,5 @@
 import express from "express";
-import { createRoom, getAllRooms, getRoomById, updateRoomById, deleteRoomById, getUserRooms} from "../controllers/serverRoomIDController";
+import { createRoom, getAllRooms, getRoomById, updateRoomById, deleteRoomById, getUserRooms, getAllTeamDetailsInARoom} from "../controllers/serverRoomIDController";
 import { verifyToken } from "../middlewares/authMiddleware";
 import multer from 'multer';
 import bodyParser from "body-parser";
@@ -41,5 +41,8 @@ router.delete("/rooms/:id", verifyToken(['spectator','admin']),deleteRoomById);
 
 // Fetch rooms created by a specific user
 router.get("/user-rooms", verifyToken(['admin','spectator']), getUserRooms);
+
+// get room
+router.get("/getTeam/:id", verifyToken(['admin','spectator']), getAllTeamDetailsInARoom);
 
 export default router;

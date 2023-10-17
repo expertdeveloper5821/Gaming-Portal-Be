@@ -26,24 +26,36 @@ export const postWinningPlayers = async (req: Request, res: Response) => {
             return res.status(401).json({ message: "Room data not found" });
         }
 
-        // Create a new WinnerPlayers object
-        const winnerPlayer = new WinnerPlayers({
-            winnerUuid: uuidv4(),
-            teamData: [], // Initialize an empty array
-            createdBy: userId,
-            roomId: roomIdData.roomUuid,
-        });
+        // Find the existing WinnerPlayers object for the specified roomId
+        let winnerPlayer = await WinnerPlayers.findOne({ roomId: roomIdData.roomUuid });
 
-        // Iterate through the array and push each team's data into the teamData array
-        for (const teamData of teamDataArray) {
-            const { teamName, highestKill, chickenDinner, firstWinner, secondWinner } = teamData;
-            winnerPlayer.teamData.push({
-                teamName,
-                highestKill,
-                chickenDinner,
-                firstWinner,
-                secondWinner
+        // If no WinnerPlayers object exists, create a new one
+        if (!winnerPlayer) {
+            winnerPlayer = new WinnerPlayers({
+                winnerUuid: uuidv4(),
+                teamData: [],
+                createdBy: userId,
+                roomId: roomIdData.roomUuid,
             });
+        }
+
+        const registeredTeams = roomIdData.registerTeams.map((team: any) => team.teamName);
+
+        // Iterate through all registered teams and check if they exist in the provided team data
+        for (const registeredTeam of registeredTeams) {
+            const teamData = teamDataArray.find((team: any) => team.teamName === registeredTeam);
+
+            if (teamData) {
+                winnerPlayer.teamData.push(teamData);
+            } else {
+                winnerPlayer.teamData.push({
+                    teamName: registeredTeam,
+                    highestKill: 0,
+                    chickenDinner: 0,
+                    firstWinner: 0,
+                    secondWinner: 0,
+                });
+            }
         }
 
         // Save the winnerPlayer object with all team data
@@ -64,6 +76,7 @@ export const postWinningPlayers = async (req: Request, res: Response) => {
 };
 
 
+
 // Get all winning players in lead board
 export const getLeaderboard = async (req: Request, res: Response) => {
     try {
@@ -76,28 +89,35 @@ export const getLeaderboard = async (req: Request, res: Response) => {
         // Fetch all WinnerPlayers documents
         const allWinnerPlayers = await WinnerPlayers.find();
 
-        // Create an empty object to store team-wise total points
-        const teamTotalPoints: Record<string, number> = {};
+        // Create an empty object to store team-wise total points, wins, and losses
+        const teamStats: Record<string, { points: number; wins: number; losses: number }> = {};
 
-        // Calculate total points for each team and find mapType
+        // Calculate total points, wins, and losses for each team
         allWinnerPlayers.forEach((winnerPlayer) => {
             winnerPlayer.teamData.forEach((teamData: any) => {
                 const { teamName, highestKill, chickenDinner, firstWinner, secondWinner } = teamData;
                 const totalPoints = highestKill + chickenDinner + firstWinner + secondWinner;
-                if (!teamTotalPoints[teamName]) {
-                    teamTotalPoints[teamName] = 0;
+                if (!teamStats[teamName]) {
+                    teamStats[teamName] = { points: 0, wins: 0, losses: 0 };
                 }
-                teamTotalPoints[teamName] += totalPoints;
+                if (totalPoints > 0) {
+                    teamStats[teamName].wins += 1;
+                } else {
+                    teamStats[teamName].losses += 1;
+                }
+                teamStats[teamName].points += totalPoints;
             });
         });
 
-        // Convert teamTotalPoints to an array for sorting
-        const sortedTeams = Object.entries(teamTotalPoints).sort((a, b) => b[1] - a[1]);
+        // Convert teamStats to an array for sorting
+        const sortedTeams = Object.entries(teamStats).sort((a, b) => b[1].points - a[1].points);
 
-        // Create an array to hold the leaderboard data
-        const leaderboard = sortedTeams.map(([teamName, totalPoints]) => ({
+        // Create an array to hold the leaderboard data with total wins and losses
+        const leaderboard = sortedTeams.map(([teamName, stats]) => ({
             teamName,
-            totalPoints,
+            totalPoints: stats.points,
+            totalWins: stats.wins,
+            totalLosses: stats.losses,
         }));
 
         return res.status(200).json({ leaderboard });
@@ -109,6 +129,7 @@ export const getLeaderboard = async (req: Request, res: Response) => {
         });
     }
 };
+
 
 
 // Get all winning players by room UUID
