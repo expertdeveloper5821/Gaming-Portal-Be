@@ -623,7 +623,7 @@ export const acceptInvitation = async (req: Request, res: Response) => {
 
     // Check if the user is already part of the team
     if (team.teamMates.includes(userId)) {
-      return res.status(400).json({ message: 'User is already part of the team', success: false });
+      return res.status(400).json({ message: 'Invitation rejected or User is already part of the team', success: false });
     }
 
     // Add the user to the team
