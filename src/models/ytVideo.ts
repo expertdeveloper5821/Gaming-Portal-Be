@@ -7,6 +7,7 @@ interface IVideo extends Document {
   createdBy: string
   videoLink: string;
   dateAndTime: Date;
+  mapImg: string;
 }
 
 const videoSchema: Schema<IVideo> = new mongoose.Schema({
@@ -30,7 +31,13 @@ const videoSchema: Schema<IVideo> = new mongoose.Schema({
     type: Date,
     required: false,
   },
-});
+  mapImg: {
+    type: String,
+    required: false,
+  },
+},
+  { timestamps: true }
+);
 
 const Video: Model<IVideo> = mongoose.model('Video', videoSchema);
 

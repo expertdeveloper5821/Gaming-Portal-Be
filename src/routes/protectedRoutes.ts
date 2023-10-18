@@ -15,8 +15,23 @@ import {
   deleteVideoById,
 } from "../controllers/adminController";
 import { verifyToken } from "../middlewares/authMiddleware";
+import multer from 'multer';
+import bodyParser from "body-parser";
 
 const route = express.Router();
+
+
+route.use(bodyParser.json());
+route.use(bodyParser.urlencoded({ extended: true }));
+
+const storage = multer.diskStorage({
+  filename: (req, file, cb) => {
+    const name = Date.now() + '_' + file.originalname;
+    cb(null, name);
+  }
+});
+
+const upload = multer({ storage: storage });
 
 // create Role
 route.post("/role", role);
@@ -40,19 +55,18 @@ route.put("/updaterole/:userUuid", verifyToken(["admin"]), updateRole);
 route.delete("/deleterole/:userUuid", verifyToken(["admin"]), deleteRole);
 
 // to post the video link and information
-route.post("/videolink/:roomId", verifyToken(["admin",'spectator']), video);
+route.post("/videolink/:roomId", upload.single('mapImg'), verifyToken(["admin", 'spectator']), video);
 
 // to get all video link and information
-route.get("/allvideolink", verifyToken(["admin",'spectator','user']), getAllVideoLink);
+route.get("/allvideolink", verifyToken(["admin", 'spectator', 'user']), getAllVideoLink);
 
 // get video by ID
-route.get("/getvideo/:id", verifyToken(["admin",'spectator','user']), getVideoById);
+route.get("/getvideo/:id", verifyToken(["admin", 'spectator', 'user']), getVideoById);
 
 // updatevideo by id
-route.put("/updatevideo/:id", verifyToken(["admin",'spectator']), updateVideoById);
+route.put("/updatevideo/:id", upload.single('mapImg'), verifyToken(["admin", 'spectator']), updateVideoById);
 
 //  delete video by id
-route.delete("/deletevideo/:id", verifyToken(["admin",'spectator']), deleteVideoById);
+route.delete("/deletevideo/:id", verifyToken(["admin", 'spectator']), deleteVideoById);
 
 export default route;
-    

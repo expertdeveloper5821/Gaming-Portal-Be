@@ -236,6 +236,16 @@ export const updateRoomById = async (req: Request, res: Response) => {
   try {
     const roomId = req.params.id;
     const updatedRoomData = req.body;
+    const file = req.file;
+
+    let secure_url: string | null = null;
+    if (file) {
+      const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(
+        file.path
+      );
+      secure_url = uploadResponse.secure_url;
+    }
+    updatedRoomData.mapImg = secure_url;
 
     if (!roomId) {
       return res.status(400).json({ message: "Room ID is required" });
@@ -303,10 +313,10 @@ export const getUserRooms = async (req: Request, res: Response) => {
 
 
 // get all team in a room
-export const getAllTeamDetailsInARoom =async (req: Request, res: Response) => {
+export const getAllTeamDetailsInARoom = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const room = await RoomId.findById({ _id: id }); 
+    const room = await RoomId.findById({ _id: id });
 
     if (!room) {
       return res.status(404).json({ message: 'No teams found for the given roomId.' });
