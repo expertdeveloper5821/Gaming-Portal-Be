@@ -12,6 +12,16 @@ import moment from 'moment-timezone';
 import { userType } from '../middlewares/authMiddleware';
 import RoomId from "../models/serverRoomIDModels";
 import { passwordRegex, emailValidate } from "../utils/helper";
+import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
+
+
+// Configuration
+cloudinary.config({
+  cloud_name: environmentConfig.CLOUD_NAME,
+  api_key: environmentConfig.API_KEY,
+  api_secret: environmentConfig.API_SECRET
+});
+
 
 // for admin signup
 export const adminSignup = async (req: Request, res: Response) => {
@@ -35,7 +45,7 @@ export const adminSignup = async (req: Request, res: Response) => {
         message: "Password must be at least 6 characters long",
       });
     }
-    
+
     // Password validation check
     if (!passwordRegex.test(password)) {
       return res.status(400).json({
@@ -97,7 +107,7 @@ export const spectator = async (req: Request, res: Response) => {
         message: "Password must be at least 6 characters long",
       });
     }
-    
+
     // Password validation check
     if (!passwordRegex.test(password)) {
       return res.status(400).json({
@@ -268,6 +278,7 @@ export const video = async (req: Request, res: Response) => {
     const userId = user.userId;
 
     const { title, videoLink, dateAndTime } = req.body;
+    const file = req.file;
     const { roomId } = req.params
     // Check for required fields
     const requiredFields = ['title', 'videoLink', 'dateAndTime'];
@@ -285,8 +296,18 @@ export const video = async (req: Request, res: Response) => {
       });
     }
 
+    let secure_url: string | null = null;
+    if (file) {
+      const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(
+        file.path
+      );
+      secure_url = uploadResponse.secure_url;
+    }
+
     const checkRoomUuid = await RoomId.findOne({ roomUuid: roomId })
-    if (checkRoomUuid) {
+    if (!checkRoomUuid) {
+      return res.status(202).json({ message: 'Room not found' });
+    } else {
       // Parse date and time into Date objects
       const parsedDateAndTime = moment(dateAndTime).tz('Asia/Kolkata');
 
@@ -294,11 +315,9 @@ export const video = async (req: Request, res: Response) => {
         return res.status(400).json({ message: 'Invalid date or time format' });
       }
       // Create a new video document and save it to the database
-      const newVideo = new Video({ roomId: checkRoomUuid.roomUuid, title, videoLink, dateAndTime, createdBy: userId });
+      const newVideo = new Video({ roomId: checkRoomUuid.roomUuid, title, videoLink, dateAndTime, mapImg: secure_url, createdBy: userId });
       await newVideo.save();
       return res.status(200).json({ message: "Video link saved successfully", newVideo });
-    } else {
-      return res.status(202).json({ message: 'Room not found' });
     }
   } catch (error) {
     console.error(error);
@@ -309,8 +328,8 @@ export const video = async (req: Request, res: Response) => {
 // get all video links
 export const getAllVideoLink = async (req: Request, res: Response) => {
   try {
-    // Use the find method without any conditions to retrieve all videos from the database
-    const allVideos = await Video.find();
+    // Use the find method without any conditions to retrieve all videos from the database 
+    const allVideos = await Video.find().sort({ createdAt: -1 }); // Sort by createdAt in descending order
 
     if (allVideos.length === 0) {
       return res.status(404).json({
@@ -334,6 +353,7 @@ export const getAllVideoLink = async (req: Request, res: Response) => {
           title: video.title,
           videoLink: video.videoLink,
           dateAndTime: video.dateAndTime,
+          mapImg: video.mapImg
         });
       }
     }
@@ -375,6 +395,7 @@ export const getVideoById = async (req: Request, res: Response) => {
       title: video.title,
       videoLink: video.videoLink,
       dateAndTime: video.dateAndTime,
+      mapImg: video
     };
 
     res.status(200).json({ video: response });
@@ -388,16 +409,33 @@ export const getVideoById = async (req: Request, res: Response) => {
 export const updateVideoById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    if (!validId.test(id)) {
-      return res.status(404).json({ error: "Invalid ID" });
-    }
     const updatedVideoData = req.body;
+    const file = req.file;
 
-    const updatedVideo = await Video.findByIdAndUpdate(id, updatedVideoData, { new: true });
-    if (!updatedVideo) {
+    let secure_url: string | null = null;
+
+    if (file) {
+      const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(
+        file.path
+      );
+      secure_url = uploadResponse.secure_url;
+    }
+    updatedVideoData.mapImg = secure_url;
+
+    if (!id) {
+      return res.status(400).json({ message: "Room ID is required" });
+    }
+    const existingVideo = await Video.findById(id);
+
+    if (!existingVideo) {
       return res.status(404).json({ message: 'Video not found' });
     }
-    res.status(200).json({ message: 'Video updated successfully', video: updatedVideo });
+
+    // updating room data
+    await Video.findByIdAndUpdate(id, updatedVideoData, { new: true });
+
+    res.status(200).json({ message: 'Video updated successfully', video: updatedVideoData });
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
