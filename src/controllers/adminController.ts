@@ -305,7 +305,9 @@ export const video = async (req: Request, res: Response) => {
     }
 
     const checkRoomUuid = await RoomId.findOne({ roomUuid: roomId })
-    if (checkRoomUuid) {
+    if (!checkRoomUuid) {
+      return res.status(202).json({ message: 'Room not found' });
+    } else {
       // Parse date and time into Date objects
       const parsedDateAndTime = moment(dateAndTime).tz('Asia/Kolkata');
 
@@ -316,8 +318,6 @@ export const video = async (req: Request, res: Response) => {
       const newVideo = new Video({ roomId: checkRoomUuid.roomUuid, title, videoLink, dateAndTime, mapImg: secure_url, createdBy: userId });
       await newVideo.save();
       return res.status(200).json({ message: "Video link saved successfully", newVideo });
-    } else {
-      return res.status(202).json({ message: 'Room not found' });
     }
   } catch (error) {
     console.error(error);
@@ -413,6 +413,7 @@ export const updateVideoById = async (req: Request, res: Response) => {
     const file = req.file;
 
     let secure_url: string | null = null;
+
     if (file) {
       const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(
         file.path

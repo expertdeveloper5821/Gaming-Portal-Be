@@ -16,13 +16,10 @@ import {
 } from "../controllers/adminController";
 import { verifyToken } from "../middlewares/authMiddleware";
 import multer from 'multer';
-import bodyParser from "body-parser";
+
 
 const route = express.Router();
 
-
-route.use(bodyParser.json());
-route.use(bodyParser.urlencoded({ extended: true }));
 
 const storage = multer.diskStorage({
   filename: (req, file, cb) => {
