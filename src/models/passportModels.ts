@@ -12,6 +12,7 @@ let userRegisterSchema = new mongoose.Schema({
   phoneNumber: { type: String, required: false },
   profilePic: { type: String, required: false },
   bgmiId: { type: String, required: false },
+  isOnline: { type: Boolean, default: false },
 });
 
 export const user = mongoose.model("user", userRegisterSchema);

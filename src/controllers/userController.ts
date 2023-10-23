@@ -195,6 +195,9 @@ export const userLogin = async (req: Request, res: Response) => {
         .json({ message: "Invalid Email address or Password" });
     }
 
+    // Update the user's online status to true
+    await User.findOneAndUpdate({ _id: user._id }, { isOnline: true });
+    
     // Retrieve user's team where the user is the lead player
     const team = await Team.findOne({ leadPlayerId: user._id });
 
