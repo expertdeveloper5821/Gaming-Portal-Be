@@ -46,7 +46,7 @@ export const userSignup = async (req: Request, res: Response) => {
         message: "Password must be at least 6 characters long",
       });
     }
-    
+
     // Password validation check
     if (!passwordRegex.test(password)) {
       return res.status(400).json({
@@ -194,27 +194,38 @@ export const userLogin = async (req: Request, res: Response) => {
         .status(401)
         .json({ message: "Invalid Email address or Password" });
     }
+
+    // Retrieve user's team where the user is the lead player
+    const team = await Team.findOne({ leadPlayerId: user._id });
+
+    // Extract team name if the team exists
+    const teamName = team ? team.teamName : null;
+
     const token = jwt.sign(
-      { userId: user._id, role: user.role },
+      {
+        userId: user._id,
+        role: user.role,
+        userUuid: user.userUuid,
+        fullName: user.fullName,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        upiId: user.upiId,
+        userName: user.userName,
+        profilePic: user.profilePic,
+        teamName: teamName
+      },
       environmentConfig.JWT_SECRET,
       {
         expiresIn: "1h",
       }
     );
     let userData = {
-      userUuid: user.userUuid,
-      fullName: user.fullName,
-      email: user.email,
-      phoneNumber: user.phoneNumber,
-      upiId: user.upiId,
-      userName: user.userName,
-      profilePic: user.profilePic,
       token: token,
     };
 
     return res.status(200).json({
-      userData,
       message: "user Login successfully",
+      userData,
     });
   } catch (error) {
     return res.status(500).json({ error: "Internal server error" });
