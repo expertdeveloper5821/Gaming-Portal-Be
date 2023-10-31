@@ -57,46 +57,46 @@ router.get("/verify", async (req: Request, res: Response) => {
 });
 
 
-// function to handle token expiration
-const handleTokenExpiration = (userId: any) => {
-  setTimeout(async () => {
-    try {
-      // Set isOnline status to false after token expiration
-      await User.findOneAndUpdate({ _id: userId }, { isOnline: false });
-    } catch (error) {
-      console.error(error);
-    }
-  }, 60000); // 1 hour in milliseconds
-};
+// // function to handle token expiration
+// const handleTokenExpiration = (userId: any) => {
+//   setTimeout(async () => {
+//     try {
+//       // Set isOnline status to false after token expiration
+//       await User.findOneAndUpdate({ _id: userId }, { isOnline: false });
+//     } catch (error) {
+//       console.error(error);
+//     }
+//   }, 60000); // 1 minute in milliseconds
+// };
 
 
-// Logout api
-router.get("/logout", verifyToken(["admin", 'spectator','user']), async (req: Request, res: Response) => {
-  try {
-    // get the logged in user userId
-    const user = req.user as userType;
+// // Logout api
+// router.get("/logout", verifyToken(["admin", 'spectator','user']), async (req: Request, res: Response) => {
+//   try {
+//     // get the logged in user userId
+//     const user = req.user as userType;
     
-    if (!req.user) {
-      throw new Error('User not found in request.');
-    }
+//     if (!req.user) {
+//       throw new Error('User not found in request.');
+//     }
 
-    const userId = user.userId;
+//     const userId = user.userId;
 
-    // updating the field to set online false when he logged out
-    await User.findOneAndUpdate({ _id: userId }, { isOnline: false });
+//     // updating the field to set online false when he logged out
+//     await User.findOneAndUpdate({ _id: userId }, { isOnline: false });
 
-    // clear the cookie session
-    res.clearCookie("session");
+//     // clear the cookie session
+//     res.clearCookie("session");
 
-    // Call the middleware function to handle token expiration
-    handleTokenExpiration(userId);
+//     // Call the middleware function to handle token expiration
+//     handleTokenExpiration(userId);
 
-    // sending back user to login page
-    res.redirect(clientUrl!);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+//     // sending back user to login page
+//     res.redirect(clientUrl!);
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: 'Internal server error' });
+//   }
+// });
 
 export default router;

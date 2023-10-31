@@ -6,6 +6,7 @@ import RoomId from "../models/serverRoomIDModels";
 import { Transaction } from "../models/qrCodeModel";
 import { userType } from '../middlewares/authMiddleware';
 import { Types } from "mongoose";
+import { io } from "../server";
 
 
 // get Team by ID
@@ -180,6 +181,8 @@ export const getUserFriendsList = async (req: Request, res: Response) => {
 
     const userId = user.userId;
     const { search, sortingKey } = req.query;
+
+    io.emit('get-user-status', { userId });
 
     // Find the user's own team where the user is a leader
     const ownTeam = await Team.findOne({ leadPlayerId: userId });
