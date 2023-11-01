@@ -10,6 +10,7 @@ import { Role } from "../models/roleModel";
 import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
 import { Team } from "../models/teamModel";
 import { userType } from '../middlewares/authMiddleware';
+import { io } from "../server";
 
 
 // Configuration
@@ -194,6 +195,12 @@ export const userLogin = async (req: Request, res: Response) => {
         .status(401)
         .json({ message: "Invalid Email address or Password" });
     }
+
+    // Update the user's online status to true
+    await User.findOneAndUpdate({ _id: user._id }, { isOnline: true });
+
+    // Emit a user status update event
+    io.emit('user-status-update', { userId: user._id, isOnline: true });
 
     // Retrieve user's team where the user is the lead player
     const team = await Team.findOne({ leadPlayerId: user._id });

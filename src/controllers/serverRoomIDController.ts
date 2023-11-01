@@ -111,7 +111,7 @@ export const createRoom = async (req: Request, res: Response) => {
 // Get all rooms
 export const getAllRooms = async (req: Request, res: Response) => {
   try {
-    const { search } = req.query;
+    const { search, sortingKey } = req.query;
     const token = req.header("Authorization")?.replace("Bearer ", "");
 
     // Define a variable to store the user's registered room IDs
@@ -161,8 +161,13 @@ export const getAllRooms = async (req: Request, res: Response) => {
     // Filter the rooms to exclude those the user has already registered for
     const filteredRooms = rooms.filter((room) => !userRegisteredRooms.includes(room.roomUuid));
 
-    // Sort the rooms by createdAt in descending order
-    filteredRooms.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    // Sort the rooms by createdAt based on the 'latestFirst' and 'previousFirst' keys
+    let sortedRooms = filteredRooms;
+    if (sortingKey === 'latestFirst') {
+      sortedRooms = filteredRooms.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    } else if (sortingKey === 'previousFirst') {
+      sortedRooms = filteredRooms.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    }
 
     if (filteredRooms.length === 0) {
       return res.status(202).json({
@@ -297,9 +302,19 @@ export const getUserRooms = async (req: Request, res: Response) => {
     }
 
     const userId = user.userId;
+    const { sortingKey } = req.query;
 
     // Fetch rooms associated with the specific user
     const userRooms = await RoomId.find({ createdBy: userId });
+
+    // Sort the rooms by createdAt based on the 'latestFirst' and 'previousFirst' keys
+    let sortedRooms = userRooms;
+    if (sortingKey === 'latestFirst') {
+      sortedRooms = userRooms.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    } else if (sortingKey === 'previousFirst') {
+      sortedRooms = userRooms.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    }
+
 
     return res.status(200).json(userRooms);
   } catch (error) {

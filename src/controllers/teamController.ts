@@ -6,6 +6,7 @@ import RoomId from "../models/serverRoomIDModels";
 import { Transaction } from "../models/qrCodeModel";
 import { userType } from '../middlewares/authMiddleware';
 import { Types } from "mongoose";
+import { io } from "../server";
 
 
 // get Team by ID
@@ -179,9 +180,11 @@ export const getUserFriendsList = async (req: Request, res: Response) => {
     }
 
     const userId = user.userId;
-    const { search } = req.query;
+    const { search, sortingKey } = req.query;
 
-    // Find the user's own team where user is a leader
+    io.emit('get-user-status', { userId });
+
+    // Find the user's own team where the user is a leader
     const ownTeam = await Team.findOne({ leadPlayerId: userId });
 
     // Initialize the response data
@@ -191,36 +194,99 @@ export const getUserFriendsList = async (req: Request, res: Response) => {
       // Fetch leadPlayerId details
       const leadPlayer = await User.findById(ownTeam.leadPlayerId);
 
+      // Fetch details for each teammate in the user's own team
+      const teammatesDetails = await Promise.all(
+        ownTeam.teamMates.map(async (teammateId) => {
+          const teammate = await User.findById(teammateId);
+          if (teammate) {
+            return {
+              _id: teammate._id,
+              fullName: teammate.fullName,
+              userName: teammate.userName,
+              email: teammate.email,
+              profilePic: teammate.profilePic,
+              isOnline: teammate.isOnline
+            };
+          }
+          return null;
+        })
+      );
+
+      // Sorting teammates based on the isOnline property
+      const sortAlphabetically = (a: any, b: any, order: 'asc' | 'desc') => {
+        const nameA = a.fullName.toUpperCase();
+        const nameB = b.fullName.toUpperCase();
+        if (order === 'asc') {
+          if (nameA < nameB) {
+            return -1;
+          }
+          if (nameA > nameB) {
+            return 1;
+          }
+        } else {
+          if (nameA > nameB) {
+            return -1;
+          }
+          if (nameA < nameB) {
+            return 1;
+          }
+        }
+        return 0;
+      };
+
       if (search) {
         // Fetch details for each teammate in the user's own team
-        const teammatesDetails = await Promise.all(
-          ownTeam.teamMates.map(async (teammateId) => {
-            const teammate = await User.findById(teammateId);
-            if (teammate) {
-              return {
-                _id: teammate._id,
-                fullName: teammate.fullName,
-                userName: teammate.userName,
-                email: teammate.email,
-                profilePic: teammate.profilePic,
-              };
-            }
-            return null;
-          })
-        );
-
-        // Filter teammates based on the search query
         const filteredTeammates = teammatesDetails.filter((teammate) => {
           return (
-            (teammate?.fullName && teammate.fullName.toLowerCase().includes(search.toString().toLowerCase())) ||
-            (teammate?.userName && teammate.userName.toLowerCase().includes(search.toString().toLowerCase())) ||
-            (teammate?.email && teammate.email.toLowerCase().includes(search.toString().toLowerCase()))
+            (teammate?.fullName &&
+              teammate.fullName.toLowerCase().includes(search.toString().toLowerCase())) ||
+            (teammate?.userName &&
+              teammate.userName.toLowerCase().includes(search.toString().toLowerCase())) ||
+            (teammate?.email &&
+              teammate.email.toLowerCase().includes(search.toString().toLowerCase()))
           );
         });
+        // Sort the filtered teammates based on the sorting key
+        if (sortingKey === 'onlineFirst') {
+          filteredTeammates.sort((a, b) => {
+            if (a?.isOnline && !b?.isOnline) return -1;
+            if (!a?.isOnline && b?.isOnline) return 1;
+            return 0;
+          });
+        } else if (sortingKey === 'offlineFirst') {
+          filteredTeammates.sort((a, b) => {
+            if (!a?.isOnline && b?.isOnline) return -1;
+            if (a?.isOnline && !b?.isOnline) return 1;
+            return 0;
+          });
+        } else if (sortingKey === 'AtoZ') {
+          filteredTeammates.sort((a, b) => sortAlphabetically(a, b, 'asc'));
+        } else if (sortingKey === 'ZtoA') {
+          filteredTeammates.sort((a, b) => sortAlphabetically(a, b, 'desc'));
+        }
 
-        // response for the searched teammates
+        // Response for the searched teammates
         responseData.teamMates = filteredTeammates;
       } else {
+        // Sort teammates based on the sorting key
+        if (sortingKey === 'onlineFirst') {
+          teammatesDetails.sort((a, b) => {
+            if (a?.isOnline && !b?.isOnline) return -1;
+            if (!a?.isOnline && b?.isOnline) return 1;
+            return 0;
+          });
+        } else if (sortingKey === 'offlineFirst') {
+          teammatesDetails.sort((a, b) => {
+            if (!a?.isOnline && b?.isOnline) return -1;
+            if (a?.isOnline && !b?.isOnline) return 1;
+            return 0;
+          });
+        } else if (sortingKey === 'AtoZ') {
+          teammatesDetails.sort((a, b) => sortAlphabetically(a, b, 'asc'));
+        } else if (sortingKey === 'ZtoA') {
+          teammatesDetails.sort((a, b) => sortAlphabetically(a, b, 'desc'));
+        }
+
         // No search query, include team details
         responseData.yourTeam = {
           teamName: ownTeam.teamName,
@@ -229,31 +295,17 @@ export const getUserFriendsList = async (req: Request, res: Response) => {
             userName: leadPlayer?.userName || '',
             email: leadPlayer?.email || '',
             profilePic: leadPlayer?.profilePic || '',
+            isOnline: leadPlayer?.isOnline || ''
           },
         };
-
-        // Fetch details for each teammate in the user's own team
-        const teammatesDetails = await Promise.all(
-          ownTeam.teamMates.map(async (teammateId) => {
-            const teammate = await User.findById(teammateId);
-            if (teammate) {
-              return {
-                _id: teammate._id,
-                fullName: teammate.fullName,
-                userName: teammate.userName,
-                email: teammate.email,
-                profilePic: teammate.profilePic,
-              };
-            }
-            return null;
-          })
-        );
 
         responseData.yourTeam.teamMates = teammatesDetails;
       }
     } else {
       // If the user doesn't have their own team, return an error
-      return res.status(403).json({ message: 'You do not have your own team.', success: false });
+      return res
+        .status(403)
+        .json({ message: 'You do not have your own team.', success: false });
     }
 
     return res.status(200).json({
@@ -264,6 +316,7 @@ export const getUserFriendsList = async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 
 // add teammates into match 
 export const addTeammatesIntoMatch = async (req: Request, res: Response) => {
