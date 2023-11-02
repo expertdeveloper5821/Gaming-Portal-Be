@@ -469,11 +469,13 @@ export const userUpdate = async (req: Request, res: Response) => {
       return res.status(500).json({ error: "Error updating user" });
     }
 
+    // extracting user info
+    const { fullName, userName, email, role, userUuid, upiId, phoneNumber, profilePic } = updatedUser
     // Create a new token with updated user data
-    const token = jwt.sign({ userId: updatedUser._id, updatedUser }, environmentConfig.JWT_SECRET, {
+    const token = jwt.sign({ userId: updatedUser._id, fullName, userName, email, role, userUuid, upiId, phoneNumber, profilePic }, environmentConfig.JWT_SECRET, {
       expiresIn: '1h',
     });
-    
+
     // Return the updated user data as the response
     return res.status(200).json({
       token: token,
