@@ -456,7 +456,7 @@ export const userUpdate = async (req: Request, res: Response) => {
 
     const updatedUser = await User.findByIdAndUpdate(userId, updatedUserData, {
       new: true,
-    });
+    }).populate("role", "role");
 
     if (!updatedUser) {
       return res.status(404).json({
@@ -472,7 +472,7 @@ export const userUpdate = async (req: Request, res: Response) => {
     // extracting user info
     const { fullName, userName, email, role, userUuid, upiId, phoneNumber, profilePic } = updatedUser
     // Create a new token with updated user data
-    const token = jwt.sign({ userId: updatedUser._id, fullName, userName, email, role, userUuid, upiId, phoneNumber, profilePic }, environmentConfig.JWT_SECRET, {
+    const token = jwt.sign({ userId: updatedUser._id, role:updatedUser.role, fullName, userName, email, userUuid, upiId, phoneNumber, profilePic }, environmentConfig.JWT_SECRET, {
       expiresIn: '1h',
     });
 
