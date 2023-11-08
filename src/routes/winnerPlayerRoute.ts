@@ -12,9 +12,9 @@ router.post("/players/:roomId", verifyToken(['spectator','admin']), postWinningP
 router.get("/players", verifyToken(['spectator', 'user','admin']), getLeaderboard);
 
 //  allwin players get 
-router.get("/get-players/:winnerUuid", verifyToken(['spectator', 'user','admin']), getWinnersByRoomUuid);
+router.get("/get-players/:roomId", verifyToken(['spectator', 'user','admin']), getWinnersByRoomUuid);
 
 // winner updating 
-router.put("/players/:_id", verifyToken(['spectator','admin']), updatePostwinner);
+router.put("/players/:roomId", verifyToken(['spectator','admin']), updatePostwinner);
 
 export default router;
