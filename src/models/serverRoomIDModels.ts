@@ -77,6 +77,7 @@ const roomIdSchema: Schema = new Schema(
         ],
       },
     ],
+    winnerUuid: {type:String},
     availableSlots: {
       type: Number,
       default: 25, // default 25 slots

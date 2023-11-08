@@ -61,10 +61,15 @@ export const postWinningPlayers = async (req: Request, res: Response) => {
         // Save the winnerPlayer object with all team data
         await winnerPlayer.save();
 
+        // Update the RoomId model with the winnerUuid
+        roomIdData.winnerUuid = winnerPlayer.winnerUuid;
+        await roomIdData.save();
+
         return res.status(200).json({
             message: "Winner info posted successfully",
             winnerUuid: winnerPlayer.winnerUuid,
             _id: winnerPlayer._id,
+            roomId: winnerPlayer.roomId
         });
     } catch (error) {
         console.error(error);
@@ -135,13 +140,13 @@ export const getLeaderboard = async (req: Request, res: Response) => {
 // Get all winning players by room UUID
 export const getWinnersByRoomUuid = async (req: Request, res: Response) => {
     try {
-        const { winnerUuid } = req.params;
+        const { roomId } = req.params;
 
-        if (!winnerUuid) {
+        if (!roomId) {
             return res.status(400).json({ message: "Winner UUID parameter is required" });
         }
 
-        const winnerPlayer = await WinnerPlayers.findOne({ winnerUuid });
+        const winnerPlayer = await WinnerPlayers.findOne({ roomId });
 
         if (!winnerPlayer) {
             return res.status(404).json({ message: "Winner player data not found" });
@@ -201,6 +206,7 @@ export const getWinnersByRoomUuid = async (req: Request, res: Response) => {
 
         return res.status(200).json({
             winnerUuid: winnerPlayer.winnerUuid,
+            roomId: winnerPlayer.roomId,
             room: {
                 gameName: roomIdData.gameName,
                 gameType: roomIdData.gameType,
@@ -222,16 +228,16 @@ export const getWinnersByRoomUuid = async (req: Request, res: Response) => {
 // update winner api
 export const updatePostwinner = async (req: Request, res: Response) => {
     try {
-        const winnerUuid = req.params._id;
+        const roomId = req.params.roomId;
         const teamDataArray = req.body;
 
-        if (!winnerUuid) {
-            return res.status(400).json({ message: "winnerId is required" });
+        if (!roomId) {
+            return res.status(400).json({ message: "roomId is required" });
         }
 
-        const existingWinnersData = await WinnerPlayers.findById(winnerUuid);
+        const existingWinnersData = await WinnerPlayers.findOne({ roomId });
         if (!existingWinnersData) {
-            return res.status(404).json({ message: "winnerId not found" });
+            return res.status(404).json({ message: "winner not found" });
         }
 
         // Update the team data
