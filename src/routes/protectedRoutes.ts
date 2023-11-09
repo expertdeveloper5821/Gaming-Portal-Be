@@ -13,6 +13,7 @@ import {
   getVideoById,
   updateVideoById,
   deleteVideoById,
+  getVideosByUser
 } from "../controllers/adminController";
 import { verifyToken } from "../middlewares/authMiddleware";
 import multer from 'multer';
@@ -65,5 +66,8 @@ route.put("/updatevideo/:id", upload.single('mapImg'), verifyToken(["admin", 'sp
 
 //  delete video by id
 route.delete("/deletevideo/:id", verifyToken(["admin", 'spectator']), deleteVideoById);
+
+//  get user video
+route.get("/userVideo", verifyToken(['spectator']), getVideosByUser);
 
 export default route;

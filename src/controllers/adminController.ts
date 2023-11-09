@@ -459,3 +459,27 @@ export const deleteVideoById = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+// get perticular created user video
+export const getVideosByUser = async (req: Request, res: Response) => {
+  try {
+    const user = req.user as userType; // Type assertion to userType
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
+    }
+
+    const userId = user.userId;
+
+    // Retrieve videos created by the authenticated user
+    const userVideos = await Video.find({ createdBy: userId });
+
+    if (userVideos.length === 0) {
+      return res.status(404).json({ message: 'No videos found for the user' });
+    }
+
+    return res.status(200).json({ userVideos });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
