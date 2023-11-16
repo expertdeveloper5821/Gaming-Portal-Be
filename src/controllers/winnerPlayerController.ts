@@ -161,31 +161,35 @@ export const getWinnersByRoomUuid = async (req: Request, res: Response) => {
         const teamDetails = await Promise.all(
             roomIdData.registerTeams.map(async (team: any) => {
                 const leaderData = await user.findOne({ _id: team.leaderId });
-
+        
                 if (!leaderData) {
                     throw new Error("Leader data not found");
                 }
                 let arr = winnerPlayer.teamData.filter(i => i.teamName == team.teamName)
-
-                let prizeTitle = '';
+        
+                let prizeTitles = [];
+        
                 if ((arr[0]?.highestKill || 0) > 0) {
-                    prizeTitle = 'Highest Kill'
-                } else if ((arr[0]?.chickenDinner || 0) > 0) {
-                    prizeTitle = 'Chicken Dinner'
-                } else if ((arr[0]?.firstWinner || 0) > 0) {
-                    prizeTitle = 'First Winner'
-                } else if ((arr[0]?.secondWinner || 0) > 0) {
-                    prizeTitle = 'Second Winner'
+                    prizeTitles.push('Highest Kill');
                 }
-
+                if ((arr[0]?.chickenDinner || 0) > 0) {
+                    prizeTitles.push('Chicken Dinner');
+                }
+                if ((arr[0]?.firstWinner || 0) > 0) {
+                    prizeTitles.push('First Winner');
+                }
+                if ((arr[0]?.secondWinner || 0) > 0) {
+                    prizeTitles.push('Second Winner');
+                }
+        
                 const teamMembersData = await Promise.all(
                     team.teamMateIds.map(async (memberId: any) => {
                         const userData = await user.findOne({ _id: memberId });
-
+        
                         if (!userData) {
                             throw new Error("User data not found");
                         }
-
+        
                         return {
                             fullName: userData.fullName,
                             profilePic: userData.profilePic,
@@ -194,7 +198,7 @@ export const getWinnersByRoomUuid = async (req: Request, res: Response) => {
                 );
                 return {
                     teamName: team.teamName,
-                    prizeTitle: prizeTitle,
+                    prizeTitles: prizeTitles, 
                     leader: {
                         fullName: leaderData.fullName,
                         profilePic: leaderData.profilePic,

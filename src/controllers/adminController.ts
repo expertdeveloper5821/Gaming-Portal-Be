@@ -477,7 +477,15 @@ export const getVideosByUser = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'No videos found for the user' });
     }
 
-    return res.status(200).json({ userVideos });
+    // Fetch additional information (gameType) based on roomId
+    const videosWithGameType = await Promise.all(
+      userVideos.map(async (video) => {
+        const gameRoomInfo = await RoomId.findOne({ roomUuid: video.roomId });
+        return { ...video.toObject(), gameType: gameRoomInfo ? gameRoomInfo.gameType : null };
+      })
+    );
+
+    return res.status(200).json({ data: videosWithGameType });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Internal server error" });
