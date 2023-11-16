@@ -192,7 +192,7 @@ export const userLogin = async (req: Request, res: Response) => {
 
     if (!isPasswordValid) {
       return res
-        .status(401)
+        .status(403)
         .json({ message: "Invalid Email address or Password" });
     }
 
