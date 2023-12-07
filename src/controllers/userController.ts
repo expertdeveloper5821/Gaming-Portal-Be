@@ -472,7 +472,7 @@ export const userUpdate = async (req: Request, res: Response) => {
     // extracting user info
     const { fullName, userName, email, role, userUuid, upiId, phoneNumber, profilePic } = updatedUser
     // Create a new token with updated user data
-    const token = jwt.sign({ userId: updatedUser._id, role:updatedUser.role, fullName, userName, email, userUuid, upiId, phoneNumber, profilePic }, environmentConfig.JWT_SECRET, {
+    const token = jwt.sign({ userId: updatedUser._id, role: updatedUser.role, fullName, userName, email, userUuid, upiId, phoneNumber, profilePic }, environmentConfig.JWT_SECRET, {
       expiresIn: '1h',
     });
 
@@ -724,3 +724,43 @@ export const sendEmailToUser = async (req: Request, res: Response) => {
 //     return res.status(500).json({message: 'internal server erroe'})
 //   }
 // }
+
+// for spectator to change the password after login
+export const changePassword = async (req: Request, res: Response) => {
+  try {
+    const { newPassword, confirmPassword } = req.body;
+
+    const user = req.user as userType;
+
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
+    }
+
+    const userId = user.userId;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Invalid authentication token', success: false });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: "New password and confirm password do not match" });
+    }
+
+    if (!passwordRegex.test(confirmPassword)) {
+      return res.status(400).json({
+        message:
+          "Password must contain at least one letter, one digit, one special character (!@#$%^&*()_+), and be at least 6 characters long",
+      });
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    await User.findByIdAndUpdate(userId, { password: hashedNewPassword });
+
+    return res.status(200).json({ message: "Password changed successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+

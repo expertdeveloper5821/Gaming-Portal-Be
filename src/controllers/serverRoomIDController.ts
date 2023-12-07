@@ -305,7 +305,12 @@ export const getUserRooms = async (req: Request, res: Response) => {
     const { sortingKey } = req.query;
 
     // Fetch rooms associated with the specific user
-    const userRooms = await RoomId.find({ createdBy: userId });
+    const userRooms = await RoomId.find({
+      $or: [
+        { createdBy: userId },
+        { assignTo: userId }
+      ]
+    });
 
     // Sort the rooms by createdAt based on the 'latestFirst' and 'previousFirst' keys
     let sortedRooms = userRooms;
