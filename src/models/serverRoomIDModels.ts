@@ -59,8 +59,13 @@ const roomIdSchema: Schema = new Schema(
       required: false,
     },
     createdBy: {
-      type: String, 
+      type: String,
       required: true,
+    },
+    assignTo: {
+      type: Schema.Types.ObjectId,
+      ref: "user",
+      required: false,
     },
     registerTeams: [
       {
@@ -77,7 +82,7 @@ const roomIdSchema: Schema = new Schema(
         ],
       },
     ],
-    winnerUuid: {type:String},
+    winnerUuid: { type: String },
     availableSlots: {
       type: Number,
       default: 25, // default 25 slots

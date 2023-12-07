@@ -279,7 +279,7 @@ export const video = async (req: Request, res: Response) => {
 
     const { title, videoLink, dateAndTime } = req.body;
     const file = req.file;
-    const { roomId } = req.params
+    const { roomId } = req.params;
     // Check for required fields
     const requiredFields = ['title', 'videoLink', 'dateAndTime'];
     const missingFields = requiredFields.filter(field => !req.body[field]);
@@ -304,7 +304,7 @@ export const video = async (req: Request, res: Response) => {
       secure_url = uploadResponse.secure_url;
     }
 
-    const checkRoomUuid = await RoomId.findOne({ roomUuid: roomId })
+    const checkRoomUuid = await RoomId.findOne({ _id: roomId })
     if (!checkRoomUuid) {
       return res.status(202).json({ message: 'Room not found' });
     } else {
@@ -315,7 +315,7 @@ export const video = async (req: Request, res: Response) => {
         return res.status(400).json({ message: 'Invalid date or time format' });
       }
       // Create a new video document and save it to the database
-      const newVideo = new Video({ roomId: checkRoomUuid.roomUuid, title, videoLink, dateAndTime, mapImg: secure_url, createdBy: userId });
+      const newVideo = new Video({ roomId: checkRoomUuid._id, title, videoLink, dateAndTime, mapImg: secure_url, createdBy: userId });
       await newVideo.save();
       return res.status(200).json({ message: "Video link saved successfully", newVideo });
     }
@@ -328,8 +328,7 @@ export const video = async (req: Request, res: Response) => {
 // get all video links
 export const getAllVideoLink = async (req: Request, res: Response) => {
   try {
-    // Use the find method without any conditions to retrieve all videos from the database 
-    const allVideos = await Video.find().sort({ createdAt: -1 }); // Sort by createdAt in descending order
+    const allVideos = await Video.find().sort({ createdAt: -1 });
 
     if (allVideos.length === 0) {
       return res.status(404).json({
@@ -337,30 +336,24 @@ export const getAllVideoLink = async (req: Request, res: Response) => {
       });
     }
 
-    // Create an array to store modified video data with createdBy fullName
-    const videosWithCreatedByFullName = [];
+    // Fetch createdBy user details for each video
+    const videosWithUserDetails = await Promise.all(
+      allVideos.map(async (video) => {
+        const createdBy = await user.findById(video.createdBy, 'fullName');
+        return { ...video.toObject(), createdBy };
+      })
+    );
 
-    // Loop through each video and fetch createdBy user's fullName
-    for (const video of allVideos) {
-      const createdByUser = await user.findById(video.createdBy);
-      if (createdByUser) {
-        videosWithCreatedByFullName.push({
-          _id: video._id,
-          roomId: video.roomId,
-          createdBy: {
-            fullName: createdByUser.fullName,
-          },
-          title: video.title,
-          videoLink: video.videoLink,
-          dateAndTime: video.dateAndTime,
-          mapImg: video.mapImg
-        });
-      }
-    }
+    // Fetch room details for each video
+    const videosWithRoomDetails = await Promise.all(
+      videosWithUserDetails.map(async (video) => {
+        const roomId = await RoomId.findById(video.roomId, 'gameType gameName');
+        return { ...video, roomId };
+      })
+    );
 
-    // If video links are found, return the data as the response
     return res.status(200).json({
-      data: videosWithCreatedByFullName,
+      data: videosWithRoomDetails,
     });
   } catch (error) {
     console.error(error);
@@ -480,7 +473,7 @@ export const getVideosByUser = async (req: Request, res: Response) => {
     // Fetch additional information (gameType) based on roomId
     const videosWithGameType = await Promise.all(
       userVideos.map(async (video) => {
-        const gameRoomInfo = await RoomId.findOne({ roomUuid: video.roomId });
+        const gameRoomInfo = await RoomId.findById({ _id: video.roomId });
         return { ...video.toObject(), gameType: gameRoomInfo ? gameRoomInfo.gameType : null };
       })
     );

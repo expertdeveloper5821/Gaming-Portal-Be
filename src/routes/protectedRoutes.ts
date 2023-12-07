@@ -13,8 +13,9 @@ import {
   getVideoById,
   updateVideoById,
   deleteVideoById,
-  getVideosByUser
+  getVideosByUser,
 } from "../controllers/adminController";
+import { assignToOtherSpectator, getSpacatator } from '../controllers/assignController';
 import { verifyToken } from "../middlewares/authMiddleware";
 import multer from 'multer';
 
@@ -69,5 +70,11 @@ route.delete("/deletevideo/:id", verifyToken(["admin", 'spectator']), deleteVide
 
 //  get user video
 route.get("/userVideo", verifyToken(['spectator']), getVideosByUser);
+
+//  assign to other user
+route.post("/assignTo", verifyToken(['spectator']), assignToOtherSpectator);
+
+//  get spectator
+route.get("/getSpec/:role", verifyToken(['spectator', 'admin']), getSpacatator);
 
 export default route;

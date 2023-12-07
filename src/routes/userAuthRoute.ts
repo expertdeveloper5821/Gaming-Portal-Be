@@ -11,6 +11,7 @@ import {
   sendInviteMail,
   sendEmailToUser,
   acceptInvitation,
+  changePassword,
   // findEmail
 } from "../controllers/userController";
 const route = express.Router();
@@ -53,7 +54,7 @@ route.post("/reset-password", resetPassword);
 route.get("/getuser", getUserDetails);
 
 // get Alluser
-route.get("/getalluser", verifyToken(["admin", 'spectator','user']), getAllUsers);
+route.get("/getalluser", verifyToken(["admin", 'spectator', 'user']), getAllUsers);
 
 // update user 
 route.put("/updateuser", upload.single('profilePic'), verifyToken(["admin", 'user']), userUpdate);
@@ -67,5 +68,7 @@ route.post("/send-invite", verifyToken(["user"]), sendInviteMail)
 // post accept invite mail
 route.post("/accept-invite", verifyToken(["user"]), acceptInvitation)
 
+// post change password 
+route.post("/change-password", verifyToken(["spectator"]), changePassword)
 
 export default route;
