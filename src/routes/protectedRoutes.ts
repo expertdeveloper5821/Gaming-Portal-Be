@@ -14,6 +14,7 @@ import {
   updateVideoById,
   deleteVideoById,
   getVideosByUser,
+  blockUser
 } from "../controllers/adminController";
 import { assignToOtherSpectator, getSpacatator } from '../controllers/assignController';
 import { verifyToken } from "../middlewares/authMiddleware";
@@ -72,9 +73,12 @@ route.delete("/deletevideo/:id", verifyToken(["admin", 'spectator']), deleteVide
 route.get("/userVideo", verifyToken(['spectator']), getVideosByUser);
 
 //  assign to other user
-route.post("/assignTo", verifyToken(['spectator']), assignToOtherSpectator);
+route.post("/assignTo", verifyToken(['spectator', 'admin']), assignToOtherSpectator);
 
 //  get spectator
 route.get("/getSpec/:role", verifyToken(['spectator', 'admin']), getSpacatator);
+
+//  block user 
+route.post("/blockUser", verifyToken(['admin']), blockUser);
 
 export default route;
