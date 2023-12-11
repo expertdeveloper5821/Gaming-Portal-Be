@@ -62,6 +62,10 @@ const roomIdSchema: Schema = new Schema(
       type: String,
       required: true,
     },
+    updatedBy: {
+      type: String,
+      required: true,
+    },
     assignTo: {
       type: Schema.Types.ObjectId,
       ref: "user",

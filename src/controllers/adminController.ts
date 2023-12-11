@@ -498,6 +498,7 @@ export const blockUser = async (req: Request, res: Response) => {
       message: `User ${blockStatus ? 'blocked' : 'unblocked'} successfully`,
     });
   } catch (error) {
+    console.error(error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };

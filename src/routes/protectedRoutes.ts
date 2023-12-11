@@ -73,10 +73,10 @@ route.delete("/deletevideo/:id", verifyToken(["admin", 'spectator']), deleteVide
 route.get("/userVideo", verifyToken(['spectator']), getVideosByUser);
 
 //  assign to other user
-route.post("/assignTo", verifyToken(['spectator', 'admin']), assignToOtherSpectator);
+route.post("/assignTo", verifyToken(["admin", 'spectator']), assignToOtherSpectator);
 
 //  get spectator
-route.get("/getSpec/:role", verifyToken(['spectator', 'admin']), getSpacatator);
+route.get("/getSpec/:role", verifyToken(["admin", 'spectator']), getSpacatator);
 
 //  block user 
 route.post("/blockUser", verifyToken(['admin']), blockUser);
