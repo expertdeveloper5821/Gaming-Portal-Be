@@ -5,6 +5,7 @@ import { environmentConfig } from '../config/environmentConfig';
 // Define the User interface
 export interface userType {
   userId: string;
+  fullName: string;
   role: {
     role: string[]; // Define the structure of the 'role' property
   };

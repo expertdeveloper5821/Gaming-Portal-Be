@@ -484,3 +484,21 @@ export const getVideosByUser = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+
+// block user api for admin:- 
+export const blockUser = async (req: Request, res: Response) => {
+  try {
+    const { email, blockStatus } = req.body;
+
+    // Update the user's block status
+    await user.findOneAndUpdate({ email }, { isBlocked: blockStatus });
+
+    return res.status(200).json({
+      message: `User ${blockStatus ? 'blocked' : 'unblocked'} successfully`,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};

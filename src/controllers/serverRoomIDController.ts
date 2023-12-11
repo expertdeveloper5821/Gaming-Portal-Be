@@ -179,9 +179,11 @@ export const getAllRooms = async (req: Request, res: Response) => {
     const roomsWithUserDetails = await Promise.all(
       filteredRooms.map(async (room) => {
         const userInfo = await user.findOne({ _id: room.createdBy });
+        const updatedUserInfo = await user.findOne({ _id: room.updatedBy });
         return {
           ...room.toObject(),
-          createdBy: userInfo ? userInfo.fullName : "Unknown",
+          createdBy: userInfo ? { _id: userInfo._id, fullName: userInfo.fullName } : "Unknown",
+          updatedBy: updatedUserInfo ? { _id: updatedUserInfo._id, fullName: updatedUserInfo.fullName } : 'Unknown'
         };
       })
     );
@@ -212,6 +214,13 @@ export const getRoomById = async (req: Request, res: Response) => {
       return res.status(500).json({ error: "User not found" });
     }
 
+
+    const updatedUserInfo = await user.findOne({ _id: room.updatedBy })
+
+    if (!updatedUserInfo) {
+      return res.status(500).json({ error: "Updated User not found" });
+    }
+
     // Count the number of transactions for this room
     const transactionCount = await Transaction.countDocuments({ roomId: room.roomUuid });
 
@@ -221,7 +230,14 @@ export const getRoomById = async (req: Request, res: Response) => {
     // Create a new room object with the desired format
     const formattedRoom = {
       ...room.toObject(),
-      createdBy: userInfo.fullName,
+      createdBy: {
+        _id: userInfo._id,
+        fullName: userInfo ? userInfo.fullName : "Unknown",
+      },
+      updatedBy: {
+        _id: updatedUserInfo._id,
+        fullName: updatedUserInfo ? updatedUserInfo.fullName : 'Unknown',
+      },
       slotsLeft
     };
 
@@ -243,6 +259,12 @@ export const updateRoomById = async (req: Request, res: Response) => {
     const updatedRoomData = req.body;
     const file = req.file;
 
+    const user = req.user as userType;
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
+    }
+    const userId = user.userId;
+
     let secure_url: string | null = null;
     if (file) {
       const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(
@@ -261,6 +283,14 @@ export const updateRoomById = async (req: Request, res: Response) => {
     if (!existingRoom) {
       return res.status(202).json({ message: "Room not found" });
     }
+
+    // If updatedBy field doesn't exist in updatedRoomData, initialize it
+    if (!updatedRoomData.updatedBy) {
+      updatedRoomData.updatedBy = '';
+    }
+
+    // Append the current user's ID to the updatedBy string
+    updatedRoomData.updatedBy = updatedRoomData.updatedBy ? `${updatedRoomData.updatedBy},${userId}` : userId;
 
     // Update the room data
     await RoomId.findByIdAndUpdate(roomId, updatedRoomData, { new: true });

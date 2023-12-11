@@ -178,6 +178,11 @@ export const userLogin = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email }).populate("role", "role");
+
+    if (user && user.isBlocked) {
+      return res.status(403).json({ message: 'Unabel to login.' });
+    }
+
     if (!user) {
       return res.status(400).json({
         message: `Invalid Email address or Password`,
