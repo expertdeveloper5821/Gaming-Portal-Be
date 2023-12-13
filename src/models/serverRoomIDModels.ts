@@ -60,11 +60,11 @@ const roomIdSchema: Schema = new Schema(
     },
     createdBy: {
       type: String,
-      required: true,
+      required: false,
     },
     updatedBy: {
       type: String,
-      required: true,
+      required: false,
     },
     assignTo: {
       type: Schema.Types.ObjectId,
