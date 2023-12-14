@@ -16,7 +16,7 @@ import {
   getVideosByUser,
   blockUser
 } from "../controllers/adminController";
-import { assignToOtherSpectator, getSpacatator } from '../controllers/assignController';
+import { assignToOtherSpectator, getSpacatator, acceptRoomAssignment, rejectRoomAssignment } from '../controllers/assignController';
 import { verifyToken } from "../middlewares/authMiddleware";
 import multer from 'multer';
 
@@ -74,6 +74,12 @@ route.get("/userVideo", verifyToken(['spectator']), getVideosByUser);
 
 //  assign to other user
 route.post("/assignTo", verifyToken(["admin", 'spectator']), assignToOtherSpectator);
+
+//  accept invitation
+route.post("/accept", verifyToken(["admin", 'spectator']), acceptRoomAssignment);
+
+//  reject invitation
+route.post("/reject", verifyToken(["admin", 'spectator']), rejectRoomAssignment);
 
 //  get spectator
 route.get("/getSpec/:role", verifyToken(["admin", 'spectator']), getSpacatator);
