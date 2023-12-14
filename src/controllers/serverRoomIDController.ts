@@ -91,6 +91,7 @@ export const createRoom = async (req: Request, res: Response) => {
       secondWin,
       thirdWin,
       availableSlots: 25, // Fixed number of slots
+      assignTo: null,
     });
 
     return res.status(200).json({
@@ -342,6 +343,20 @@ export const getUserRooms = async (req: Request, res: Response) => {
       ]
     });
 
+    // Check if no rooms are found
+    if (userRooms.length === 0) {
+      return res.status(404).json({ message: 'No rooms found for the user', success: false });
+    }
+  
+    const yourCreatedRoom = userRooms.filter(room => room.createdBy === userId && room.assignTo === null);
+    const assignedRoom = userRooms.filter(room => {
+      const isAssigned = room.assignTo && room.assignTo.toString() === userId;
+      return isAssigned;
+    });
+    if (assignedRoom.length === 0) {
+      return res.status(404).json({ message: 'No assigned rooms found for the user', success: false });
+    }
+
     // Sort the rooms by createdAt based on the 'latestFirst' and 'previousFirst' keys
     let sortedRooms = userRooms;
     if (sortingKey === 'latestFirst') {
@@ -351,7 +366,7 @@ export const getUserRooms = async (req: Request, res: Response) => {
     }
 
 
-    return res.status(200).json(userRooms);
+    return res.status(200).json({yourCreatedRoom, assignedRoom});
   } catch (error) {
     console.error(error);
     return res.status(500).json({
