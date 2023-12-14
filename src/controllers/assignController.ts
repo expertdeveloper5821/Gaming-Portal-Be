@@ -43,37 +43,50 @@ const mailTemplate = fs.readFileSync(mailTemplatePath, 'utf-8');
 // Assign room to other spactator
 export const assignToOtherSpectator = async (req: Request, res: Response) => {
     try {
-
         const { roomid, assignTo } = req.body;
 
-        const existingAssignment = await RoomId.findById(roomid);
+        // Check if the room is already assigned to any user
+        const existingAssignment = await RoomId.findOne({
+            _id: roomid,
+            assignTo: { $ne: null } // Check if the assignTo field is not null (i.e., already assigned)
+        });
 
-        if (existingAssignment && existingAssignment.status === 'accepted' && existingAssignment.assignTo !== null) {
-            return res.status(400).json({ message: 'This room is already assigned to this spectator.' });
-        }
+        if (existingAssignment) {
+            // Find the user with the specified fullName (assignTo)
+            const assignedUser = await user.findOne({ fullName: { $regex: new RegExp('^' + assignTo + '$', 'i') } });
 
-        if (existingAssignment && (existingAssignment.status === 'pending' || existingAssignment.status === 'rejected') && (existingAssignment.assignTo === null)) {
-            const assignedUser = await user.findOne({ email: { $regex: new RegExp('^' + assignTo + '$', 'i') } });
-
+            // If the user is not found, return a 404 response
             if (!assignedUser) {
                 return res.status(404).json({ message: 'User not found' });
             }
+            // Check if the room is already assigned to the specified user
+            if (existingAssignment.assignTo.equals(assignedUser._id)) {
+                return res.status(400).json({ message: 'This room is already assigned to this spectator.' });
+            }
 
-            const assignment = await RoomId.findById({ _id: roomid });
+            // Update the room assignment to the specified user
+            const assignment = await RoomId.findOneAndUpdate({ _id: roomid }, { assignTo: assignedUser._id }, { new: true });
 
+            // If the update fails,
             if (!assignment) {
                 return res.status(200).json({ message: 'Failed to assign a room' });
             } else {
+                // Retrieve user information from the token
                 const user = req.user as userType;
                 const senderFullName = user.fullName;
+
+                // Retrieve email and room information for sending the email
                 const userEmail = assignedUser.email;
                 const roomData = assignment.toObject();
+
+                // Format date and time
                 const formattedDateAndTime = moment(roomData.dateAndTime).format("DD-MM-YYYY h:mm A");
                 const dateTimeFormat = formattedDateAndTime.split(" ");
                 const date = dateTimeFormat[0];
                 const time = dateTimeFormat[1];
                 const dayTime = dateTimeFormat[2];
-                const roomInvitationLink = `${environmentConfig.CLIENT_URL}?roomid=${roomid}&assignTo=${assignedUser._id}`;
+
+                // Replace placeholders in the email template with actual data
                 const emailContent = mailTemplate
                     .replace('{{senderFullName}}', senderFullName)
                     .replace('{{roomId}}', roomData.roomId)
@@ -84,17 +97,19 @@ export const assignToOtherSpectator = async (req: Request, res: Response) => {
                     .replace('{{version}}', roomData.version)
                     .replace('{{date}}', date)
                     .replace('{{time}}', `${time} ${dayTime}`)
+
+                // Send email to the assigned user
                 const mailOptions = {
                     from: environmentConfig.EMAIL_USER,
                     to: userEmail,
                     subject: "Room Assign",
-                    html: `${emailContent} <b>Click the following link to accept or reject the invitation:-</b> <a href=${roomInvitationLink}>Click Here</a>`
+                    html: emailContent
                 }
                 transporter.sendMail(mailOptions, (err) => {
                     if (err) {
                         return res.status(500).json({ message: 'Failed to send the email for assigning a room' });
                     } else {
-                        return res.status(200).json({ message: 'Email sent to assigned user.' });
+                        return res.status(200).json({ message: 'Room assigned to spectator successfully. Email sent to assigned user.' });
                     }
                 })
             }
@@ -106,59 +121,3 @@ export const assignToOtherSpectator = async (req: Request, res: Response) => {
 };
 
 
-// acceptRoomAssignment api
-export const acceptRoomAssignment = async (req: Request, res: Response) => {
-    try {
-        const { roomid, assignTo } = req.query;
-
-        // Find the room with the specified ID
-        const room = await RoomId.findById({ _id: roomid });
-
-        if (!room) {
-            return res.status(404).json({ message: 'Room not found' });
-        }
-
-        const updatedRoom = await RoomId.findByIdAndUpdate(
-            { _id: roomid },
-            {
-                $set: {
-                    status: 'accepted',
-                    assignTo: assignTo
-                }
-            },
-            { new: true })
-
-        return res.status(200).json({ message: 'Invitaion accepted...' });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: 'Internal server error' });
-    }
-};
-
-
-export const rejectRoomAssignment = async (req: Request, res: Response) => {
-    try {
-        const { roomid, assignTo } = req.query;
-
-        // Find the room with the specified ID
-        const room = await RoomId.findById({ _id: roomid });
-
-        if (!room) {
-            return res.status(404).json({ message: 'Room not found' });
-        }
-
-        const updatedRoom = await RoomId.findByIdAndUpdate(
-            { _id: roomid },
-            {
-                $set: {
-                    status: 'rejected',
-                }
-            },
-            { new: true })
-
-        return res.status(200).json({ message: 'Invitaion rejected... ' });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: 'Internal server error' });
-    }
-};

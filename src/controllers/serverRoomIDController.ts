@@ -91,7 +91,6 @@ export const createRoom = async (req: Request, res: Response) => {
       secondWin,
       thirdWin,
       availableSlots: 25, // Fixed number of slots
-      assignTo: null,
     });
 
     return res.status(200).json({
@@ -333,7 +332,7 @@ export const getUserRooms = async (req: Request, res: Response) => {
     }
 
     const userId = user.userId;
-    const { sortingKey, isAssigned } = req.query;
+    const { sortingKey } = req.query;
 
     // Fetch rooms associated with the specific user
     const userRooms = await RoomId.find({
@@ -341,12 +340,6 @@ export const getUserRooms = async (req: Request, res: Response) => {
         { createdBy: userId },
         { assignTo: userId }
       ]
-    });
-  
-    const yourCreatedRoom = userRooms.filter(room => room.createdBy === userId && room.assignTo === null);
-    const assignedRoom = userRooms.filter(room => {
-      const findAssigned = room.assignTo && room.assignTo.toString() === userId;
-      return findAssigned;
     });
 
     // Sort the rooms by createdAt based on the 'latestFirst' and 'previousFirst' keys
@@ -356,38 +349,9 @@ export const getUserRooms = async (req: Request, res: Response) => {
     } else if (sortingKey === 'previousFirst') {
       sortedRooms = userRooms.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
     }
-    let response;
-    if(isAssigned === 'false'){
-      if(yourCreatedRoom.length === 0){
-        response = {
-          message: "No data found",
-          data: yourCreatedRoom 
-        }
-        return res.status(404).json(response);
-      } else {
-        response = {
-          message: "Data found",
-          data: yourCreatedRoom
-        }
-        return res.status(200).json(response);
-      }
-      
-    }else if (isAssigned === 'true'){
-      if(assignedRoom.length === 0){
-        response = {
-          message: "No data found",
-          data: assignedRoom
-        }
-        return res.status(404).json(response);
-      } else {
-        response = {
-          message: "Data found",
-          data: assignedRoom
-        }
-        return res.status(200).json(response);
-      }
-    }
-    // return res.status(200).json(response);
+
+
+    return res.status(200).json(userRooms);
   } catch (error) {
     console.error(error);
     return res.status(500).json({
