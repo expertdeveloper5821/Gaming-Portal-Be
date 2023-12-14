@@ -74,6 +74,7 @@ export const assignToOtherSpectator = async (req: Request, res: Response) => {
                 const time = dateTimeFormat[1];
                 const dayTime = dateTimeFormat[2];
                 const roomInvitationLink = `${environmentConfig.CLIENT_URL}?roomid=${roomid}&assignTo=${assignedUser._id}`;
+                
                 const emailContent = mailTemplate
                     .replace('{{senderFullName}}', senderFullName)
                     .replace('{{roomId}}', roomData.roomId)
@@ -84,6 +85,7 @@ export const assignToOtherSpectator = async (req: Request, res: Response) => {
                     .replace('{{version}}', roomData.version)
                     .replace('{{date}}', date)
                     .replace('{{time}}', `${time} ${dayTime}`)
+                    // sending mail
                 const mailOptions = {
                     from: environmentConfig.EMAIL_USER,
                     to: userEmail,
