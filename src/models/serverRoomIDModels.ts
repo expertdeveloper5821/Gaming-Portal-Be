@@ -71,11 +71,6 @@ const roomIdSchema: Schema = new Schema(
       ref: "user",
       required: false,
     },
-    status: {
-      type: String,
-      enum: ['pending', 'accepted', 'rejected'],
-      default: 'pending',
-    },
     registerTeams: [
       {
         teamName: String,
