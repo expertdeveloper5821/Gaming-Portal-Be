@@ -333,7 +333,7 @@ export const getUserRooms = async (req: Request, res: Response) => {
     }
 
     const userId = user.userId;
-    const { sortingKey } = req.query;
+    const { sortingKey, isAssigned } = req.query;
 
     // Fetch rooms associated with the specific user
     const userRooms = await RoomId.find({
@@ -342,20 +342,12 @@ export const getUserRooms = async (req: Request, res: Response) => {
         { assignTo: userId }
       ]
     });
-
-    // Check if no rooms are found
-    if (userRooms.length === 0) {
-      return res.status(404).json({ message: 'No rooms found for the user', success: false });
-    }
   
     const yourCreatedRoom = userRooms.filter(room => room.createdBy === userId && room.assignTo === null);
     const assignedRoom = userRooms.filter(room => {
-      const isAssigned = room.assignTo && room.assignTo.toString() === userId;
-      return isAssigned;
+      const findAssigned = room.assignTo && room.assignTo.toString() === userId;
+      return findAssigned;
     });
-    if (assignedRoom.length === 0) {
-      return res.status(404).json({ message: 'No assigned rooms found for the user', success: false });
-    }
 
     // Sort the rooms by createdAt based on the 'latestFirst' and 'previousFirst' keys
     let sortedRooms = userRooms;
@@ -364,9 +356,38 @@ export const getUserRooms = async (req: Request, res: Response) => {
     } else if (sortingKey === 'previousFirst') {
       sortedRooms = userRooms.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
     }
-
-
-    return res.status(200).json({yourCreatedRoom, assignedRoom});
+    let response;
+    if(isAssigned === 'false'){
+      if(yourCreatedRoom.length === 0){
+        response = {
+          message: "No data found",
+          data: yourCreatedRoom 
+        }
+        return res.status(404).json(response);
+      } else {
+        response = {
+          message: "Data found",
+          data: yourCreatedRoom
+        }
+        return res.status(200).json(response);
+      }
+      
+    }else if (isAssigned === 'true'){
+      if(assignedRoom.length === 0){
+        response = {
+          message: "No data found",
+          data: assignedRoom
+        }
+        return res.status(404).json(response);
+      } else {
+        response = {
+          message: "Data found",
+          data: assignedRoom
+        }
+        return res.status(200).json(response);
+      }
+    }
+    // return res.status(200).json(response);
   } catch (error) {
     console.error(error);
     return res.status(500).json({
