@@ -13,7 +13,8 @@ let userRegisterSchema = new mongoose.Schema({
   profilePic: { type: String, required: false },
   bgmiId: { type: String, required: false },
   isOnline: { type: Boolean, default: false },
-  isBlocked: { type: Boolean, default: false }
+  isBlocked: { type: Boolean, default: false },
+  description: { type: String, required: false },
 });
 
 export const user = mongoose.model("user", userRegisterSchema);

@@ -112,7 +112,7 @@ export const createRoom = async (req: Request, res: Response) => {
 // Get all rooms
 export const getAllRooms = async (req: Request, res: Response) => {
   try {
-    const { search, sortingKey } = req.query;
+    const { search, sortingKey, page, limit } = req.query;
     const token = req.header("Authorization")?.replace("Bearer ", "");
 
     // Define a variable to store the user's registered room IDs
@@ -169,8 +169,14 @@ export const getAllRooms = async (req: Request, res: Response) => {
     } else if (sortingKey === 'previousFirst') {
       sortedRooms = filteredRooms.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
     }
+    // Pagination
+    const parsedPage = parseInt(page as string, 10) || 1;
+    const parsedLimit = parseInt(limit as string, 10) || 10;
+    const startIndex = (parsedPage - 1) * parsedLimit;
 
-    if (filteredRooms.length === 0) {
+    const paginatedRooms = sortedRooms.slice(startIndex, startIndex + parsedLimit);
+
+    if (paginatedRooms.length === 0) {
       return res.status(202).json({
         message: search ? "No rooms found with the provided query" : "No rooms found",
       });
@@ -178,7 +184,7 @@ export const getAllRooms = async (req: Request, res: Response) => {
 
     // Add user details to the filtered rooms
     const roomsWithUserDetails = await Promise.all(
-      filteredRooms.map(async (room) => {
+      paginatedRooms.map(async (room) => {
         const userInfo = await user.findOne({ _id: room.createdBy });
         const updatedUserInfo = await user.findOne({ _id: room.updatedBy });
         return {

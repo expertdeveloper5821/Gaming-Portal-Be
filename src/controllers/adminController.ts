@@ -489,16 +489,22 @@ export const getVideosByUser = async (req: Request, res: Response) => {
 // block user api for admin:- 
 export const blockUser = async (req: Request, res: Response) => {
   try {
-    const { email, blockStatus } = req.body;
+    const { email, blockStatus, description } = req.body;
 
     // Update the user's block status
-    await user.findOneAndUpdate({ email }, { isBlocked: blockStatus });
+    await user.findOneAndUpdate(
+      { email },
+      { isBlocked: blockStatus, description }, // Update both isBlocked and description
+      { new: true } // Add this to return the modified document
+    );
 
     return res.status(200).json({
       message: `User ${blockStatus ? 'blocked' : 'unblocked'} successfully`,
+      description
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
+

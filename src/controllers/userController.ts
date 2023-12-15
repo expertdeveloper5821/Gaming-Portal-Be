@@ -180,7 +180,8 @@ export const userLogin = async (req: Request, res: Response) => {
     const user = await User.findOne({ email }).populate("role", "role");
 
     if (user && user.isBlocked) {
-      return res.status(403).json({ message: 'Unabel to login.' });
+      const blockDescription = user.description;
+      return res.status(403).json({ message: 'Unabel to login.', blockDescription });
     }
 
     if (!user) {
@@ -384,7 +385,7 @@ export const getUserDetails = async (req: Request, res: Response) => {
 // get all user
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
-    const { search } = req.query;
+    const { search, sort, page, limit } = req.query;
 
     let usersQuery = {};
 
@@ -400,8 +401,21 @@ export const getAllUsers = async (req: Request, res: Response) => {
       };
     }
 
+    // Handle sorting by _id (latest or oldest)
+    let sortOptions = {};
+    if (sort === 'latestfirst' || sort === 'oldestfirst') {
+      sortOptions = { _id: sort === 'latestfirst' ? -1 : 1 };
+    }
+    // Handle pagination
+    const parsedPage = parseInt(page as string, 10) || 1;
+    const parsedLimit = parseInt(limit as string, 10) || 10;
+    const skip = (parsedPage - 1) * parsedLimit;
+
     const allUsers = await User
       .find(usersQuery)
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(parsedLimit)
       .populate('role', 'role');
 
     if (allUsers.length === 0) {
