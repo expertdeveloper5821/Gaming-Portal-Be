@@ -328,11 +328,39 @@ export const video = async (req: Request, res: Response) => {
 // get all video links
 export const getAllVideoLink = async (req: Request, res: Response) => {
   try {
-    const allVideos = await Video.find().sort({ createdAt: -1 });
+    const { page = 1, limit = 10, sortingKey, search } = req.query;
+
+    // Parsing query parameters
+    const parsedPage = parseInt(page as string, 10);
+    const parsedLimit = parseInt(limit as string, 10);
+
+    // Determine sorting order based on sortingKey
+    const sortQuery: { [key: string]: string } = {};
+    if (sortingKey === 'latestFirst') {
+      sortQuery['createdAt'] = '-1'; // Sort by latest first
+    } else if (sortingKey === 'previousFirst') {
+      sortQuery['createdAt'] = '1'; // Sort by oldest first
+    }
+
+    // Building the search query
+    const searchQuery = search
+      ? {
+          $or: [
+            { title: { $regex: search, $options: 'i' } }, 
+          ],
+        }
+      : {};
+
+    // Fetch videos with search, sorting, and pagination
+    const allVideos = await Video.find(searchQuery)
+      .sort(sortQuery as any)
+      .skip((parsedPage - 1) * parsedLimit)
+      .limit(parsedLimit)
+      .exec();
 
     if (allVideos.length === 0) {
       return res.status(404).json({
-        message: "No video found",
+        message: 'No videos found',
       });
     }
 
@@ -357,7 +385,7 @@ export const getAllVideoLink = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 };
 

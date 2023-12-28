@@ -401,8 +401,44 @@ export const addTeammatesIntoMatch = async (req: Request, res: Response) => {
 // get all Teams
 export const getAllTeams = async (req: Request, res: Response) => {
   try {
-    // Fetch all teams
-    const teams = await Team.find();
+    const { page, limit, sortingKey , search } = req.query;
+
+    // Determine sorting order based on sortingKey
+    const sortQuery: { [key: string]: string } = {};
+    if (sortingKey === 'latestFirst') {
+      sortQuery['_id'] = '-1'; // Sort by latest first
+    } else if (sortingKey === 'previousFirst') {
+      sortQuery['_id'] = '1'; // Sort by oldest first
+    }
+
+    // Building the search query
+    const searchQuery = search
+      ? {
+        $or: [
+          { teamName: { $regex: search, $options: 'i' } },
+          { 'leadPlayer.fullName': { $regex: search, $options: 'i' } },
+          { 'teamMates.fullName': { $regex: search, $options: 'i' } },
+        ],
+      }
+      : {};
+
+
+    // Parsing query parameters
+    const parsedPage = parseInt(page as string, 10) || 1;
+    const parsedLimit = parseInt(limit as string, 10) || 10;
+    
+    // Fetch teams with search, sorting, and pagination
+    const teams = await Team.find(searchQuery)
+      .sort(sortQuery as any)
+      .skip((parsedPage - 1) * parsedLimit)
+      .limit(parsedLimit)
+      .exec();
+
+      if (teams.length === 0) {
+        return res.status(404).json({
+          message: 'No teams found',
+        });
+      }
 
     // Fetch details for each team, including teammate and lead player details
     const teamDetails = await Promise.all(
@@ -446,11 +482,11 @@ export const getAllTeams = async (req: Request, res: Response) => {
     return res.status(200).json({
       data: {
         teams: teamDetails,
-      },
+      }
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 };
 
