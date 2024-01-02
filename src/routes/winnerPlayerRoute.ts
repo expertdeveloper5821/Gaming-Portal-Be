@@ -1,20 +1,20 @@
 import express from "express";
-import { postWinningPlayers, getWinningPlayerById, getAllWinningPlayers, getWinnersByRoomUuid } from "../controllers/winnerPlayerController";
+import { postWinningPlayers, getLeaderboard, getWinnersByRoomUuid, updatePostwinner } from "../controllers/winnerPlayerController";
 import { verifyToken } from "../middlewares/authMiddleware";
 
 
 const router = express.Router();
 
-// winner creating - 
-router.post("/players", verifyToken(['spectator','admin']), postWinningPlayers);
+// winner creating 
+router.post("/players/:roomId", verifyToken(['spectator','admin']), postWinningPlayers);
 
-// win players get by id 
-router.get("/players/:id", verifyToken(['spectator', 'user','admin']), getWinningPlayerById);
+//  get leader board
+router.get("/players", verifyToken(['spectator', 'user','admin']), getLeaderboard);
 
-// allwin players get 
-router.get("/players", verifyToken(['spectator', 'user','admin']), getAllWinningPlayers);
+//  allwin players get 
+router.get("/get-players/:roomId", verifyToken(['spectator', 'user','admin']), getWinnersByRoomUuid);
 
-// allwin players get 
-router.get("/get-players/:uuid", verifyToken(['spectator', 'user','admin']), getWinnersByRoomUuid);
+// winner updating 
+router.put("/players/:roomId", verifyToken(['spectator','admin']), updatePostwinner);
 
 export default router;

@@ -13,10 +13,25 @@ import {
   getVideoById,
   updateVideoById,
   deleteVideoById,
+  getVideosByUser,
+  blockUser
 } from "../controllers/adminController";
+import { assignToOtherSpectator, getSpacatator } from '../controllers/assignController';
 import { verifyToken } from "../middlewares/authMiddleware";
+import multer from 'multer';
+
 
 const route = express.Router();
+
+
+const storage = multer.diskStorage({
+  filename: (req, file, cb) => {
+    const name = Date.now() + '_' + file.originalname;
+    cb(null, name);
+  }
+});
+
+const upload = multer({ storage: storage });
 
 // create Role
 route.post("/role", role);
@@ -40,19 +55,30 @@ route.put("/updaterole/:userUuid", verifyToken(["admin"]), updateRole);
 route.delete("/deleterole/:userUuid", verifyToken(["admin"]), deleteRole);
 
 // to post the video link and information
-route.post("/videolink", verifyToken(["admin",'spectator']), video);
+route.post("/videolink/:roomId", upload.single('mapImg'), verifyToken(["admin", 'spectator']), video);
 
 // to get all video link and information
-route.get("/allvideolink", verifyToken(["admin",'spectator']), getAllVideoLink);
+route.get("/allvideolink", verifyToken(["admin", 'spectator', 'user']), getAllVideoLink);
 
 // get video by ID
-route.get("/getvideo/:id", verifyToken(["admin",'spectator']), getVideoById);
+route.get("/getvideo/:id", verifyToken(["admin", 'spectator', 'user']), getVideoById);
 
 // updatevideo by id
-route.put("/updatevideo/:id", verifyToken(["admin",'spectator']), updateVideoById);
+route.put("/updatevideo/:id", upload.single('mapImg'), verifyToken(["admin", 'spectator']), updateVideoById);
 
 //  delete video by id
-route.delete("/deletevideo/:id", verifyToken(["admin",'spectator']), deleteVideoById);
+route.delete("/deletevideo/:id", verifyToken(["admin", 'spectator']), deleteVideoById);
+
+//  get user video
+route.get("/userVideo", verifyToken(['spectator']), getVideosByUser);
+
+//  assign to other user
+route.post("/assignTo", verifyToken(["admin", 'spectator']), assignToOtherSpectator);
+
+//  get spectator
+route.get("/getSpec/:role", verifyToken(["admin", 'spectator']), getSpacatator);
+
+//  block user 
+route.post("/blockUser", verifyToken(['admin']), blockUser);
 
 export default route;
-    

@@ -9,8 +9,6 @@ import { environmentConfig } from './config/environmentConfig';
 import path from 'path';
 import MongoDBStore from 'connect-mongodb-session';
 
-import { sendMailToUser } from './middlewares/news-letter';
-sendMailToUser();
 
 const app:Express = express();
 

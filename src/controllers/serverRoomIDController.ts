@@ -8,6 +8,7 @@ import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
 import moment from 'moment-timezone';
 import { Transaction } from "../models/qrCodeModel";
 import { userType } from '../middlewares/authMiddleware';
+import { Team } from "../models/teamModel";
 
 
 // Configuration
@@ -88,7 +89,8 @@ export const createRoom = async (req: Request, res: Response) => {
       lastSurvival,
       highestKill,
       secondWin,
-      thirdWin
+      thirdWin,
+      availableSlots: 25, // Fixed number of slots
     });
 
     return res.status(200).json({
@@ -105,10 +107,11 @@ export const createRoom = async (req: Request, res: Response) => {
   }
 };
 
+
 // Get all rooms
 export const getAllRooms = async (req: Request, res: Response) => {
   try {
-    const { search } = req.query;
+    const { search, sortingKey } = req.query;
     const token = req.header("Authorization")?.replace("Bearer ", "");
 
     // Define a variable to store the user's registered room IDs
@@ -133,7 +136,6 @@ export const getAllRooms = async (req: Request, res: Response) => {
         return res.status(401).json({ error: "Invalid token" });
       }
     }
-
     // Construct the query to fetch rooms
     let roomsQuery = {};
 
@@ -159,8 +161,16 @@ export const getAllRooms = async (req: Request, res: Response) => {
     // Filter the rooms to exclude those the user has already registered for
     const filteredRooms = rooms.filter((room) => !userRegisteredRooms.includes(room.roomUuid));
 
+    // Sort the rooms by createdAt based on the 'latestFirst' and 'previousFirst' keys
+    let sortedRooms = filteredRooms;
+    if (sortingKey === 'latestFirst') {
+      sortedRooms = filteredRooms.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    } else if (sortingKey === 'previousFirst') {
+      sortedRooms = filteredRooms.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    }
+
     if (filteredRooms.length === 0) {
-      return res.status(204).json({
+      return res.status(202).json({
         message: search ? "No rooms found with the provided query" : "No rooms found",
       });
     }
@@ -169,25 +179,33 @@ export const getAllRooms = async (req: Request, res: Response) => {
     const roomsWithUserDetails = await Promise.all(
       filteredRooms.map(async (room) => {
         const userInfo = await user.findOne({ _id: room.createdBy });
+        const updatedUserInfo = await user.findOne({ _id: room.updatedBy });
         return {
           ...room.toObject(),
-          createdBy: userInfo ? userInfo.fullName : "Unknown",
+          createdBy: userInfo ? { _id: userInfo._id, fullName: userInfo.fullName } : "Unknown",
+          updatedBy: updatedUserInfo ? { _id: updatedUserInfo._id, fullName: updatedUserInfo.fullName } : 'Unknown'
         };
       })
     );
 
     return res.status(200).json(roomsWithUserDetails);
   } catch (error) {
-    return res.status(500).json({ error: "Failed to fetch rooms" });
+    console.error(error);
+    return res.status(500).json({
+      error: "Failed to fetch rooms",
+      success: false,
+    });
   }
 };
 
+
+// get room by id 
 export const getRoomById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const room = await RoomId.findById(id);
     if (!room) {
-      return res.status(204).json({ error: "Room not found" });
+      return res.status(202).json({ error: "Room not found" });
     }
 
     const userInfo = await user.findOne({ _id: room.createdBy })
@@ -195,17 +213,66 @@ export const getRoomById = async (req: Request, res: Response) => {
     if (!userInfo) {
       return res.status(500).json({ error: "User not found" });
     }
-    return res.status(200).json({ room, fullName: userInfo.fullName });
+
+
+    const updatedUserInfo = await user.findOne({ _id: room.updatedBy })
+
+    if (!updatedUserInfo) {
+      return res.status(500).json({ error: "Updated User not found" });
+    }
+
+    // Count the number of transactions for this room
+    const transactionCount = await Transaction.countDocuments({ roomId: room.roomUuid });
+
+    // Calculate the number of slots left
+    const slotsLeft = room.availableSlots - transactionCount;
+
+    // Create a new room object with the desired format
+    const formattedRoom = {
+      ...room.toObject(),
+      createdBy: {
+        _id: userInfo._id,
+        fullName: userInfo ? userInfo.fullName : "Unknown",
+      },
+      updatedBy: {
+        _id: updatedUserInfo._id,
+        fullName: updatedUserInfo ? updatedUserInfo.fullName : 'Unknown',
+      },
+      slotsLeft
+    };
+
+    return res.status(200).json({ room: formattedRoom });
   } catch (error) {
-    return res.status(500).json({ error: "Failed to fetch room" });
+    console.error(error);
+    return res.status(500).json({
+      error: "Failed to fetch room",
+      success: false,
+    });
   }
 };
+
 
 // Update a room by ID
 export const updateRoomById = async (req: Request, res: Response) => {
   try {
     const roomId = req.params.id;
     const updatedRoomData = req.body;
+    const file = req.file;
+
+    const user = req.user as userType;
+    if (!user) {
+      return res.status(401).json({ message: 'You are not authenticated!', success: false });
+    }
+    const userId = user.userId;
+
+    let secure_url: string | null = null;
+    if (file) {
+      const uploadResponse: UploadApiResponse = await cloudinary.uploader.upload(
+        file.path
+      );
+      secure_url = uploadResponse.secure_url;
+    }
+    updatedRoomData.mapImg = secure_url;
 
     if (!roomId) {
       return res.status(400).json({ message: "Room ID is required" });
@@ -214,11 +281,19 @@ export const updateRoomById = async (req: Request, res: Response) => {
     const existingRoom = await RoomId.findById(roomId);
 
     if (!existingRoom) {
-      return res.status(204).json({ message: "Room not found" });
+      return res.status(202).json({ message: "Room not found" });
     }
 
+    // If updatedBy field doesn't exist in updatedRoomData, initialize it
+    if (!updatedRoomData.updatedBy) {
+      updatedRoomData.updatedBy = '';
+    }
+
+    // Append the current user's ID to the updatedBy string
+    updatedRoomData.updatedBy = updatedRoomData.updatedBy ? `${updatedRoomData.updatedBy},${userId}` : userId;
+
     // Update the room data
-    await RoomId.findByIdAndUpdate(roomId, updatedRoomData);
+    await RoomId.findByIdAndUpdate(roomId, updatedRoomData, { new: true });
 
     return res.status(200).json({ message: "Room updated successfully" });
 
@@ -237,7 +312,7 @@ export const deleteRoomById = async (req: Request, res: Response) => {
     const { id } = req.params;
     const deletedRoom = await RoomId.findByIdAndDelete(id);
     if (!deletedRoom) {
-      return res.status(204).json({ error: "Room not found" });
+      return res.status(202).json({ error: "Room not found" });
     }
     res.status(200).json({ message: "Room deleted successfully" });
   } catch (error) {
@@ -257,9 +332,24 @@ export const getUserRooms = async (req: Request, res: Response) => {
     }
 
     const userId = user.userId;
+    const { sortingKey } = req.query;
 
     // Fetch rooms associated with the specific user
-    const userRooms = await RoomId.find({ createdBy: userId });
+    const userRooms = await RoomId.find({
+      $or: [
+        { createdBy: userId },
+        { assignTo: userId }
+      ]
+    });
+
+    // Sort the rooms by createdAt based on the 'latestFirst' and 'previousFirst' keys
+    let sortedRooms = userRooms;
+    if (sortingKey === 'latestFirst') {
+      sortedRooms = userRooms.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    } else if (sortingKey === 'previousFirst') {
+      sortedRooms = userRooms.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    }
+
 
     return res.status(200).json(userRooms);
   } catch (error) {
@@ -270,3 +360,25 @@ export const getUserRooms = async (req: Request, res: Response) => {
     });
   }
 };
+
+
+// get all team in a room
+export const getAllTeamDetailsInARoom = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const room = await RoomId.findById({ _id: id });
+
+    if (!room) {
+      return res.status(404).json({ message: 'No teams found for the given roomId.' });
+    }
+
+    const teams = room.registerTeams.map((team: { teamName: any; }) => ({
+      teamName: team.teamName
+    }));
+
+    return res.status(200).json({ teams: teams });
+  } catch (error) {
+    console.error('Error: ', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+}

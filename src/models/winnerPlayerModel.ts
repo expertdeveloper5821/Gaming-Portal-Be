@@ -1,30 +1,43 @@
 import mongoose, { Schema } from "mongoose";
 
-const winnerPlayersSchema: Schema = new Schema(
-  {
-    winnerUuid: {
-      type: String,
-      required: true,
-    },
-    winnerName: {
-      type: String,
-      required: true,
-    },
-    winningPosition: {
-      type: String,
-      required: true,
-    },
-    uuid: {
-      type: String,
-      required: true,
-    },
-    createdBy: {
-      type: String, // Assuming the user ID is a string
-      required: true,
-    },
+const teamDataSchema = new Schema({
+  teamName: {
+    type: String,
+    required: false,
   },
-  { timestamps: true }
-);
+  highestKill: {
+    type: Number,
+    required: false,
+  },
+  chickenDinner: {
+    type: Number,
+    required: false,
+  },
+  firstWinner: {
+    type: Number,
+    required: false,
+  },
+  secondWinner: {
+    type: Number,
+    required: false,
+  },
+});
+
+const winnerPlayersSchema = new Schema({
+  winnerUuid: {
+    type: String,
+    required: false,
+  },
+  teamData: [teamDataSchema],
+  roomId: {
+    type: String,
+    required: false,
+  },
+  createdBy: {
+    type: String,
+    required: false,
+  },
+}, { timestamps: true });
 
 const WinnerPlayers = mongoose.model("WinnerPlayer", winnerPlayersSchema);
 export default WinnerPlayers;

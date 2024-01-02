@@ -59,16 +59,38 @@ const roomIdSchema: Schema = new Schema(
       required: false,
     },
     createdBy: {
-      type: String, 
-      required: true,
+      type: String,
+      required: false,
+    },
+    updatedBy: {
+      type: String,
+      required: false,
+    },
+    assignTo: {
+      type: Schema.Types.ObjectId,
+      ref: "user",
+      required: false,
     },
     registerTeams: [
       {
         teamName: String,
-        leaderEmail: String,
-        emails: [String],
+        leaderId: {
+          type: Schema.Types.ObjectId,
+          ref: "user", // Reference the user model
+        },
+        teamMateIds: [
+          {
+            type: Schema.Types.ObjectId,
+            ref: "user", // Reference the user model
+          },
+        ],
       },
     ],
+    winnerUuid: { type: String },
+    availableSlots: {
+      type: Number,
+      default: 25, // default 25 slots
+    },
   },
   { timestamps: true }
 );
