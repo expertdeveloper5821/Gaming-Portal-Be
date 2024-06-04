@@ -1,5 +1,5 @@
-import * as dotenv from 'dotenv';
-dotenv.config();
+// import * as dotenv from 'dotenv';
+// dotenv.config();
 // console.log("environment check", process.env)
 // setting the all env credentails
 export interface EnvironmentConfig {

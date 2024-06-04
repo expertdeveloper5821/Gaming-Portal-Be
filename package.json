@@ -4,8 +4,9 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "node dist/server.js",
-    "dev": "nodemon --exec ts-node src/server.ts",
+    "start:dev": "node --env-file=./.env.development dist/server.js",
+    "start:prod": "node --env-file=./.env.production dist/server.js",
+    "dev": "nodemon --exec set NODE_ENV=development && ts-node src/server.ts",
     "build": "tsc"
   },
   "keywords": [],
@@ -19,7 +20,7 @@
     "connect-mongodb-session": "^3.1.1",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
-    "dotenv": "^16.3.1",
+    "dotenv": "^16.4.5",
     "express": "^4.18.2",
     "express-session": "^1.17.3",
     "html-pdf": "^3.0.1",
