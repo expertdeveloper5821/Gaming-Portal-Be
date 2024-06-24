@@ -1,8 +1,8 @@
-import app from './app';
-import http from 'http';
-import { environmentConfig } from './config/environmentConfig';
-import { printSuccess, printError } from './utils/consoleMessage'; 
-import { setupSocketIO } from './middlewares/socket';
+import app from "./app";
+import http from "http";
+import { environmentConfig } from "./config/environmentConfig";
+import { printSuccess, printError } from "./utils/consoleMessage";
+import { setupSocketIO } from "./middlewares/socket";
 
 const port: number = environmentConfig.SERVER_PORT;
 
@@ -13,8 +13,8 @@ export const io = setupSocketIO(server);
 app.locals.io = io;
 
 // sample get route
-app.get('/', (req, res) => {
-  res.status(200).send('Hello, Gamers!');
+app.get("/", (req, res) => {
+  res.status(200).send("Hello, Gamers!");
 });
 
 // server listening
@@ -27,5 +27,3 @@ server.listen(port, () => {
     printError(`Server could not start on port ${port}...😵`);
   }
 });
-
- 
