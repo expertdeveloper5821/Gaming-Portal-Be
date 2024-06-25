@@ -8,7 +8,12 @@ const port: number =
   (process.env.PORT as unknown as number) || environmentConfig.SERVER_PORT;
 
 console.log(port, "port");
-console.log(process.env.NODE_ENV, "node environment");
+console.log(
+  process.env.NODE_ENV,
+  "node environment",
+  process.env.VERCEL_ENV,
+  "vercel environment"
+);
 console.log(environmentConfig.DB_NAME, environmentConfig.DB_URL);
 console.log(environmentConfig.ENV, environmentConfig.SERVER_PORT);
 
