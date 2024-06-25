@@ -4,7 +4,7 @@
         "jwtSecret": "This12is34Secrete56"
     },
     "port": 5009,
-    "DbUrl": "mongodb+srv://pattseheadshot:pattseheadshot5821@pattseheadshot.m6gtd0f.mongodb.net/?retryWrites=true&w=majority",
+    "DbUrl": "mongodb+srv://ESportsGaming:ESportsGaming5821@esportsgaming.m0fd2tn.mongodb.net/?retryWrites=true&w=majority&appName=ESportsGaming",
     "DbName": "test",
     "email": {
         "emailHost": "smtp.gmail.com",

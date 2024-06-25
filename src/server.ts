@@ -7,6 +7,11 @@ import { setupSocketIO } from "./middlewares/socket";
 const port: number =
   (process.env.PORT as unknown as number) || environmentConfig.SERVER_PORT;
 
+console.log(port, "port");
+console.log(process.env.NODE_ENV, "node environment");
+console.log(environmentConfig.DB_NAME, environmentConfig.DB_URL);
+console.log(environmentConfig.ENV, environmentConfig.SERVER_PORT);
+
 const server = http.createServer(app);
 
 // Set up Socket.io

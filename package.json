@@ -8,7 +8,7 @@
     "start:prod": "node --env-file=./.env.production dist/server.js",
     "dev": "nodemon --exec set NODE_ENV=development && ts-node src/server.ts",
     "build": "tsc",
-    "start": "npm run build && node dist/server.js",
+    "start": "node dist/server.js",
     "start2": "npm run build && npm run set-env-prod:start-server",
     "dev2": "npm run build && npm run set-env-dev:start-server",
     "set-env-prod:start-server": "cross-env NODE_ENV=production node dist/server.js",
