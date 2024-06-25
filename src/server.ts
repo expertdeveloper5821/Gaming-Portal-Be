@@ -4,7 +4,8 @@ import { environmentConfig } from "./config/environmentConfig";
 import { printSuccess, printError } from "./utils/consoleMessage";
 import { setupSocketIO } from "./middlewares/socket";
 
-const port: number = environmentConfig.SERVER_PORT;
+const port: number =
+  (process.env.PORT as unknown as number) || environmentConfig.SERVER_PORT;
 
 const server = http.createServer(app);
 
